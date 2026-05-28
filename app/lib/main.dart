@@ -7,6 +7,14 @@ import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Set status bar color to match header (solid, not transparent)
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Color(0xFFFFFFFF),
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+  ));
+
   // Load saved server URL (no default — user must configure)
   final prefs = await SharedPreferences.getInstance();
   final server = prefs.getString('server') ?? '';
@@ -30,6 +38,20 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
       _themeMode =
           _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
+    // Update status bar color to match theme
+    SystemChrome.setSystemUIOverlayStyle(
+      _themeMode == ThemeMode.dark
+          ? const SystemUiOverlayStyle(
+              statusBarColor: Color(0xFF1c1c1a),
+              statusBarIconBrightness: Brightness.light,
+              statusBarBrightness: Brightness.dark,
+            )
+          : const SystemUiOverlayStyle(
+              statusBarColor: Color(0xFFFFFFFF),
+              statusBarIconBrightness: Brightness.dark,
+              statusBarBrightness: Brightness.light,
+            ),
+    );
   }
 
   @override
@@ -48,15 +70,10 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
         ),
         scaffoldBackgroundColor: const Color(0xFFf5f4ed),
         textTheme: GoogleFonts.notoSansScTextTheme(),
-        appBarTheme: AppBarTheme(
-          backgroundColor: const Color(0xFFFFFFFF),
-          foregroundColor: const Color(0xFF141413),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFFFFFFF),
+          foregroundColor: Color(0xFF141413),
           elevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: const Color(0xFFFFFFFF),
-            statusBarIconBrightness: Brightness.dark,
-            statusBarBrightness: Brightness.light,
-          ),
         ),
       ),
       darkTheme: ThemeData(
@@ -69,15 +86,10 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
         ),
         scaffoldBackgroundColor: const Color(0xFF141413),
         textTheme: GoogleFonts.notoSansScTextTheme(ThemeData.dark().textTheme),
-        appBarTheme: AppBarTheme(
-          backgroundColor: const Color(0xFF1c1c1a),
-          foregroundColor: const Color(0xFFe4ece0),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1c1c1a),
+          foregroundColor: Color(0xFFe4ece0),
           elevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: const Color(0xFF1c1c1a),
-            statusBarIconBrightness: Brightness.light,
-            statusBarBrightness: Brightness.dark,
-          ),
         ),
       ),
       home: HomeScreen(
