@@ -28,6 +28,12 @@ class _LintScreenState extends State<LintScreen> {
       });
     } catch (e) {
       setState(() => _loading = false);
+      if (mounted) {
+        final msg = e.toString().contains('SocketException')
+            ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
+            : '加载检查数据失败';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
     }
   }
 

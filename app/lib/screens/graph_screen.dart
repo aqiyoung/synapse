@@ -32,6 +32,12 @@ class _GraphScreenState extends State<GraphScreen> {
       });
     } catch (e) {
       setState(() => _loading = false);
+      if (mounted) {
+        final msg = e.toString().contains('SocketException')
+            ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
+            : '加载图谱失败';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
     }
   }
 
@@ -292,11 +298,6 @@ class _GraphPainter extends CustomPainter {
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
     canvas.scale(scale);
-
-    // Center the graph
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    canvas.translate(centerX, centerY);
 
     // Draw edges
     final edgePaint = Paint()
