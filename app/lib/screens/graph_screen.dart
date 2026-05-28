@@ -122,21 +122,52 @@ class GraphPainter extends CustomPainter {
     if (nodes.isEmpty) return;
 
     final nodePositions = <int, Offset>{};
-    final nodeRadius = 24.0;
-    final padding = 60.0;
+    final nodeRadius = 20.0;
+    final padding = 40.0;
 
     // Calculate center and radius based on node count
     final center = Offset(size.width / 2, size.height / 2);
     final minDim = size.width < size.height ? size.width : size.height;
-    final radius = (minDim / 2 - padding - nodeRadius).clamp(80.0, 400.0);
 
-    // Layout nodes in a proper circle
-    for (var i = 0; i < nodes.length; i++) {
-      final angle = (2 * 3.14159 * i) / nodes.length - 3.14159 / 2;
-      nodePositions[nodes[i]['id']] = Offset(
-        center.dx + radius * cos(angle),
-        center.dy + radius * sin(angle),
-      );
+    // Adaptive radius based on node count
+    final effectiveRadius = nodes.length > 50
+        ? (minDim / 2 - padding - nodeRadius).clamp(100.0, 500.0)
+        : (minDim / 2 - padding - nodeRadius).clamp(80.0, 300.0);
+
+    // Layout nodes in concentric circles for better distribution
+    if (nodes.length <= 20) {
+      // Single circle for small graphs
+      for (var i = 0; i < nodes.length; i++) {
+        final angle = (2 * 3.14159 * i) / nodes.length - 3.14159 / 2;
+        nodePositions[nodes[i]['id']] = Offset(
+          center.dx + effectiveRadius * cos(angle),
+          center.dy + effectiveRadius * sin(angle),
+        );
+      }
+    } else {
+      // Multiple concentric circles for larger graphs
+      final innerCount = (nodes.length * 0.3).round().clamp(5, 15);
+      final outerCount = nodes.length - innerCount;
+      final innerRadius = effectiveRadius * 0.4;
+      final outerRadius = effectiveRadius;
+
+      // Inner circle
+      for (var i = 0; i < innerCount; i++) {
+        final angle = (2 * 3.14159 * i) / innerCount - 3.14159 / 2;
+        nodePositions[nodes[i]['id']] = Offset(
+          center.dx + innerRadius * cos(angle),
+          center.dy + innerRadius * sin(angle),
+        );
+      }
+
+      // Outer circle
+      for (var i = 0; i < outerCount; i++) {
+        final angle = (2 * 3.14159 * i) / outerCount - 3.14159 / 2;
+        nodePositions[nodes[innerCount + i]['id']] = Offset(
+          center.dx + outerRadius * cos(angle),
+          center.dy + outerRadius * sin(angle),
+        );
+      }
     }
 
     // Draw edges
@@ -145,8 +176,8 @@ class GraphPainter extends CustomPainter {
       ..strokeWidth = 1.5;
 
     for (final edge in edges) {
-      final from = nodePositions[edge['from']];
-      final to = nodePositions[edge['to']];
+      final from = nodePositions[edge['source'] ?? edge['from']];
+      final to = nodePositions[edge['target'] ?? edge['to']];
       if (from != null && to != null) {
         canvas.drawLine(from, to, edgePaint);
       }
@@ -171,17 +202,20 @@ class GraphPainter extends CustomPainter {
 
       // Node label
       final title = node['title'] ?? '';
+      final displayTitle = title.length > 8 ? '${title.substring(0, 8)}...' : title;
       final textPainter = TextPainter(
         text: TextSpan(
-          text: title.length > 6 ? '${title.substring(0, 6)}...' : title,
+          text: displayTitle,
           style: TextStyle(
             color: textColor,
-            fontSize: 10,
+            fontSize: 9,
+            fontWeight: FontWeight.w500,
           ),
         ),
         textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
       );
-      textPainter.layout();
+      textPainter.layout(maxWidth: nodeRadius * 3);
       textPainter.paint(
         canvas,
         Offset(pos.dx - textPainter.width / 2, pos.dy + nodeRadius + 4),

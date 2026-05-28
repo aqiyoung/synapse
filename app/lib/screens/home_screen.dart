@@ -211,8 +211,8 @@ class _HomeScreenState extends State<HomeScreen> {
           // Tags
           if (_tags.isNotEmpty)
             Container(
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               color: colorScheme.surface,
               child: ListView(
                 scrollDirection: Axis.horizontal,
@@ -222,6 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: TagChip(
                       label: '全部',
                       selected: _selectedTag.isEmpty,
+                      count: _notes.length,
                       onTap: () => _onTagSelected(''),
                     ),
                   ),
@@ -230,6 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: TagChip(
                           label: tag.name,
                           selected: _selectedTag == tag.name,
+                          count: tag.noteCount,
                           onTap: () => _onTagSelected(tag.name),
                         ),
                       )),
