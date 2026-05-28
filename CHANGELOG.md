@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.2+13 (2026-05-28)
+
+### Fixes
+- Status bar: global SystemChrome.setSystemUIOverlayStyle (works on all pages)
+- Status bar color updates when toggling light/dark mode
+- Removed redundant AppBarTheme.systemOverlayStyle
+
 ## v1.1.1+12 (2026-05-28)
 
 ### Fixes
