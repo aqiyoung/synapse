@@ -81,7 +81,6 @@ class _GraphScreenState extends State<GraphScreen> {
                         ),
                       )
                     : InteractiveViewer(
-                        boundaryPadding: const EdgeInsets.all(100),
                         minScale: 0.3,
                         maxScale: 3.0,
                         child: CustomPaint(
