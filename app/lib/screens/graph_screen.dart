@@ -154,7 +154,7 @@ class _GraphWidget extends StatefulWidget {
 
 class _GraphWidgetState extends State<_GraphWidget>
     with TickerProviderStateMixin {
-  late AnimationController _animController;
+  late Ticker _ticker;
   late List<_GraphNode> _graphNodes;
   late Map<int, _GraphNode> _nodeMap;
   late List<_Edge> _graphEdges;
@@ -185,11 +185,12 @@ class _GraphWidgetState extends State<_GraphWidget>
     _nodeMap = {};
     _graphEdges = [];
     _initGraph();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(hours: 1),
-    )..addListener(_onFrame);
-    _animController.repeat();
+    _ticker = createTicker((_) {
+      if (_graphNodes.isEmpty) return;
+      _simulate();
+      setState(() {});
+    });
+    _ticker.start();
   }
 
   @override
@@ -197,6 +198,7 @@ class _GraphWidgetState extends State<_GraphWidget>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.nodes != widget.nodes) {
       _initGraph();
+      if (!_ticker.isActive) _ticker.start();
     }
   }
 
@@ -249,12 +251,6 @@ class _GraphWidgetState extends State<_GraphWidget>
         tgt.degree++;
       }
     }
-  }
-
-  void _onFrame() {
-    if (!mounted || _graphNodes.isEmpty) return;
-    _simulate();
-    setState(() {});
   }
 
   void _simulate() {
@@ -332,7 +328,7 @@ class _GraphWidgetState extends State<_GraphWidget>
 
   @override
   void dispose() {
-    _animController.dispose();
+    _ticker.dispose();
     super.dispose();
   }
 
@@ -376,9 +372,7 @@ class _GraphWidgetState extends State<_GraphWidget>
             widget.onNodeTap(_dragNode!.id);
           }
           _dragNode = null;
-          if (!_animController.isAnimating) {
-            _animController.repeat();
-          }
+          if (!_ticker.isActive) _ticker.start();
         },
         child: CustomPaint(
           size: Size.infinite,
