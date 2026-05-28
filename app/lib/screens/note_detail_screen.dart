@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
@@ -22,13 +21,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   void initState() {
     super.initState();
     _loadNote();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    super.dispose();
   }
 
   Future<void> _loadNote() async {
@@ -55,19 +47,8 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            Theme.of(context).brightness == Brightness.dark
-                ? Brightness.light
-                : Brightness.dark,
-      ),
-      child: Scaffold(
-      extendBodyBehindAppBar: true,
+    return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -86,14 +67,12 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           : _note == null
               ? const Center(child: Text('笔记不存在'))
               : _buildContent(colorScheme),
-    ),
     );
   }
 
   Widget _buildContent(ColorScheme colorScheme) {
-    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(20, topPadding, 20, 20),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

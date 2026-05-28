@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
 import 'note_detail_screen.dart';
@@ -99,14 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            widget.isDark ? Brightness.light : Brightness.dark,
-      ),
-      child: Scaffold(
-      extendBodyBehindAppBar: true,
+    return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -150,18 +142,16 @@ class _HomeScreenState extends State<HomeScreen> {
           color: colorScheme.primary,
         ),
       ),
-      ),
     );
   }
 
   Widget _buildNoteList(ColorScheme colorScheme) {
-    return Container(
-      color: colorScheme.surface,
+    return SafeArea(
       child: Column(
         children: [
           // Header
           Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
             color: colorScheme.surface,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

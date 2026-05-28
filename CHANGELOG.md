@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.1+12 (2026-05-28)
+
+### Fixes
+- Status bar: solid color (not transparent) matching header on all pages
+- Removed edge-to-edge mode, status bar color set via theme AppBarTheme
+- Status bar: white in light mode, dark surface in dark mode
+
 ## v1.1.0+11 (2026-05-28)
 
 ### Fixes
