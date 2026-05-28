@@ -19,6 +19,10 @@ class _LintScreenState extends State<LintScreen> {
   }
 
   Future<void> _loadLint() async {
+    if (!ApiService.isConfigured) {
+      setState(() => _loading = false);
+      return;
+    }
     setState(() => _loading = true);
     try {
       final data = await ApiService.getLint();
@@ -74,7 +78,14 @@ class _LintScreenState extends State<LintScreen> {
                     child:
                         CircularProgressIndicator(color: colorScheme.primary))
                 : _lintData == null
-                    ? const Center(child: Text('加载失败'))
+                    ? Center(
+                        child: Text(
+                          ApiService.isConfigured ? '加载失败' : '请先在设置中配置服务器',
+                          style: TextStyle(
+                            color: colorScheme.onSurface.withOpacity(0.4),
+                          ),
+                        ),
+                      )
                     : _buildContent(colorScheme),
           ),
         ],

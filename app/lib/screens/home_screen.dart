@@ -43,6 +43,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
+    if (!ApiService.isConfigured) {
+      setState(() => _loading = false);
+      return;
+    }
     setState(() => _loading = true);
     try {
       final notes = await ApiService.getNotes(
@@ -256,11 +260,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: CircularProgressIndicator(color: colorScheme.primary))
                 : _notes.isEmpty
                     ? Center(
-                        child: Text(
-                          '暂无笔记',
-                          style: TextStyle(
-                            color: colorScheme.onSurface.withOpacity(0.4),
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.4),
+                              ),
+                            ),
+                            if (!ApiService.isConfigured) ...[
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const SettingsScreen()),
+                                ).then((_) => _loadData()),
+                                child: const Text('前往设置'),
+                              ),
+                            ],
+                          ],
                         ),
                       )
                     : ListView.builder(

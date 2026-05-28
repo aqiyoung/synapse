@@ -7,10 +7,10 @@ import 'services/api_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load saved server URL
+  // Load saved server URL (no default — user must configure)
   final prefs = await SharedPreferences.getInstance();
-  final server = prefs.getString('server') ?? 'https://wiki.threel.site';
-  await ApiService.setServer(server);
+  final server = prefs.getString('server') ?? '';
+  if (server.isNotEmpty) await ApiService.setServer(server);
 
   runApp(const KnowledgeBaseApp());
 }

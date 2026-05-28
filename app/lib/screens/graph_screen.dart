@@ -24,6 +24,10 @@ class _GraphScreenState extends State<GraphScreen> {
   }
 
   Future<void> _loadGraph() async {
+    if (!ApiService.isConfigured) {
+      setState(() => _loading = false);
+      return;
+    }
     setState(() => _loading = true);
     try {
       final data = await ApiService.getGraph();
@@ -85,7 +89,7 @@ class _GraphScreenState extends State<GraphScreen> {
                 : _nodes.isEmpty
                     ? Center(
                         child: Text(
-                          '暂无图谱数据',
+                          ApiService.isConfigured ? '暂无图谱数据' : '请先在设置中配置服务器',
                           style: TextStyle(
                             color: colorScheme.onSurface.withOpacity(0.4),
                           ),

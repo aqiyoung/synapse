@@ -3,8 +3,9 @@ import 'package:http/http.dart' as http;
 import '../models/note.dart';
 
 class ApiService {
-  // 生产环境地址（可通过设置修改）
-  static String baseUrl = 'https://wiki.threel.site/api';
+  static String baseUrl = '';
+
+  static bool get isConfigured => baseUrl.isNotEmpty;
 
   static Future<void> setServer(String url) async {
     baseUrl = url.endsWith('/api') ? url : '$url/api';
@@ -17,8 +18,8 @@ class ApiService {
   // 获取笔记列表
   static Future<List<Note>> getNotes({String? tag, String? search}) async {
     var url = '$baseUrl/notes?limit=200';
-    if (tag != null && tag.isNotEmpty) url += '&tag=$tag';
-    if (search != null && search.isNotEmpty) url += '&search=$search';
+    if (tag != null && tag.isNotEmpty) url += '&tag=${Uri.encodeQueryComponent(tag)}';
+    if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeQueryComponent(search)}';
 
     final response = await http.get(Uri.parse(url), headers: _headers);
     if (response.statusCode == 200) {

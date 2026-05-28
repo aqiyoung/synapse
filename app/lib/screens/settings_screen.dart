@@ -27,7 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadServer() async {
     final prefs = await SharedPreferences.getInstance();
-    final server = prefs.getString('server') ?? 'https://wiki.threel.site';
+    final server = prefs.getString('server') ?? '';
     setState(() {
       _serverController.text = server;
     });
@@ -70,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextField(
             controller: _serverController,
             decoration: InputDecoration(
-              hintText: 'https://wiki.threel.site',
+              hintText: 'https://your-server.com',
               labelText: '服务器地址',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -110,7 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(Icons.info_outline, color: colorScheme.primary),
             title: const Text('版本'),
-            subtitle: const Text('1.0.7'),
+            subtitle: const Text('1.0.8'),
             contentPadding: EdgeInsets.zero,
           ),
           ListTile(
