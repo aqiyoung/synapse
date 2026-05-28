@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
@@ -29,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   bool _loading = true;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
@@ -194,7 +197,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Search
                 TextField(
                   controller: _searchController,
-                  onSubmitted: _onSearch,
+                  onChanged: (value) {
+                    _searchDebounce?.cancel();
+                    _searchDebounce = Timer(
+                      const Duration(milliseconds: 500),
+                      () => _onSearch(value),
+                    );
+                  },
                   decoration: InputDecoration(
                     hintText: '搜索笔记...',
                     hintStyle: TextStyle(
@@ -202,6 +211,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     prefixIcon: Icon(Icons.search,
                         color: colorScheme.onSurface.withOpacity(0.4)),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear,
+                                color: colorScheme.onSurface.withOpacity(0.4)),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearch('');
+                            },
+                          )
+                        : null,
                     filled: true,
                     fillColor: colorScheme.background,
                     border: OutlineInputBorder(

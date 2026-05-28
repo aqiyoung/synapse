@@ -22,6 +22,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   void initState() {
     super.initState();
     _loadNote();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
   }
 
   Future<void> _loadNote() async {
@@ -57,7 +64,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                 : Brightness.dark,
       ),
       child: Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -81,8 +91,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   }
 
   Widget _buildContent(ColorScheme colorScheme) {
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(20, topPadding, 20, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

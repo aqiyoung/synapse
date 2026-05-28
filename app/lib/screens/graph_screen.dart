@@ -342,16 +342,24 @@ class _GraphWidgetState extends State<_GraphWidget>
     return LayoutBuilder(builder: (context, constraints) {
       final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
       return GestureDetector(
-        onScaleStart: (details) {
-          _lastFocal = details.focalPoint;
-          _dragStartScreen = details.focalPoint;
-          _dragNode = _findNode(details.focalPoint, widgetSize);
+        onTap: () {
+          if (_dragNode != null) {
+            widget.onNodeTap(_dragNode!.id);
+            _dragNode = null;
+          }
+        },
+        onTapDown: (details) {
+          _dragNode = _findNode(details.localPosition, widgetSize);
           if (_dragNode != null) {
             _hoveredNode = _dragNode;
           }
-          if (_dragNode == null) {
-            _panStart = details.focalPoint - _pan;
-          }
+        },
+        onTapCancel: () {
+          _dragNode = null;
+        },
+        onScaleStart: (details) {
+          _lastFocal = details.focalPoint;
+          _panStart = details.focalPoint - _pan;
         },
         onScaleUpdate: (details) {
           setState(() {
@@ -372,10 +380,6 @@ class _GraphWidgetState extends State<_GraphWidget>
           });
         },
         onScaleEnd: (details) {
-          final moved = (_lastFocal - _dragStartScreen).distance;
-          if (_dragNode != null && moved < 10) {
-            widget.onNodeTap(_dragNode!.id);
-          }
           _dragNode = null;
           if (!_ticker.isActive) _ticker.start();
         },

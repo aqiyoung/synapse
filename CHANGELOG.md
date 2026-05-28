@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.9+10 (2026-05-28)
+
+### Fixes
+- Status bar: true immersive mode on note detail (edge-to-edge + transparent AppBar)
+- Search: real-time search with 500ms debounce (no need to press submit)
+- Search: added clear button to reset search
+- Graph: node tap now works — was broken because `onScaleEnd` never fires for quick taps in Flutter's gesture system, switched to `onTap` callback
+
 ## v1.0.8+9 (2026-05-28)
 
 ### Changes
