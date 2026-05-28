@@ -1,25 +1,23 @@
 # 知识库系统开发文档（DEV）
 
-> 最后更新：2026-05-26
+> 最后更新：2026-05-28
 
 ## 快速参考
 
-- **访问地址**：https://wiki.threel.site
-- **前端文件**：`/vol1/1000/dev-projects/knowledge-base/frontend/index.html`
-- **后端目录**：`/vol1/1000/dev-projects/knowledge-base/backend/`
-- **数据库**：`/vol1/1000/dev-projects/knowledge-base/data/knowledge.db`
+- **前端文件**：`frontend/index.html`
+- **后端目录**：`backend/`
+- **数据库**：`data/knowledge.db`
 - **服务端口**：18800（Uvicorn）
 - **服务管理**：`sudo systemctl restart knowledge-base`
-- **Nginx 配置**：`/etc/nginx/conf.d/wiki.threel.site.conf`
 
 ## 修改代码后的操作
 
 ```bash
 # 前端修改 → 直接生效（静态文件）
-vim /vol1/1000/dev-projects/knowledge-base/frontend/index.html
+vim frontend/index.html
 
 # 后端修改 → 重启服务
-vim /vol1/1000/dev-projects/knowledge-base/backend/api.py
+vim backend/api.py
 sudo systemctl restart knowledge-base
 
 # Nginx 修改 → 测试 + 重载
@@ -29,8 +27,7 @@ sudo nginx -t && sudo nginx -s reload
 ## 数据备份
 
 ```bash
-cp /vol1/1000/dev-projects/knowledge-base/data/knowledge.db \
-   /vol1/1000/dev-projects/knowledge-base/data/knowledge.db.$(date +%Y%m%d)
+cp data/knowledge.db data/knowledge.db.$(date +%Y%m%d)
 ```
 
 ## 注意事项
