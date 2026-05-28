@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.5+16 (2026-05-29)
+
+### Fixes
+- Graph: tags legend moved to top-right corner (no longer overlaps dark mode FAB)
+
 ## v1.1.4+15 (2026-05-28)
 
 ### Fixes

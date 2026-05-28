@@ -560,7 +560,7 @@ class _GraphPainter extends CustomPainter {
     final boxW = pad * 2 + 10 + maxW;
     final boxH = pad * 2 + titleH + entries.length * lh;
     final bx = size.width - boxW - 12;
-    final by = size.height - boxH - 12;
+    final by = 12.0;
 
     final bgRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(bx, by, boxW, boxH), const Radius.circular(6));
