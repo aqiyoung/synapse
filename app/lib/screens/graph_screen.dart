@@ -160,54 +160,50 @@ class _GraphWidgetState extends State<_GraphWidget> {
     final nodeRadius = 24.0;
     final padding = 40.0;
 
-    // Calculate canvas size based on node count
-    final canvasSize = max(800.0, widget.nodes.length * 15.0);
-    final center = Offset(canvasSize / 2, canvasSize / 2);
-    final radius = (canvasSize / 2 - padding - nodeRadius).clamp(100.0, 400.0);
+    // Layout radius based on node count
+    final radius = (widget.nodes.length * 8.0 + padding + nodeRadius).clamp(120.0, 350.0);
 
-    // Layout in concentric circles
+    // Layout centered at origin (0, 0)
     if (widget.nodes.length <= 15) {
-      // Single circle
       for (var i = 0; i < widget.nodes.length; i++) {
         final angle = (2 * pi * i) / widget.nodes.length - pi / 2;
         _nodePositions[widget.nodes[i]['id']] = Offset(
-          center.dx + radius * cos(angle),
-          center.dy + radius * sin(angle),
+          radius * cos(angle),
+          radius * sin(angle),
         );
       }
     } else {
-      // Multiple concentric circles
       final innerCount = (widget.nodes.length * 0.25).round().clamp(5, 12);
       final outerCount = widget.nodes.length - innerCount;
       final innerRadius = radius * 0.35;
       final outerRadius = radius;
 
-      // Inner circle
       for (var i = 0; i < innerCount; i++) {
         final angle = (2 * pi * i) / innerCount - pi / 2;
         _nodePositions[widget.nodes[i]['id']] = Offset(
-          center.dx + innerRadius * cos(angle),
-          center.dy + innerRadius * sin(angle),
+          innerRadius * cos(angle),
+          innerRadius * sin(angle),
         );
       }
 
-      // Outer circle
       for (var i = 0; i < outerCount; i++) {
         final angle = (2 * pi * i) / outerCount - pi / 2;
         _nodePositions[widget.nodes[innerCount + i]['id']] = Offset(
-          center.dx + outerRadius * cos(angle),
-          center.dy + outerRadius * sin(angle),
+          outerRadius * cos(angle),
+          outerRadius * sin(angle),
         );
       }
     }
   }
 
-  int? _getNodeAtPosition(Offset pos) {
+  int? _getNodeAtPosition(Offset screenPos, Size widgetSize) {
     final nodeRadius = 24.0;
+    // Convert screen position to graph space
+    final graphPos = (screenPos - Offset(widgetSize.width / 2, widgetSize.height / 2) - _offset) / _scale;
     for (final node in widget.nodes) {
       final nodePos = _nodePositions[node['id']];
       if (nodePos == null) continue;
-      final distance = (pos - nodePos).distance;
+      final distance = (graphPos - nodePos).distance;
       if (distance <= nodeRadius * 1.5) {
         return node['id'];
       }
@@ -217,55 +213,58 @@ class _GraphWidgetState extends State<_GraphWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onScaleStart: (details) {
-        _panStart = details.focalPoint;
-        _dragNodeId = _getNodeAtPosition(
-          (details.focalPoint - _offset) / _scale,
-        );
-        if (_dragNodeId != null) {
-          _dragStartPos = _nodePositions[_dragNodeId!]!;
-        }
-      },
-      onScaleUpdate: (details) {
-        setState(() {
-          if (_dragNodeId != null) {
-            // Drag node
-            final delta = (details.focalPoint - _panStart) / _scale;
-            _nodePositions[_dragNodeId!] = _dragStartPos + delta;
-          } else {
-            // Pan canvas
-            _offset += details.focalPoint - _panStart;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
+        return GestureDetector(
+          onScaleStart: (details) {
             _panStart = details.focalPoint;
-            if (details.scale != 1.0) {
-              _scale = (_scale * details.scale).clamp(0.3, 3.0);
+            _dragNodeId = _getNodeAtPosition(details.focalPoint, widgetSize);
+            if (_dragNodeId != null) {
+              _dragStartPos = _nodePositions[_dragNodeId!]!;
             }
-          }
-        });
+          },
+          onScaleUpdate: (details) {
+            setState(() {
+              if (_dragNodeId != null) {
+                // Drag node: convert screen delta to graph space
+                final delta = (details.focalPoint - _panStart) / _scale;
+                _nodePositions[_dragNodeId!] = _dragStartPos + delta;
+              } else {
+                // Pan canvas: accumulate in screen space
+                _offset += details.focalPoint - _panStart;
+                _panStart = details.focalPoint;
+                if (details.scale != 1.0) {
+                  _scale = (_scale * details.scale).clamp(0.3, 3.0);
+                }
+              }
+            });
+          },
+          onScaleEnd: (details) {
+            if (_dragNodeId != null) {
+              final distance =
+                  (_nodePositions[_dragNodeId!]! - _dragStartPos).distance;
+              if (distance < 5 / _scale) {
+                // Tap (threshold adjusted for scale)
+                widget.onNodeTap(_dragNodeId!);
+              }
+            }
+            _dragNodeId = null;
+          },
+          child: CustomPaint(
+            size: Size.infinite,
+            painter: _GraphPainter(
+              nodes: widget.nodes,
+              edges: widget.edges,
+              nodePositions: _nodePositions,
+              primaryColor: widget.primaryColor,
+              textColor: widget.textColor,
+              offset: _offset,
+              scale: _scale,
+            ),
+          ),
+        );
       },
-      onScaleEnd: (details) {
-        if (_dragNodeId != null) {
-          final distance =
-              (_nodePositions[_dragNodeId!]! - _dragStartPos).distance;
-          if (distance < 5) {
-            // Tap
-            widget.onNodeTap(_dragNodeId!);
-          }
-        }
-        _dragNodeId = null;
-      },
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: _GraphPainter(
-          nodes: widget.nodes,
-          edges: widget.edges,
-          nodePositions: _nodePositions,
-          primaryColor: widget.primaryColor,
-          textColor: widget.textColor,
-          offset: _offset,
-          scale: _scale,
-        ),
-      ),
     );
   }
 }
@@ -296,7 +295,8 @@ class _GraphPainter extends CustomPainter {
     final nodeRadius = 24.0;
 
     canvas.save();
-    canvas.translate(offset.dx, offset.dy);
+    // Center graph on widget, then apply pan and zoom
+    canvas.translate(size.width / 2 + offset.dx, size.height / 2 + offset.dy);
     canvas.scale(scale);
 
     // Draw edges
