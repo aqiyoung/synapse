@@ -371,7 +371,7 @@ class _GraphWidgetState extends State<_GraphWidget>
           });
         },
         onScaleEnd: (details) {
-          final moved = (details.focalPoint - _dragStartScreen).distance;
+          final moved = (_lastFocal - _dragStartScreen).distance;
           if (_dragNode != null && moved < 10) {
             widget.onNodeTap(_dragNode!.id);
           }
