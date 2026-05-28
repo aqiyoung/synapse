@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
@@ -7,12 +6,6 @@ import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Immersive status bar
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-  ));
 
   // Load saved server URL
   final prefs = await SharedPreferences.getInstance();
@@ -75,10 +68,6 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
           backgroundColor: Color(0xFF1c1c1a),
           foregroundColor: Color(0xFFe4ece0),
           elevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-          ),
         ),
       ),
       home: HomeScreen(

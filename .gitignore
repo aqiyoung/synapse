@@ -48,5 +48,6 @@ data/knowledge.db
 
 # Android signing
 app/android/key.properties
+app/android/release-key.jks
 app/android/app/release-key.jks
 app/android/app/*.jks

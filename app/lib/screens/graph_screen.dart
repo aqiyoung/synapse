@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import '../services/api_service.dart';
 import 'note_detail_screen.dart';
 
@@ -112,7 +111,6 @@ class _GraphScreenState extends State<GraphScreen> {
   }
 }
 
-// Internal node representation with physics state
 class _GraphNode {
   final int id;
   final String title;
@@ -155,8 +153,8 @@ class _GraphWidget extends StatefulWidget {
 }
 
 class _GraphWidgetState extends State<_GraphWidget>
-    with SingleTickerProviderStateMixin {
-  late Ticker _ticker;
+    with TickerProviderStateMixin {
+  late AnimationController _animController;
   late List<_GraphNode> _graphNodes;
   late Map<int, _GraphNode> _nodeMap;
   late List<_Edge> _graphEdges;
@@ -166,25 +164,31 @@ class _GraphWidgetState extends State<_GraphWidget>
   _GraphNode? _hoveredNode;
   Offset _panStart = Offset.zero;
   Offset _lastFocal = Offset.zero;
-  bool _needsPaint = true;
+  final _random = Random();
 
-  // Default tag color palette (fallback when tag has no color)
   static const _defaultColors = [
-    Color(0xFFc96442), // terracotta
-    Color(0xFF4a9e8a), // teal
-    Color(0xFF8b6bbf), // purple
-    Color(0xFFd4a843), // gold
-    Color(0xFF5b8abf), // blue
-    Color(0xFFbf6b8a), // pink
-    Color(0xFF6bbf4a), // green
-    Color(0xFFbf8a5b), // brown
+    Color(0xFFc96442),
+    Color(0xFF4a9e8a),
+    Color(0xFF8b6bbf),
+    Color(0xFFd4a843),
+    Color(0xFF5b8abf),
+    Color(0xFFbf6b8a),
+    Color(0xFF6bbf4a),
+    Color(0xFFbf8a5b),
   ];
 
   @override
   void initState() {
     super.initState();
+    _graphNodes = [];
+    _nodeMap = {};
+    _graphEdges = [];
     _initGraph();
-    _ticker = Ticker(_onTick)..start();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(hours: 1),
+    )..addListener(_onFrame);
+    _animController.repeat();
   }
 
   @override
@@ -200,7 +204,6 @@ class _GraphWidgetState extends State<_GraphWidget>
     _nodeMap = {};
     _graphEdges = [];
 
-    // Build tag color map
     final tagColorMap = <String, Color>{};
     final allTags = <String>{};
     for (final n in widget.nodes) {
@@ -213,8 +216,6 @@ class _GraphWidgetState extends State<_GraphWidget>
       colorIdx++;
     }
 
-    // Create nodes in a circle
-    final cx = 0.0, cy = 0.0, r = 200.0;
     for (var i = 0; i < widget.nodes.length; i++) {
       final n = widget.nodes[i];
       final tags = (n['tags'] as List?)?.cast<String>() ?? [];
@@ -223,19 +224,19 @@ class _GraphWidgetState extends State<_GraphWidget>
           ? (tagColorMap[firstTag] ?? const Color(0xFF8d9e8a))
           : const Color(0xFF8d9e8a);
       final angle = (2 * pi * i) / widget.nodes.length;
+      final r = 200.0;
       final node = _GraphNode(
         id: n['id'],
         title: n['title'] ?? '无标题',
         tags: tags,
         color: color,
-        x: cx + r * cos(angle),
-        y: cy + r * sin(angle),
+        x: r * cos(angle),
+        y: r * sin(angle),
       );
       _graphNodes.add(node);
       _nodeMap[node.id] = node;
     }
 
-    // Create edges and compute degree
     for (final e in widget.edges) {
       final srcId = e['source'] ?? e['from'];
       final tgtId = e['target'] ?? e['to'];
@@ -247,30 +248,21 @@ class _GraphWidgetState extends State<_GraphWidget>
         tgt.degree++;
       }
     }
-
-    _needsPaint = true;
   }
 
-  void _onTick(Duration elapsed) {
-    if (!mounted) return;
-    _tick();
-    if (_needsPaint) {
-      setState(() {
-        _needsPaint = false;
-      });
-    }
+  void _onFrame() {
+    if (!mounted || _graphNodes.isEmpty) return;
+    _simulate();
+    setState(() {});
   }
 
-  void _tick() {
-    if (_graphNodes.isEmpty) return;
-    const alpha = 0.25;
-    final w = context.size?.width ?? 400.0;
-    final h = context.size?.height ?? 600.0;
+  void _simulate() {
+    const alpha = 0.3;
 
     // Damping
     for (final n in _graphNodes) {
-      n.vx *= 0.9;
-      n.vy *= 0.9;
+      n.vx *= 0.85;
+      n.vy *= 0.85;
     }
 
     // Node repulsion
@@ -278,13 +270,16 @@ class _GraphWidgetState extends State<_GraphWidget>
       for (var j = i + 1; j < _graphNodes.length; j++) {
         final a = _graphNodes[i], b = _graphNodes[j];
         final dx = a.x - b.x, dy = a.y - b.y;
-        final dist = sqrt(dx * dx + dy * dy);
-        if (dist < 180 && dist > 0) {
-          final f = (180 - dist) * 0.04 * alpha;
-          a.vx += dx / dist * f;
-          a.vy += dy / dist * f;
-          b.vx -= dx / dist * f;
-          b.vy -= dy / dist * f;
+        final distSq = dx * dx + dy * dy;
+        final dist = sqrt(distSq);
+        if (dist < 200 && dist > 0.1) {
+          final f = (200 - dist) * 0.05 * alpha;
+          final fx = dx / dist * f;
+          final fy = dy / dist * f;
+          a.vx += fx;
+          a.vy += fy;
+          b.vx -= fx;
+          b.vy -= fy;
         }
       }
     }
@@ -293,49 +288,50 @@ class _GraphWidgetState extends State<_GraphWidget>
     for (final e in _graphEdges) {
       final dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
       final dist = sqrt(dx * dx + dy * dy);
-      if (dist > 0) {
-        final f = (dist - 100) * 0.006 * alpha;
-        e.a.vx += dx / dist * f;
-        e.a.vy += dy / dist * f;
-        e.b.vx -= dx / dist * f;
-        e.b.vy -= dy / dist * f;
+      if (dist > 0.1) {
+        final f = (dist - 120) * 0.008 * alpha;
+        final fx = dx / dist * f;
+        final fy = dy / dist * f;
+        e.a.vx += fx;
+        e.a.vy += fy;
+        e.b.vx -= fx;
+        e.b.vy -= fy;
       }
     }
 
-    // Center gravity
+    // Center gravity + slight jitter to keep alive
     for (final n in _graphNodes) {
-      n.vx += (0 - n.x) * 0.0005 * alpha;
-      n.vy += (0 - n.y) * 0.0005 * alpha;
+      n.vx += (0 - n.x) * 0.001 * alpha;
+      n.vy += (0 - n.y) * 0.001 * alpha;
+      // Tiny random jitter to prevent complete stillness
+      n.vx += (_random.nextDouble() - 0.5) * 0.05;
+      n.vy += (_random.nextDouble() - 0.5) * 0.05;
     }
 
-    // Apply velocity (skip dragged node)
+    // Apply velocity
     for (final n in _graphNodes) {
       if (n == _dragNode) continue;
       n.x += n.vx;
       n.y += n.vy;
     }
-
-    _needsPaint = true;
   }
 
   _GraphNode? _findNode(Offset screenPos, Size widgetSize) {
-    // Convert screen to graph space
     final gp =
         (screenPos - Offset(widgetSize.width / 2, widgetSize.height / 2) -
                 _pan) /
             _scale;
     for (final n in _graphNodes) {
       final dx = gp.dx - n.x, dy = gp.dy - n.y;
-      if (dx * dx + dy * dy < (n.radius + 8) * (n.radius + 8)) {
-        return n;
-      }
+      final hitR = max(n.radius + 8, 15.0);
+      if (dx * dx + dy * dy < hitR * hitR) return n;
     }
     return null;
   }
 
   @override
   void dispose() {
-    _ticker.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -371,14 +367,8 @@ class _GraphWidgetState extends State<_GraphWidget>
           });
         },
         onScaleEnd: (details) {
-          if (_dragNode != null) {
-            // Check if it was a tap (not a drag)
-            final node = _dragNode!;
-            _dragNode = null;
-            // Single pointer = potential tap
-            if (details.pointerCount == 1) {
-              widget.onNodeTap(node.id);
-            }
+          if (_dragNode != null && details.pointerCount == 1) {
+            widget.onNodeTap(_dragNode!.id);
           }
           _dragNode = null;
         },
@@ -387,12 +377,10 @@ class _GraphWidgetState extends State<_GraphWidget>
           painter: _GraphPainter(
             nodes: _graphNodes,
             edges: _graphEdges,
-            nodeMap: _nodeMap,
             pan: _pan,
             scale: _scale,
             hoveredNode: _hoveredNode,
             isDark: widget.isDark,
-            widgetSize: widgetSize,
           ),
         ),
       );
@@ -408,22 +396,18 @@ class _Edge {
 class _GraphPainter extends CustomPainter {
   final List<_GraphNode> nodes;
   final List<_Edge> edges;
-  final Map<int, _GraphNode> nodeMap;
   final Offset pan;
   final double scale;
   final _GraphNode? hoveredNode;
   final bool isDark;
-  final Size widgetSize;
 
   _GraphPainter({
     required this.nodes,
     required this.edges,
-    required this.nodeMap,
     required this.pan,
     required this.scale,
     required this.hoveredNode,
     required this.isDark,
-    required this.widgetSize,
   });
 
   @override
@@ -433,7 +417,6 @@ class _GraphPainter extends CustomPainter {
     final bg = isDark ? const Color(0xFF141413) : const Color(0xFFf5f4ed);
     final fg = isDark ? const Color(0xFFe4ece0) : const Color(0xFF141413);
 
-    // Background
     canvas.drawRect(
         Rect.fromLTWH(0, 0, size.width, size.height), Paint()..color = bg);
 
@@ -441,7 +424,6 @@ class _GraphPainter extends CustomPainter {
     canvas.translate(size.width / 2 + pan.dx, size.height / 2 + pan.dy);
     canvas.scale(scale);
 
-    // Grid
     _drawGrid(canvas, size, fg);
 
     // Edges
@@ -454,7 +436,6 @@ class _GraphPainter extends CustomPainter {
       canvas.drawLine(Offset(e.a.x, e.a.y), Offset(e.b.x, e.b.y), edgePaint);
     }
 
-    // Compute max degree for normalization
     final maxDeg =
         nodes.fold<int>(0, (m, n) => n.degree > m ? n.degree : m).toDouble();
     if (maxDeg == 0) return;
@@ -465,50 +446,42 @@ class _GraphPainter extends CustomPainter {
       final normalizedDeg = n.degree / maxDeg;
       final r = isHov ? 6.0 : (3.0 + normalizedDeg * 13.0);
 
-      // Glow for hovered or high-degree nodes
+      // Glow
       if (isHov || n.degree >= 4) {
         final glowR = r + (isHov ? 16.0 : 10.0);
         final glowAlpha = isHov ? 0.25 : 0.12;
         final grad = ui.Gradient.radial(
           Offset(n.x, n.y),
           glowR,
-          [
-            n.color.withOpacity(glowAlpha),
-            n.color.withOpacity(0.0),
-          ],
+          [n.color.withOpacity(glowAlpha), n.color.withOpacity(0.0)],
         );
         canvas.drawCircle(Offset(n.x, n.y), glowR, Paint()..shader = grad);
       }
 
-      // Ring for degree >= 3
+      // Ring
       if (n.degree >= 3 && !isHov) {
         canvas.drawCircle(
-          Offset(n.x, n.y),
-          r + 2,
-          Paint()
-            ..color = n.color.withOpacity(0.3)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1,
-        );
+            Offset(n.x, n.y),
+            r + 2,
+            Paint()
+              ..color = n.color.withOpacity(0.3)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1);
       }
 
-      // Node fill
+      // Fill
       canvas.drawCircle(
-        Offset(n.x, n.y),
-        r,
-        Paint()..color = isHov ? fg : n.color,
-      );
+          Offset(n.x, n.y), r, Paint()..color = isHov ? fg : n.color);
 
-      // Highlight dot for larger nodes
+      // Highlight
       if (r >= 6) {
         canvas.drawCircle(
-          Offset(n.x - r * 0.25, n.y - r * 0.25),
-          r * 0.35,
-          Paint()..color = Colors.white.withOpacity(0.15),
-        );
+            Offset(n.x - r * 0.25, n.y - r * 0.25),
+            r * 0.35,
+            Paint()..color = Colors.white.withOpacity(0.15));
       }
 
-      // Label for hovered or high-degree nodes
+      // Label
       if (isHov || n.degree >= 5) {
         final fontSize = max(10.0, min(13.0, 9.0 + normalizedDeg * 4.0));
         final label =
@@ -529,14 +502,11 @@ class _GraphPainter extends CustomPainter {
     }
 
     canvas.restore();
-
-    // Tag legend (outside graph transform)
     _drawTagLegend(canvas, size, fg);
   }
 
   void _drawGrid(Canvas canvas, Size size, Color fg) {
     const gridSize = 60.0;
-    // Calculate visible range in graph space
     final left = (-size.width / 2 - pan.dx) / scale;
     final top = (-size.height / 2 - pan.dy) / scale;
     final right = (size.width / 2 - pan.dx) / scale;
@@ -560,35 +530,26 @@ class _GraphPainter extends CustomPainter {
   void _drawTagLegend(Canvas canvas, Size size, Color fg) {
     final usedTags = <String, Color>{};
     for (final n in nodes) {
-      if (n.tags.isNotEmpty) {
-        usedTags.putIfAbsent(n.tags.first, () => n.color);
-      }
+      if (n.tags.isNotEmpty) usedTags.putIfAbsent(n.tags.first, () => n.color);
     }
     if (usedTags.length <= 1) return;
 
     final entries = usedTags.entries.toList();
-    const pad = 10.0;
-    const lh = 18.0;
-    const titleH = 16.0;
-
-    final maxW = entries
-        .map((e) => e.key.length * 7.0)
-        .reduce((a, b) => a > b ? a : b);
+    const pad = 10.0, lh = 18.0, titleH = 16.0;
+    final maxW =
+        entries.map((e) => e.key.length * 7.0).reduce((a, b) => a > b ? a : b);
     final boxW = pad * 2 + 10 + maxW;
     final boxH = pad * 2 + titleH + entries.length * lh;
     final bx = size.width - boxW - 12;
     final by = size.height - boxH - 12;
 
-    // Box background
     final bgRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(bx, by, boxW, boxH), const Radius.circular(6));
     canvas.drawRRect(
         bgRect,
         Paint()
-          ..color = (isDark
-              ? const Color(0xFF1c1c1a)
-              : Colors.white)
-              .withOpacity(0.95));
+          ..color =
+              (isDark ? const Color(0xFF1c1c1a) : Colors.white).withOpacity(0.95));
     canvas.drawRRect(
         bgRect,
         Paint()
@@ -596,32 +557,23 @@ class _GraphPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1);
 
-    // Title
     final titleTp = TextPainter(
       text: TextSpan(
         text: 'TAGS',
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          color: fg.withOpacity(0.4),
-        ),
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: fg.withOpacity(0.4)),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
     titleTp.paint(canvas, Offset(bx + pad, by + pad + 4));
 
-    // Tag entries
     for (var i = 0; i < entries.length; i++) {
       final iy = by + titleH + pad + i * lh + 4;
-      canvas.drawCircle(Offset(bx + pad + 4, iy), 3,
-          Paint()..color = entries[i].value);
+      canvas.drawCircle(
+          Offset(bx + pad + 4, iy), 3, Paint()..color = entries[i].value);
       final tagTp = TextPainter(
         text: TextSpan(
           text: entries[i].key,
-          style: TextStyle(
-            fontSize: 11,
-            color: fg.withOpacity(0.6),
-          ),
+          style: TextStyle(fontSize: 11, color: fg.withOpacity(0.6)),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
