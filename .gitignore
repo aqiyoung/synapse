@@ -1,0 +1,38 @@
+# Flutter
+app/.dart_tool/
+app/.packages
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/pubspec.lock
+
+# Android
+app/android/.gradle/
+app/android/local.properties
+app/android/app/debug/
+app/android/app/profile/
+app/android/app/release/
+
+# iOS
+app/ios/Pods/
+app/ios/.symlinks/
+app/ios/Flutter/Flutter.framework
+app/ios/Flutter/Flutter.podspec
+app/ios/Runner.xcworkspace/xcshareddata/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/wiki.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+*.bak.*

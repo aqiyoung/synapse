@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库 · Knowledge Base</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0f1110;
+  --panel: #161817;
+  --panel-2: #1c1e1d;
+  --panel-menu: #141615;
+  --text: #e4ece0;
+  --muted: #7a8575;
+  --line: #252a24;
+  --line-strong: #384236;
+  --green: #8de84a;
+  --cyan: #5bc0eb;
+  --amber: #f0c040;
+  --red: #e8685a;
+  --violet: #a78bfa;
+  --blue: #60a0e8;
+  --radius: 10px;
+  --shadow: 0 12px 48px rgba(0,0,0,0.4);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #faf8f2;
+  --panel: #ffffff;
+  --panel-2: #f0eee5;
+  --panel-menu: #ffffff;
+  --text: #1a1d18;
+  --muted: #5c6556;
+  --line: #d8d3c5;
+  --line-strong: #b5af9e;
+  --green: #3a9e1e;
+  --cyan: #1a7a94;
+  --amber: #9a6800;
+  --red: #c0392b;
+  --violet: #6d5cb8;
+  --blue: #2e68b8;
+  --shadow: 0 8px 32px rgba(20,30,18,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--text); }
+
+/* ── App shell ── */
+.app { display: flex; height: 100vh; height: 100dvh; overflow: hidden; width: 100%; max-width: 100vw; }
+
+/* ── Sidebar ── */
+.sb {
+  width: 300px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 50;
+  transition: transform .2s ease;
+}
+
+.sb-head {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+.sb-head h1 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.subtitle {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.sb-search { padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: center; }
+.search-history {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+}
+.search-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.search-history-header button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+}
+.search-history-header button:hover {
+  color: var(--text);
+}
+.search-history-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.search-history-item:hover {
+  background: var(--panel-2);
+}
+.sb-search {
+  position: relative;
+}
+
+.sb-search input {
+  width: 100%;
+  text-align: center;
+  padding: 8px 10px 8px 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+  transition: border-color .15s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23899180' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l.098.115 3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+}
+.sb-search input::placeholder { color: var(--muted); }
+.sb-search input:focus { border-color: var(--text); }
+
+.sb-stats {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+.stat-item { text-align: center; padding: 4px 0; }
+.stat-n { display: block; font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.stat-l { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+
+.sb-tags {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.sb-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: none;
+  background: transparent;
+  font-family: inherit;
+  line-height: 1;
+}
+.sb-tag:hover { border-color: var(--text); color: var(--text); }
+.sb-tag.on {
+  border-color: var(--text);
+  color: var(--text);
+  background: rgba(128,128,128,0.08);
+}
+.load-more {
+  padding: 12px 16px;
+  text-align: center;
+  border-top: 1px solid var(--line);
+}
+.load-more button {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  width: 100%;
+}
+.load-more button:hover:not(:disabled) {
+  background: var(--line);
+}
+.load-more button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.note-count {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.sb-tag-manage {
+  border-style: dashed;
+  opacity: 0.6;
+}
+.sb-tag-manage:hover {
+  opacity: 1;
+}
+
+
+.sb-list { flex: 1; overflow-y: auto; padding: 4px 8px; }
+.sb-item {
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  margin-bottom: 1px;
+  border: 1px solid transparent;
+  transition: none;
+}
+.sb-item:hover { background: rgba(156,255,87,0.04); }
+.sb-item.on {
+  background: rgba(156,255,87,0.06);
+  border-color: var(--line);
+}
+.sb-item .ttl {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+  color: var(--text);
+}
+.sb-item.on .ttl { color: var(--text); }
+.sb-item .sum {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+.sb-item .dt {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+  opacity: .5;
+}
+
+.sb-nav {
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: none;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.sb-nav:hover { color: var(--text); background: rgba(156,255,87,0.04); }
+
+/* ── Main ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+
+/* Toolbar */
+.tb {
+  padding: 12px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+}
+.tb .menu-btn {
+  display: none;
+  width: 32px; height: 32px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+  font-family: inherit;
+}
+.tb .menu-btn:hover { border-color: var(--text); color: var(--text); }
+.tb .ttl {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.tb .btns { display: flex; gap: 6px; flex-shrink: 0; }
+.tb .btns button {
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+  transition: none;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  line-height: 1;
+  min-height: 32px;
+}
+.tb .btns button:hover { border-color: var(--text); color: var(--text); }
+.tb .btns button.pr {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+.tb .btns button.pr:hover { opacity: .85; }
+
+/* Theme toggle */
+.theme-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+  font-family: inherit;
+  padding: 0;
+  line-height: 1;
+}
+.theme-btn:hover { border-color: var(--text); color: var(--text); }
+
+/* ── Content ── */
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+
+/* ── Dashboard table ── */
+.dash {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.dash th {
+  background: var(--panel-menu);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  cursor: pointer;
+  user-select: none;
+  transition: color .15s ease;
+}
+.dash th:hover { color: var(--text); }
+.dash th .arrow { margin-left: 4px; opacity: .3; }
+.dash th.sorted .arrow { opacity: 1; color: var(--text); }
+.dash td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.dash tbody tr { transition: background .15s ease; cursor: pointer; }
+.dash tbody tr:hover td { background: rgba(156,255,87,0.035); }
+
+.dash .note-title {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+.dash .note-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.dash .note-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text);
+}
+.dash .note-date {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.dash .note-snippet {
+  color: var(--muted);
+  font-size: 11px;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Filter bar ── */
+.filter-bar {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+}
+.filter-bar select, .filter-bar input {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  outline: none;
+  transition: border-color .15s ease;
+  min-height: 32px;
+}
+.filter-bar select:hover, .filter-bar input:hover { border-color: var(--line-strong); }
+.filter-bar select:focus, .filter-bar input:focus { border-color: var(--text); }
+.filter-bar .count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Note view ── */
+.note-view {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 48px 80px;
+}
+.note-view .doc-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  color: var(--text);
+}
+.note-view .doc-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.note-view .doc-meta .tags { display: flex; gap: 4px; }
+.note-view .doc-meta .tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--text);
+}
+
+/* ── Markdown ── */
+.md { color: var(--text); font-size: 14px; line-height: 1.75; word-wrap: break-word; overflow-wrap: break-word; }
+.md > :first-child { margin-top: 0 !important; }
+.md > :last-child { margin-bottom: 0 !important; }
+.md h1 { font-size: 20px; font-weight: 700; margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); line-height: 1.3; color: var(--text); }
+.md h1:first-child { margin-top: 0; }
+.md h2 { font-size: 16px; font-weight: 600; margin: 22px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); line-height: 1.35; color: var(--text); }
+.md h3 { font-size: 14px; font-weight: 600; margin: 18px 0 8px; line-height: 1.4; color: var(--text); }
+.md h4 { font-size: 14px; font-weight: 700; margin: 14px 0 6px; color: var(--text); }
+.md p { margin: 10px 0; }
+.md a { color: var(--text); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 2px; transition: none; }
+.md a:hover { text-decoration-color: var(--text); }
+.md ul, .md ol { padding-left: 20px; margin: 10px 0; }
+.md li { margin: 3px 0; padding-left: 2px; line-height: 1.65; }
+.md code { background: var(--panel); color: var(--cyan); padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: var(--font-mono); }
+.code-block { position: relative; margin: 14px 0; }
+.code-lang { position: absolute; top: 0; right: 0; padding: 4px 10px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; z-index: 1; }
+.copy-btn { position: absolute; bottom: 0; right: 0; padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); color: var(--muted); font: inherit; font-size: 10px; cursor: pointer; opacity: 0; transition: none; z-index: 1; }
+.copy-btn:hover { border-color: var(--text); color: var(--text); }
+.code-block:hover .copy-btn { opacity: 1; }
+.md pre { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; margin: 0; }
+.md pre code { background: none; padding: 12px 14px; font-size: 12px; line-height: 1.6; white-space: pre; display: block; color: var(--text); }
+.md blockquote { border-left: 2px solid var(--text); padding: 8px 14px; color: var(--muted); margin: 14px 0; background: rgba(156,255,87,0.03); border-radius: 0 var(--radius) var(--radius) 0; }
+.md table { width: 100%; border-collapse: collapse; margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-size: 12px; }
+.md th { background: var(--panel); font-weight: 600; text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); color: var(--text); font-size: 11px; }
+.md td { padding: 7px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.md tr:last-child td { border-bottom: none; }
+.md tbody tr:hover td { background: rgba(156,255,87,0.03); }
+.md hr { border: none; height: 1px; background: var(--line); margin: 24px 0; }
+.md strong { font-weight: 700; }
+.md em { color: var(--muted); }
+
+/* Wikilink */
+.md .wikilink {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+  cursor: pointer;
+  transition: none;
+}
+.md .wikilink:hover { text-decoration-color: var(--text); }
+.md .wikilink-missing { color: var(--muted); cursor: default; }
+
+/* ── TOC ── */
+.toc {
+  position: sticky; top: 20px;
+  width: 240px; flex-shrink: 0;
+  padding: 8px 0;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  align-self: flex-start;
+}
+.toc-hd {
+  font-size: 11px; font-weight: 600;
+  color: var(--muted);
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+.toc-list { padding: 0 4px; }
+.toc-item {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 2px transparent solid;
+}
+.toc-item:hover { color: var(--text); background: rgba(156,255,87,0.04); }
+.toc-item.on { color: var(--text); border-left-color: var(--text); background: rgba(156,255,87,0.06); }
+.toc-1 { padding-left: 8px; font-weight: 600; font-size: 13px; }
+.toc-2 { padding-left: 16px; font-size: 12px; }
+.toc-3 { padding-left: 24px; font-size: 11px; }
+.toc-3.on { color: var(--text); }
+
+/* ── Relations ── */
+.relations-panel {
+  margin-top: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.relations-section { margin-bottom: 12px; }
+.relations-label {
+  font-size: 11px; color: var(--muted);
+  padding: 3px 10px 6px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
+}
+.relations-list { padding: 0 4px; }
+.relations-item {
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 2px transparent solid;
+}
+.relations-item:hover { color: var(--text); background: rgba(156,255,87,0.04); border-left-color: var(--line-strong); }
+
+/* ── Empty state ── */
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  padding: 40px 20px;
+  text-align: center;
+}
+.empty .ico { font-size: 48px; margin-bottom: 16px; opacity: .15; }
+.empty .txt { font-size: 14px; margin-bottom: 6px; color: var(--text); font-weight: 600; }
+.empty .hnt { font-size: 11px; opacity: .4; max-width: 260px; line-height: 1.5; }
+
+/* ── Overlay ── */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.3);
+  z-index: 40; display: none;
+  backdrop-filter: blur(4px);
+}
+.overlay.on { display: block; }
+
+/* ── Loading ── */
+.loading-state {
+  min-height: 260px;
+  padding: 42px 18px 48px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(156,255,87,0.035), transparent 62%), color-mix(in srgb, var(--bg) 42%, transparent);
+  color: var(--muted);
+  text-align: center;
+}
+.loading-kicker {
+  display: block;
+  color: var(--text);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.loading-state strong {
+  display: block;
+  margin-top: 14px;
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+}
+.loading-bars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(44px, 1fr));
+  gap: 8px;
+  width: min(280px, 70vw);
+  margin: 28px auto 0;
+}
+.loading-bars span {
+  height: 3px;
+  border-radius: 999px;
+  background: var(--line-strong);
+  animation: loading-pulse 1.2s ease-in-out infinite;
+}
+.loading-bars span:nth-child(2) { animation-delay: 0.16s; }
+.loading-bars span:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes loading-pulse {
+  0%, 100% { background: var(--line-strong); box-shadow: none; }
+  50% { background: var(--text); box-shadow: 0 0 18px rgba(156,255,87,0.28); }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--line-strong); }
+* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+
+/* ── Selection ── */
+::selection { background: rgba(156,255,87,0.15); color: var(--text); }
+
+/* ── Pulse dot ── */
+.pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 0 12px var(--text);
+  flex-shrink: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .sb {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 280px;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow);
+  }
+  .sb.show { transform: translateX(0); }
+  .tb .menu-btn { display: flex; }
+  .note-view { padding: 16px 12px 50px; max-width: 100%; overflow-x: hidden; }
+  .note-view .doc-title { font-size: 18px; word-break: break-word; }
+  .note-view .doc-meta { flex-wrap: wrap; }
+  .toc { display: none; }
+  .md { font-size: 13px; word-break: break-word; overflow-wrap: anywhere; }
+  .md table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .md pre { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .md pre code { font-size: 11px; white-space: pre; }
+  .md img { max-width: 100%; height: auto; }
+  .tb .ttl { font-size: 11px; }
+  .relations-panel { overflow-x: hidden; }
+  .relations-item { white-space: normal; word-break: break-word; }
+  .filter-bar { flex-wrap: wrap; gap: 6px; }
+  .filter-bar select { flex: 1; min-width: 80px; }
+  .filter-bar input { width: 100%; order: 3; }
+  .filter-bar .count { order: 4; width: 100%; text-align: right; }
+  /* Table → card layout */
+  .dash thead { display: none; }
+  .dash, .dash tbody, .dash tr, .dash td { display: block; width: 100%; }
+  .dash tr { margin-bottom: 8px; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--panel); }
+  .dash td { padding: 2px 0; border: none; }
+  .dash .note-title { font-size: 14px; max-width: 100%; }
+  .dash .note-snippet { max-width: 100%; white-space: nowrap; }
+  .dash .note-date { font-size: 10px; }
+  .sb-stats { padding: 8px; }
+  .stat-n { font-size: 14px; }
+  .sb-tags { max-height: 80px; }
+  .content { padding-bottom: 24px; }
+}
+
+/* 标签管理模态框 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  background: var(--panel);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+}
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0;
+  line-height: 1;
+}
+.modal-close:hover {
+  color: var(--text);
+}
+.modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.template-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.template-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--panel-2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.template-item:hover {
+  background: var(--line);
+}
+.template-icon {
+  font-size: 20px;
+}
+.template-name {
+  font-size: 14px;
+}
+
+.tag-list {
+  margin-bottom: 16px;
+}
+.tag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.tag-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tag-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.tag-name {
+  font-size: 14px;
+}
+.tag-count {
+  font-size: 12px;
+  color: var(--muted);
+}
+.tag-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-edit, .btn-delete {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+}
+.btn-edit:hover {
+  background: var(--panel-2);
+}
+.btn-delete {
+  color: var(--red);
+  border-color: var(--red);
+}
+.btn-delete:hover:not(:disabled) {
+  background: rgba(232,104,90,0.1);
+}
+.btn-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tag-edit-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.tag-edit-form h4 {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.form-group {
+  margin-bottom: 12px;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+.color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.color-option {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.color-option.selected {
+  border-color: var(--text);
+}
+.color-option:hover {
+  transform: scale(1.1);
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.btn-cancel, .btn-save {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+}
+.btn-cancel {
+  background: transparent;
+  color: var(--text);
+}
+.btn-save {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+.btn-save:hover {
+  opacity: 0.9;
+}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="app">
+  <div class="overlay" :class="{ on: sbOpen }" @click="sbOpen = false"></div>
+
+  <!-- Sidebar -->
+  <div class="sb" :class="{ show: sbOpen }">
+    <div class="sb-head">
+      <h1>📚 知识库</h1>
+      <div class="subtitle">Knowledge Base · {{ notes.length }} 篇笔记</div>
+    </div>
+    <div class="sb-search">
+      <input type="text" v-model="searchQ" @input="doSearch" placeholder="搜索笔记..." />
+    </div>
+    <div class="sb-stats">
+      <div class="stat-item">
+        <span class="stat-n">{{ notes.length }}</span>
+        <span class="stat-l">笔记</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-n">{{ tags.length }}</span>
+        <span class="stat-l">标签</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-n">{{ totalEdges }}</span>
+        <span class="stat-l">关联</span>
+      </div>
+    </div>
+    <div class="sb-tags" v-if="tags.length">
+      <button v-for="t in tags" :key="t.name"
+        class="sb-tag" :class="{ on: curTag === t.name }" :style="{ borderColor: t.color, color: curTag === t.name ? t.color : '' }"
+        @click="toggleTag(t.name)">
+        {{ t.name }}
+      </button>
+      <button class="sb-tag sb-tag-manage" @click="showTagModal = true" title="管理标签">⚙</button>
+    </div>
+    <div class="sb-list">
+      <div v-for="n in notes" :key="n.id"
+        class="sb-item" :class="{ on: curNote && curNote.id === n.id }"
+        @click="openNote(n)">
+        <div class="ttl">{{ n.title || '无标题' }}</div>
+        <div class="sum">{{ strip(n.content).substring(0, 60) }}</div>
+        <div class="dt">{{ fmt(n.updated_at) }}</div>
+      </div>
+      <div v-if="!notes.length" style="padding:30px 12px;text-align:center;color:var(--muted);font-size:11px">
+        <div style="font-size:28px;margin-bottom:6px;opacity:.15">📝</div>
+        暂无笔记
+      </div>
+      <div v-if="hasMore" class="load-more">
+        <button @click="loadMoreNotes()" :disabled="loadingMore">
+          {{ loadingMore ? '加载中...' : '加载更多' }}
+        </button>
+        <span class="note-count">已加载 {{ notes.length }} / {{ totalNotes }}</span>
+      </div>
+    </div>
+    <div class="sb-nav" @click="showTemplateModal = true">📝 笔记模板</div>
+    <div class="sb-nav" @click="sbOpen=false; curNote=null; showGraph=true">🕸️ 知识图谱</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="tb">
+      <button class="menu-btn" @click="sbOpen = !sbOpen">☰</button>
+      <div class="ttl">{{ curNote ? (curNote.title || '无标题') : '📚 知识库仪表盘' }}</div>
+      <button class="theme-btn" @click="toggleTheme" :title="isDark ? '亮色模式' : '暗色模式'">
+        {{ isDark ? '☀️' : '🌙' }}
+      </button>
+    </div>
+
+    <!-- Loading state -->
+    <div class="content" v-if="loading">
+      <div class="loading-state">
+        <span class="loading-kicker">LOADING...</span>
+        <strong>知识库</strong>
+        <div class="loading-bars">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graph view -->
+    <div class="content" v-if="showGraph && !loading" style="position:relative;overflow:hidden;height:100%;display:flex;flex-direction:column;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--panel);position:relative;z-index:10;flex-shrink:0;">
+        <button @click="showGraph=false; curTag=''; filterQ='';" style="padding:5px 12px;border-radius:var(--radius);border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.3px;min-height:32px;line-height:1;">← 返回</button>
+        <span style="font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px;">🕸️ 知识图谱</span>
+        <span style="font-size:11px;color:var(--muted);">{{ graphNodes.length }} 节点 · {{ graphEdges.length }} 关联</span>
+      </div>
+      <canvas id="graphCanvas" style="width:100%;flex:1;display:block;cursor:grab;"></canvas>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="content" v-if="!curNote && !loading && !showGraph">
+      <div class="filter-bar">
+        <select v-model="sortKey">
+          <option value="updated_at">最近更新</option>
+          <option value="created_at">创建时间</option>
+          <option value="title">标题</option>
+        </select>
+        <select v-model="sortDir">
+          <option value="desc">降序</option>
+          <option value="asc">升序</option>
+        </select>
+        <input type="text" v-model="filterQ" placeholder="过滤..." style="flex:1;min-width:120px" />
+        <span class="count">{{ filteredNotes.length }} / {{ notes.length }} 条</span>
+      </div>
+      <table class="dash">
+        <thead>
+          <tr>
+            <th @click="setSort('title')" :class="{ sorted: sortKey === 'title' }">
+              标题 <span class="arrow">{{ sortKey === 'title' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+            <th @click="setSort('tags')" :class="{ sorted: sortKey === 'tags' }">
+              标签 <span class="arrow">{{ sortKey === 'tags' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+            <th @click="setSort('updated_at')" :class="{ sorted: sortKey === 'updated_at' }">
+              更新 <span class="arrow">{{ sortKey === 'updated_at' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+            <th>摘要</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="n in filteredNotes" :key="n.id" @click="openNote(n)">
+            <td><div class="note-title">{{ n.title || '无标题' }}</div></td>
+            <td>
+              <div class="note-tags">
+                <span class="note-tag" v-for="tag in (n.tags || [])" :key="tag">{{ tag }}</span>
+              </div>
+            </td>
+            <td><span class="note-date">{{ fmt(n.updated_at) }}</span></td>
+            <td><span class="note-snippet">{{ strip(n.content).substring(0, 80) }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="!filteredNotes.length && notes.length" class="empty">
+        <div class="ico">🔍</div>
+        <div class="txt">没有匹配的笔记</div>
+        <div class="hnt">试试调整搜索条件或标签过滤</div>
+      </div>
+    </div>
+
+    <!-- Note view -->
+    <div class="content" v-if="curNote && !loading && !showGraph">
+      <div style="padding:10px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <button @click="curNote=null; curTag=''; filterQ='';" style="padding:5px 12px;border-radius:var(--radius);border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.3px;min-height:32px;line-height:1;">← 返回</button>
+      </div>
+      <div style="display:flex">
+        <div class="note-view" style="flex:1">
+          <div class="doc-title">{{ curNote.title || '无标题' }}</div>
+          <div class="doc-meta" v-if="curNote.tags && curNote.tags.length">
+            <div class="tags">
+              <span class="tag" v-for="tag in curNote.tags" :key="tag">{{ tag }}</span>
+            </div>
+            <span>{{ fmt(curNote.updated_at) }}</span>
+          </div>
+          <div class="md" v-html="renderMd(curNote.content)"></div>
+
+          <!-- Relations -->
+          <div class="relations-panel" v-if="relationsData && (relationsData.outgoing.length || relationsData.incoming.length)">
+            <div class="relations-section" v-if="relationsData.outgoing.length">
+              <div class="relations-label">↗ 引用</div>
+              <div class="relations-list">
+                <div class="relations-item" v-for="r in relationsData.outgoing" :key="r.id" @click="openRelation(r)">{{ r.title }}</div>
+              </div>
+            </div>
+            <div class="relations-section" v-if="relationsData.incoming.length">
+              <div class="relations-label">↙ 被引用</div>
+              <div class="relations-list">
+                <div class="relations-item" v-for="r in relationsData.incoming" :key="r.id" @click="openRelation(r)">{{ r.title }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOC -->
+        <div class="toc" v-if="tocItems.length">
+          <div class="toc-hd">目录</div>
+          <div class="toc-list">
+            <div v-for="(item, i) in tocItems" :key="i"
+              class="toc-item" :class="['toc-' + item.level, { on: tocActive === i }]"
+              @click="scrollToHeading(item.id)">
+              {{ item.text }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="/vue.global.prod.js"></script>
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+// ===== Utils =====
+
+function stripMd(md) {
+  if (!md) return '';
+  return md
+    .replace(/^---[\s\S]*?---/, '')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[*_~>`\-#|]/g, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+}
+
+function fmtDate(s) {
+  if (!s) return '';
+  try {
+    const d = new Date(s);
+    if (isNaN(d)) return s;
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 86400000) return diff < 3600000 ? Math.floor(diff/60000) + ' 分钟前' : Math.floor(diff/3600000) + ' 小时前';
+    if (diff < 604800000) return Math.floor(diff/86400000) + ' 天前';
+    return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+  } catch(e) { return s; }
+}
+
+// ===== Markdown renderer =====
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function renderMdImpl(md) {
+  if (!md) return '';
+  // 先转义 HTML 特殊字符，防止 XSS
+  let h = md
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // 再做 markdown 转换（此时只有我们生成的 HTML 标签是安全的）
+  h = h
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<div class="code-block"><div class="code-lang">$1</div><pre><code>$2</code></pre><button class="copy-btn" onclick="copyCode(this)">复制</button>
+<!-- 标签管理模态框 -->
+<div v-if="showTagModal" class="modal-overlay" @click.self="showTagModal = false">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>标签管理</h3>
+      <button class="modal-close" @click="showTagModal = false">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="tag-list">
+        <div v-for="tag in tags" :key="tag.id" class="tag-item">
+          <div class="tag-info">
+            <span class="tag-color" :style="{ background: tag.color }"></span>
+            <span class="tag-name">{{ tag.name }}</span>
+            <span class="tag-count">({{ tag.note_count }})</span>
+          </div>
+          <div class="tag-actions">
+            <button class="btn-edit" @click="editTag(tag)">编辑</button>
+            <button class="btn-delete" @click="deleteTag(tag)" :disabled="tag.note_count > 0">删除</button>
+          </div>
+        </div>
+      </div>
+      <div v-if="editingTag" class="tag-edit-form">
+        <h4>编辑标签</h4>
+        <div class="form-group">
+          <label>名称</label>
+          <input v-model="editingTag.name" type="text" placeholder="标签名称">
+        </div>
+        <div class="form-group">
+          <label>颜色</label>
+          <div class="color-picker">
+            <div v-for="color in morandiColors" :key="color" 
+                 class="color-option" :style="{ background: color }"
+                 :class="{ selected: editingTag.color === color }"
+                 @click="editingTag.color = color">
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" @click="editingTag = null">取消</button>
+          <button class="btn-save" @click="saveTag()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\[\[([^\]]+)\]\]/g, '<a class="wikilink" data-title="$1" href="#">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(m, text, url) {
+      if (/^javascript:/i.test(url)) return m; // 过滤 javascript: 协议
+      return '<a href="' + url.replace(/"/g, '&quot;') + '" target="_blank" rel="noreferrer">' + text + '</a>';
+    })
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/\|(.+)\|/g, (m) => {
+      const cells = m.split('|').filter(Boolean).map(c => c.trim());
+      if (cells.every(c => /^[-:]+$/.test(c))) return '';
+      const tag = cells.some(c => /^[-:]+$/.test(c)) ? 'th' : 'td';
+      return '<tr>' + cells.map(c => '<' + tag + '>' + c + '</' + tag + '>').join('') + '</tr>';
+    })
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  h = '<p>' + h + '</p>';
+  h = h.replace(/<p>\s*<\/p>/g, '');
+  h = h.replace(/<p>(<h[1-6]>)/g, '$1');
+  h = h.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+  h = h.replace(/<p>(<pre>)/g, '$1');
+  h = h.replace(/(<\/pre>)<\/p>/g, '$1');
+  h = h.replace(/<p>(<hr>)<\/p>/g, '$1');
+  h = h.replace(/<p>(<li>)/g, '<ul>$1');
+  h = h.replace(/(<\/li>)<\/p>/g, '$1</ul>');
+  return h;
+}
+
+// ===== Copy code =====
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '已复制';
+    setTimeout(() => { btn.textContent = '复制'; }, 1500);
+  });
+}
+
+// ===== API =====
+
+const API = '/api';
+
+function getToken() {
+  return localStorage.getItem('wiki:token') || '';
+}
+
+function setToken(t) {
+  if (t) localStorage.setItem('wiki:token', t);
+  else localStorage.removeItem('wiki:token');
+}
+
+async function fetchJSON(url) {
+  const headers = {};
+  const t = getToken();
+  if (t) headers['Authorization'] = 'Bearer ' + t;
+  const r = await fetch(url, { headers });
+  if (r.status === 401) {
+    // Token 过期或无效，清除并弹框
+    setToken('');
+    const token = prompt('请输入知识库访问 Token：');
+    if (token) {
+      setToken(token);
+      return fetchJSON(url);  // 重试
+    }
+    throw new Error('需要认证 token');
+  }
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+// ===== App =====
+
+createApp({
+  setup() {
+    const sbOpen = ref(false);
+    const notes = ref([]);
+    const tags = ref([]);
+    const curNote = ref(null);
+    const curTag = ref('');
+    const searchQ = ref('');
+    const filterQ = ref('');
+    const sortKey = ref('updated_at');
+    const sortDir = ref('desc');
+    const isDark = ref(localStorage.getItem('rb:theme') !== 'light');
+    const loading = ref(true);
+    const relationsData = ref(null);
+    const tocItems = ref([]);
+    const tocActive = ref(-1);
+    const totalEdges = ref(0);
+    const showGraph = ref(false);
+    const pageSize = 50;
+    const currentPage = ref(1);
+    const totalNotes = ref(0);
+    const hasMore = ref(false);
+    const loadingMore = ref(false);
+    const showTagModal = ref(false);
+    const editingTag = ref(null);
+    const morandiColors = [
+      '#8d9e8a', '#a3917a', '#7a8d9e', '#9e8a8d', '#8a9e7a',
+      '#9e7a8a', '#7a9e8d', '#8d7a9e', '#9e8d7a', '#7a9e9e',
+      '#9e7a7a', '#7a7a9e', '#8d9e9e', '#9e9e7a', '#7a8d7a'
+    ];
+    const showTemplateModal = ref(false);
+    const templates = [
+      {
+        name: '工作日记',
+        icon: '📝',
+        content: `# 工作日记 - ${new Date().toLocaleDateString('zh-CN')}
+
+## 今日完成
+- 
+
+## 遇到的问题
+- 
+
+## 明日计划
+- 
+
+## 学习笔记
+- `
+      },
+      {
+        name: '会议记录',
+        icon: '📋',
+        content: `# 会议记录
+
+## 基本信息
+- 时间：
+- 地点：
+- 参会人员：
+
+## 会议议题
+1. 
+
+## 讨论内容
+- 
+
+## 决议事项
+- 
+
+## 后续行动
+- `
+      },
+      {
+        name: '技术文档',
+        icon: '📚',
+        content: `# 技术文档标题
+
+## 概述
+简要描述本文档的内容
+
+## 环境要求
+- 
+
+## 安装步骤
+1. 
+
+## 配置说明
+\`\`\`
+# 配置示例
+\`\`\`
+
+## 使用方法
+\`\`\`bash
+# 命令示例
+\`\`\`
+
+## 常见问题
+### Q: 问题1？
+A: 解答
+
+## 参考资料
+- `
+      },
+      {
+        name: '学习笔记',
+        icon: '🎓',
+        content: `# 学习笔记 - 主题
+
+## 核心概念
+- 
+
+## 重要知识点
+1. 
+
+## 实践案例
+\`\`\`
+# 代码或示例
+\`\`\`
+
+## 思考与总结
+- 
+
+## 参考资源
+- `
+      },
+      {
+        name: '读书笔记',
+        icon: '📖',
+        content: `# 《书名》读书笔记
+
+## 基本信息
+- 作者：
+- 出版年份：
+- 阅读日期：
+
+## 核心观点
+1. 
+
+## 精彩摘录
+> 
+
+## 个人感悟
+- 
+
+## 行动计划
+- `
+      },
+      {
+        name: '项目计划',
+        icon: '🎯',
+        content: `# 项目计划 - 项目名称
+
+## 项目背景
+- 
+
+## 目标
+1. 
+
+## 里程碑
+- [ ] 阶段1：
+- [ ] 阶段2：
+- [ ] 阶段3：
+
+## 资源需求
+- 
+
+## 风险评估
+- 
+
+## 成功标准
+- `
+      }
+    ];
+    const searchHistory = ref(JSON.parse(localStorage.getItem('wiki:searchHistory') || '[]'));
+    const showSearchHistory = ref(false);
+
+    async function loadNotes(page = 1) {
+      try {
+        const skip = (page - 1) * pageSize;
+        const data = await fetchJSON(API + '/notes?skip=' + skip + '&limit=' + pageSize);
+        if (page === 1) {
+          notes.value = data.notes || [];
+        } else {
+          notes.value = [...notes.value, ...(data.notes || [])];
+        }
+        totalNotes.value = data.total || 0;
+        hasMore.value = notes.value.length < totalNotes.value;
+        currentPage.value = page;
+      } catch(e) { console.error('加载笔记失败:', e); }
+    }
+    
+    async function loadMoreNotes() {
+      if (loadingMore.value || !hasMore.value) return;
+      loadingMore.value = true;
+      try {
+        await loadNotes(currentPage.value + 1);
+      } finally {
+        loadingMore.value = false;
+      }
+    }
+
+    async function loadTags() {
+      try {
+        const data = await fetchJSON(API + '/tags');
+        tags.value = data || [];
+      } catch(e) { console.error('加载标签失败:', e); }
+    }
+
+    async function loadStats() {
+      try {
+        const g = await fetchJSON(API + '/graph');
+        totalEdges.value = g.edges ? g.edges.length : 0;
+      } catch(e) {}
+    }
+
+    const sortedNotes = computed(() => {
+      const arr = [...notes.value];
+      const k = sortKey.value;
+      const d = sortDir.value === 'asc' ? 1 : -1;
+      arr.sort((a, b) => {
+        const av = a[k] || '';
+        const bv = b[k] || '';
+        if (typeof av === 'string') return av.localeCompare(bv, 'zh') * d;
+        return (av - bv) * d;
+      });
+      return arr;
+    });
+
+    const filteredNotes = computed(() => {
+      const q = filterQ.value.trim().toLowerCase();
+      const tag = curTag.value;
+      return sortedNotes.value.filter(n => {
+        if (tag && !(n.tags || []).includes(tag)) return false;
+        if (!q) return true;
+        const haystack = [n.title, n.content, ...(n.tags || [])].join(' ').toLowerCase();
+        return haystack.includes(q);
+      });
+    });
+
+    async function openNote(n) {
+      try {
+        curNote.value = await fetchJSON(API + '/notes/' + n.id);
+        showGraph.value = false;
+        if (graphAnimId) { cancelAnimationFrame(graphAnimId); graphAnimId = null; }
+        sbOpen.value = false;
+        relationsData.value = null;
+        tocItems.value = [];
+        try {
+          relationsData.value = await fetchJSON(API + '/notes/' + n.id + '/relations');
+        } catch(e) {}
+        if (curNote.value && curNote.value.content) {
+          const headings = [];
+          curNote.value.content.replace(/^#{1,3} (.+)$/gm, (m, text) => {
+            const level = m.startsWith('###') ? 3 : m.startsWith('##') ? 2 : 1;
+            headings.push({ level, text, id: 'h-' + headings.length });
+          });
+          tocItems.value = headings;
+        }
+      } catch(e) { console.error('加载笔记详情:', e); }
+    }
+
+    function openRelation(r) {
+      const note = notes.value.find(n => n.id === r.id);
+      if (note) openNote(note);
+    }
+    
+    // 使用模板
+    async function useTemplate(template) {
+      showTemplateModal.value = false;
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const t = getToken();
+        if (t) headers['Authorization'] = 'Bearer ' + t;
+        
+        const response = await fetch(API + '/notes', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            title: template.name + ' - ' + new Date().toLocaleDateString('zh-CN'),
+            content: template.content,
+            tags: ['模板']
+          })
+        });
+        
+        if (response.ok) {
+          const note = await response.json();
+          await loadNotes();
+          openNote(note);
+        } else {
+          alert('创建失败');
+        }
+      } catch(e) {
+        alert('创建失败: ' + e.message);
+      }
+    }
+    
+    // 标签管理方法
+    function editTag(tag) {
+      editingTag.value = { ...tag };
+    }
+    
+    async function deleteTag(tag) {
+      if (tag.note_count > 0) {
+        alert('该标签正在被使用，无法删除');
+        return;
+      }
+      if (!confirm(`确定要删除标签 "${tag.name}" 吗？`)) return;
+      
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const t = getToken();
+        if (t) headers['Authorization'] = 'Bearer ' + t;
+        
+        const response = await fetch(API + '/tags/' + tag.id, {
+          method: 'DELETE',
+          headers
+        });
+        
+        if (response.ok) {
+          await loadTags();
+          alert('删除成功');
+        } else {
+          const data = await response.json();
+          alert(data.detail || '删除失败');
+        }
+      } catch(e) {
+        alert('删除失败: ' + e.message);
+      }
+    }
+    
+    async function saveTag() {
+      if (!editingTag.value) return;
+      
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const t = getToken();
+        if (t) headers['Authorization'] = 'Bearer ' + t;
+        
+        const response = await fetch(API + '/tags/' + editingTag.value.id, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            name: editingTag.value.name,
+            color: editingTag.value.color
+          })
+        });
+        
+        if (response.ok) {
+          await loadTags();
+          editingTag.value = null;
+          alert('保存成功');
+        } else {
+          const data = await response.json();
+          alert(data.detail || '保存失败');
+        }
+      } catch(e) {
+        alert('保存失败: ' + e.message);
+      }
+    }
+
+    function toggleTag(name) {
+      curTag.value = curTag.value === name ? '' : name;
+    }
+
+    let searchTimer = null;
+    function doSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(async () => {
+        const q = searchQ.value.trim();
+        if (!q) { 
+          loadNotes(); 
+          showSearchHistory.value = false;
+          return; 
+        }
+        // 保存搜索历史
+        if (q.length >= 2) {
+          const history = searchHistory.value.filter(h => h !== q);
+          history.unshift(q);
+          if (history.length > 10) history.pop();
+          searchHistory.value = history;
+          localStorage.setItem('wiki:searchHistory', JSON.stringify(history));
+        }
+        showSearchHistory.value = false;
+        try {
+          const data = await fetchJSON(API + '/search?q=' + encodeURIComponent(q) + '&limit=20');
+          notes.value = data.results || [];
+          hasMore.value = false; // 搜索结果不分页
+        } catch(e) {}
+      }, 300);
+    }
+    
+    function selectSearchHistory(q) {
+      searchQ.value = q;
+      showSearchHistory.value = false;
+      doSearch();
+    }
+    
+    function clearSearchHistory() {
+      searchHistory.value = [];
+      localStorage.removeItem('wiki:searchHistory');
+    }
+
+    function setSort(key) {
+      if (sortKey.value === key) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortKey.value = key;
+        sortDir.value = key === 'title' ? 'asc' : 'desc';
+      }
+    }
+
+    function toggleTheme() {
+      isDark.value = !isDark.value;
+      localStorage.setItem('rb:theme', isDark.value ? 'dark' : 'light');
+      if (isDark.value) {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    }
+
+    function scrollToHeading(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ===== Graph =====
+    const graphNodes = ref([]);
+    const graphEdges = ref([]);
+    let graphAnimId = null;
+    // 使用API返回的标签颜色
+    const tagColorMap = {};
+    function getTagColor(tagName) {
+      const tag = tags.value.find(t => t.name === tagName);
+      return tag ? tag.color : '#8d9e8a';
+    }
+
+    async function renderGraph() {
+      try {
+        const g = await fetchJSON(API + '/graph');
+        const rawNodes = g.nodes || [];
+        const rawEdges = g.edges || [];
+        // Assign color by first tag (使用API返回的颜色)
+        const tagColorMap = {};
+        for (const n of rawNodes) {
+          const t = (n.tags || [])[0];
+          tagColorMap[n.id] = t ? getTagColor(t) : '#8d9e8a';
+        }
+        // Circle layout initial positions
+        const cx = 600, cy = 400, r = 300;
+        graphNodes.value = rawNodes.map((n, i) => ({
+          id: n.id, title: n.title || '无标题', tags: n.tags || [],
+          color: tagColorMap[n.id],
+          x: cx + r * Math.cos(2 * Math.PI * i / rawNodes.length),
+          y: cy + r * Math.sin(2 * Math.PI * i / rawNodes.length),
+          vx: 0, vy: 0
+        }));
+        graphEdges.value = rawEdges;
+        startGraphLoop();
+      } catch(e) { console.error('加载图谱失败:', e); }
+    }
+
+    function startGraphLoop() {
+      const canvas = document.getElementById('graphCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let W, H;
+      const resize = () => { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; };
+      resize();
+      window.addEventListener('resize', resize);
+      const nodes = graphNodes.value;
+      const edges = graphEdges.value;
+      const nodeMap = new Map(nodes.map(n => [n.id, n]));
+      let dragging = null, dragOX = 0, dragOY = 0;
+      let panX = 0, panY = 0, isPanning = false, panStartX = 0, panStartY = 0;
+      let scale = 1;
+      let hovered = null;
+
+      function findNode(mx, my) {
+        const tx = (mx - panX) / scale, ty = (my - panY) / scale;
+        return nodes.find(n => { const dx = tx - n.x, dy = ty - n.y; return dx*dx + dy*dy < 225; });
+      }
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const r = canvas.getBoundingClientRect();
+        const mx = e.clientX - r.left, my = e.clientY - r.top;
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        scale = Math.max(0.3, Math.min(3, scale * factor));
+        panX = mx - (mx - panX) * factor;
+        panY = my - (my - panY) * factor;
+      }, { passive: false });
+
+      canvas.addEventListener('mousedown', (e) => {
+        const r = canvas.getBoundingClientRect();
+        const mx = e.clientX - r.left, my = e.clientY - r.top;
+        dragging = findNode(mx, my);
+        if (dragging) {
+          dragOX = (mx - panX) / scale - dragging.x;
+          dragOY = (my - panY) / scale - dragging.y;
+          canvas.style.cursor = 'grabbing';
+        } else {
+          isPanning = true;
+          panStartX = mx - panX;
+          panStartY = my - panY;
+          canvas.style.cursor = 'grabbing';
+        }
+      });
+      canvas.addEventListener('mousemove', (e) => {
+        const r = canvas.getBoundingClientRect();
+        const mx = e.clientX - r.left, my = e.clientY - r.top;
+        if (dragging) {
+          dragging.x = (mx - panX) / scale - dragOX;
+          dragging.y = (my - panY) / scale - dragOY;
+          dragging.vx = 0; dragging.vy = 0;
+          paint();
+        } else if (isPanning) {
+          panX = mx - panStartX;
+          panY = my - panStartY;
+          paint();
+        } else {
+          hovered = findNode(mx, my);
+          canvas.style.cursor = hovered ? 'pointer' : 'grab';
+        }
+      });
+      canvas.addEventListener('mouseup', () => { dragging = null; isPanning = false; canvas.style.cursor = hovered ? 'pointer' : 'grab'; });
+      canvas.addEventListener('mouseleave', () => { dragging = null; isPanning = false; hovered = null; });
+      canvas.addEventListener('dblclick', (e) => {
+        const r = canvas.getBoundingClientRect();
+        const n = findNode(e.clientX - r.left, e.clientY - r.top);
+        if (n) { showGraph.value = false; curTag.value = ''; filterQ.value = ''; const note = notes.value.find(x => x.id === n.id); if (note) openNote(note); }
+      });
+
+      // ===== Touch support =====
+      let touchStartDist = 0, touchStartScale = 1;
+      let touchPanStartX = 0, touchPanStartY = 0;
+      let lastTouchX = 0, lastTouchY = 0;
+      let touchDragging = null;
+
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const r = canvas.getBoundingClientRect();
+        if (e.touches.length === 1) {
+          const mx = e.touches[0].clientX - r.left, my = e.touches[0].clientY - r.top;
+          touchDragging = findNode(mx, my);
+          if (touchDragging) {
+            dragOX = (mx - panX) / scale - touchDragging.x;
+            dragOY = (my - panY) / scale - touchDragging.y;
+          } else {
+            isPanning = true;
+            panStartX = mx - panX;
+            panStartY = my - panY;
+          }
+          lastTouchX = mx; lastTouchY = my;
+        } else if (e.touches.length === 2) {
+          // Pinch start
+          const dx = e.touches[1].clientX - e.touches[0].clientX;
+          const dy = e.touches[1].clientY - e.touches[0].clientY;
+          touchStartDist = Math.sqrt(dx * dx + dy * dy);
+          touchStartScale = scale;
+          isPanning = false;
+          touchDragging = null;
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const r = canvas.getBoundingClientRect();
+        if (e.touches.length === 1) {
+          const mx = e.touches[0].clientX - r.left, my = e.touches[0].clientY - r.top;
+          if (touchDragging) {
+            touchDragging.x = (mx - panX) / scale - dragOX;
+            touchDragging.y = (my - panY) / scale - dragOY;
+            touchDragging.vx = 0; touchDragging.vy = 0;
+            paint();
+          } else if (isPanning) {
+            panX = mx - panStartX;
+            panY = my - panStartY;
+            paint();
+          }
+          lastTouchX = mx; lastTouchY = my;
+        } else if (e.touches.length === 2) {
+          // Pinch zoom
+          const dx = e.touches[1].clientX - e.touches[0].clientX;
+          const dy = e.touches[1].clientY - e.touches[0].clientY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (touchStartDist > 0) {
+            scale = Math.max(0.3, Math.min(3, touchStartScale * (dist / touchStartDist)));
+          }
+          // Pan center
+          const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+          const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+          panX = cx - (cx - panX) * (scale / touchStartScale);
+          panY = cy - (cy - panY) * (scale / touchStartScale);
+          touchStartScale = scale;
+          touchStartDist = dist;
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', (e) => {
+        if (e.touches.length === 0) {
+          // Tap to open note
+          if (touchDragging) {
+            const dx = lastTouchX - ((touchDragging.x + dragOX) * scale + panX);
+            const dy = lastTouchY - ((touchDragging.y + dragOY) * scale + panY);
+            if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+              showGraph.value = false;
+              const note = notes.value.find(x => x.id === touchDragging.id);
+              if (note) openNote(note);
+            }
+          }
+          touchDragging = null;
+          isPanning = false;
+          touchStartDist = 0;
+        } else if (e.touches.length === 1) {
+          // Back to single touch
+          const mx = e.touches[0].clientX - r.left, my = e.touches[0].clientY - r.top;
+          isPanning = true;
+          panStartX = mx - panX;
+          panStartY = my - panY;
+          touchDragging = null;
+          touchStartDist = 0;
+        }
+      });
+
+      if (graphAnimId) cancelAnimationFrame(graphAnimId);
+
+      function tick() {
+        const alpha = 0.25;
+        for (const n of nodes) { n.vx *= 0.9; n.vy *= 0.9; }
+        // Repulsion
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const a = nodes[i], b = nodes[j];
+            let dx = a.x - b.x, dy = a.y - b.y;
+            let dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            if (dist < 180) {
+              const f = (180 - dist) * 0.04 * alpha;
+              a.vx += dx / dist * f; a.vy += dy / dist * f;
+              b.vx -= dx / dist * f; b.vy -= dy / dist * f;
+            }
+          }
+        }
+        // Attraction
+        for (const e of edges) {
+          const a = nodeMap.get(e.source), b = nodeMap.get(e.target);
+          if (!a || !b) continue;
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+          const f = (dist - 100) * 0.006 * alpha;
+          a.vx += dx / dist * f; a.vy += dy / dist * f;
+          b.vx -= dx / dist * f; b.vy -= dy / dist * f;
+        }
+        // Center gravity - use canvas center
+        for (const n of nodes) {
+          n.vx += (W / 2 / scale - panX / scale - n.x) * 0.0005 * alpha;
+          n.vy += (H / 2 / scale - panY / scale - n.y) * 0.0005 * alpha;
+        }
+        // Integrate
+        for (const n of nodes) {
+          if (n === dragging) continue;
+          n.x += n.vx; n.y += n.vy;
+        }
+        paint();
+        graphAnimId = requestAnimationFrame(tick);
+      }
+
+      function drawRoundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.arcTo(x + w, y, x + w, y + r, r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+        ctx.lineTo(x + r, y + h);
+        ctx.arcTo(x, y + h, x, y + h - r, r);
+        ctx.lineTo(x, y + r);
+        ctx.arcTo(x, y, x + r, y, r);
+        ctx.closePath();
+      }
+
+      function paint() {
+        // Background - 跟随页面主题
+        ctx.clearRect(0, 0, W, H);
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || !document.documentElement.getAttribute('data-theme');
+        // 主题颜色变量
+        const bg = isDark ? '#0f1110' : '#faf8f2';
+        const fg = isDark ? '255,255,255' : '30,30,30';
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        // Subtle grid
+        ctx.save();
+        ctx.translate(panX, panY);
+        ctx.scale(scale, scale);
+        const gridSize = 60;
+        const startX = Math.floor(-panX / scale / gridSize) * gridSize - gridSize;
+        const startY = Math.floor(-panY / scale / gridSize) * gridSize - gridSize;
+        const endX = startX + W / scale + gridSize * 2;
+        const endY = startY + H / scale + gridSize * 2;
+        ctx.strokeStyle = 'rgba(' + fg + ',0.06)';
+        ctx.lineWidth = 0.5;
+        for (let x = startX; x < endX; x += gridSize) {
+          ctx.beginPath(); ctx.moveTo(x, startY); ctx.lineTo(x, endY); ctx.stroke();
+        }
+        for (let y = startY; y < endY; y += gridSize) {
+          ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(endX, y); ctx.stroke();
+        }
+
+        // Edges
+        for (const e of edges) {
+          const a = nodeMap.get(e.source), b = nodeMap.get(e.target);
+          if (!a || !b) continue;
+          const isHov = hovered && (hovered.id === e.source || hovered.id === e.target);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = isHov ? 'rgba(' + fg + ',0.35)' : 'rgba(' + fg + ',0.12)';
+          ctx.lineWidth = isHov ? 1.8 : 1;
+          ctx.stroke();
+        }
+
+        // Nodes - 预计算 degree 避免重复 filter
+        const nodeDegree = new Map();
+        for (const n of nodes) nodeDegree.set(n.id, 0);
+        for (const e of edges) {
+          nodeDegree.set(e.source, (nodeDegree.get(e.source) || 0) + 1);
+          nodeDegree.set(e.target, (nodeDegree.get(e.target) || 0) + 1);
+        }
+        const maxDeg = Math.max(...nodeDegree.values(), 1);
+
+        for (const n of nodes) {
+          const isHov = hovered && hovered.id === n.id;
+          const deg = nodeDegree.get(n.id) || 0;
+          // 节点大小：根据度数映射到 3-16px 范围
+          const normalizedDeg = deg / maxDeg;
+          const baseR = isHov ? 6 : 3 + normalizedDeg * 13;
+          const r = baseR;
+
+          // Glow (hover or high-degree)
+          if (isHov || deg >= 4) {
+            const glowR = r + (isHov ? 16 : 10);
+            const alpha = isHov ? '40' : '20';
+            const grad = ctx.createRadialGradient(n.x, n.y, r * 0.5, n.x, n.y, glowR);
+            grad.addColorStop(0, n.color + alpha);
+            grad.addColorStop(1, n.color + '00');
+            ctx.beginPath(); ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+            ctx.fillStyle = grad; ctx.fill();
+          }
+
+          // 外圈（高 degree 节点）
+          if (deg >= 3 && !isHov) {
+            ctx.beginPath(); ctx.arc(n.x, n.y, r + 2, 0, Math.PI * 2);
+            ctx.strokeStyle = n.color + '50';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+
+          // 主圆
+          ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+          ctx.fillStyle = isHov ? (isDark ? '#fff' : '#1a1d18') : n.color;
+          ctx.fill();
+
+          // 内部高光（大节点）
+          if (r >= 6) {
+            ctx.beginPath(); ctx.arc(n.x - r * 0.25, n.y - r * 0.25, r * 0.35, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.fill();
+          }
+
+          // Label
+          if (isHov || deg >= 5) {
+            ctx.font = (isHov ? '600 ' : '500 ') + Math.max(10, Math.min(13, 9 + normalizedDeg * 4)) + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = isHov ? (isDark ? '#fff' : '#1a1d18') : 'rgba(' + fg + ',' + (0.5 + normalizedDeg * 0.4).toFixed(2) + ')';
+            const label = n.title.length > 20 ? n.title.substring(0, 20) + '…' : n.title;
+            ctx.fillText(label, n.x, n.y + r + 16);
+          }
+        }
+
+        ctx.restore();
+
+        // Legend (bottom-right)
+        const usedTags = [...new Set(nodes.map(n => (n.tags || [])[0] || '_'))];
+        if (usedTags.length > 1) {
+          const pad = 10;
+          const lh = 18;
+          const titleH = 16;
+          ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+          const maxW = Math.max(...usedTags.map(t => ctx.measureText(t).width));
+          const boxW = pad * 2 + 10 + maxW;
+          const boxH = pad * 2 + titleH + usedTags.length * lh;
+          const bx = W - boxW - 12;
+          const by = H - boxH - 12;
+
+          ctx.fillStyle = isDark ? 'rgba(20,20,20,0.85)' : 'rgba(255,255,255,0.9)';
+          drawRoundRect(ctx, bx, by, boxW, boxH, 6);
+          ctx.fill();
+          ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+          ctx.lineWidth = 1; ctx.stroke();
+
+          ctx.fillStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+          ctx.font = 'bold 9px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText('TAGS', bx + pad, by + pad + 8);
+
+          ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+          usedTags.forEach((t, i) => {
+            const iy = by + titleH + pad + i * lh + 4;
+            ctx.beginPath(); ctx.arc(bx + pad + 4, iy - 2, 3, 0, Math.PI * 2);
+            ctx.fillStyle = getTagColor(t); ctx.fill();
+            ctx.fillStyle = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
+            ctx.fillText(t, bx + pad + 12, iy + 1);
+          });
+        }
+
+        // Stats (top-left)
+        ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillStyle = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)';
+        ctx.textAlign = 'left';
+        ctx.fillText(nodes.length + ' nodes  ·  ' + edges.length + ' edges', 14, 24);
+      }
+
+      tick();
+    }
+
+    function renderMd(md) { return renderMdImpl(md); }
+    function strip(md) { return stripMd(md); }
+    function fmt(s) { return fmtDate(s); }
+
+    onMounted(() => {
+      if (!isDark.value) document.documentElement.setAttribute('data-theme', 'light');
+      Promise.all([loadNotes(), loadTags(), loadStats()]).finally(() => {
+        loading.value = false;
+      });
+      // Watch for graph view
+      showGraph.value = false;
+      Vue.watch(showGraph, (val) => {
+        if (val) { Vue.nextTick(() => renderGraph()); }
+      });
+      document.addEventListener('click', (e) => {
+        const wl = e.target.closest('.wikilink');
+        if (wl) {
+          e.preventDefault();
+          const title = wl.dataset.title;
+          const note = notes.value.find(n => n.title === title);
+          if (note) openNote(note);
+        }
+      });
+    });
+
+    return {
+      sbOpen, notes, tags, curNote, curTag, searchQ, filterQ,
+      sortKey, sortDir, isDark, loading, relationsData, tocItems, tocActive,
+      totalEdges, showGraph, filteredNotes, graphNodes, graphEdges,
+      openNote, showTemplateModal, templates, useTemplate, searchHistory, showSearchHistory, selectSearchHistory, clearSearchHistory, currentPage, totalNotes, hasMore, loadingMore, loadMoreNotes, showTagModal, editingTag, morandiColors, editTag, deleteTag, saveTag, openRelation, toggleTag, doSearch, setSort,
+      toggleTheme, scrollToHeading, renderMd, strip, fmt,
+    };
+  }
+}).mount('#app');
+</script></body>
+</html>
