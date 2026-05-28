@@ -1,5 +1,7 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import '../services/api_service.dart';
 import 'note_detail_screen.dart';
 
@@ -36,7 +38,8 @@ class _GraphScreenState extends State<GraphScreen> {
         final msg = e.toString().contains('SocketException')
             ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
             : '加载图谱失败';
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
@@ -91,9 +94,8 @@ class _GraphScreenState extends State<GraphScreen> {
                     : _GraphWidget(
                         nodes: _nodes,
                         edges: _edges,
-                        primaryColor: colorScheme.primary,
-                        textColor: colorScheme.onSurface,
-                        surfaceColor: colorScheme.surface,
+                        isDark: Theme.of(context).brightness ==
+                            Brightness.dark,
                         onNodeTap: (nodeId) {
                           Navigator.push(
                             context,
@@ -110,20 +112,41 @@ class _GraphScreenState extends State<GraphScreen> {
   }
 }
 
+// Internal node representation with physics state
+class _GraphNode {
+  final int id;
+  final String title;
+  final List<String> tags;
+  Color color;
+  double x, y;
+  double vx, vy;
+  int degree;
+
+  _GraphNode({
+    required this.id,
+    required this.title,
+    required this.tags,
+    required this.color,
+    required this.x,
+    required this.y,
+    this.vx = 0,
+    this.vy = 0,
+    this.degree = 0,
+  });
+
+  double get radius => 3 + (degree / 1.0).clamp(0, 1) * 13;
+}
+
 class _GraphWidget extends StatefulWidget {
   final List<Map<String, dynamic>> nodes;
   final List<Map<String, dynamic>> edges;
-  final Color primaryColor;
-  final Color textColor;
-  final Color surfaceColor;
+  final bool isDark;
   final Function(int) onNodeTap;
 
   const _GraphWidget({
     required this.nodes,
     required this.edges,
-    required this.primaryColor,
-    required this.textColor,
-    required this.surfaceColor,
+    required this.isDark,
     required this.onNodeTap,
   });
 
@@ -131,239 +154,481 @@ class _GraphWidget extends StatefulWidget {
   State<_GraphWidget> createState() => _GraphWidgetState();
 }
 
-class _GraphWidgetState extends State<_GraphWidget> {
-  late Map<int, Offset> _nodePositions;
-  Offset _offset = Offset.zero;
+class _GraphWidgetState extends State<_GraphWidget>
+    with SingleTickerProviderStateMixin {
+  late Ticker _ticker;
+  late List<_GraphNode> _graphNodes;
+  late Map<int, _GraphNode> _nodeMap;
+  late List<_Edge> _graphEdges;
+  Offset _pan = Offset.zero;
   double _scale = 1.0;
+  _GraphNode? _dragNode;
+  _GraphNode? _hoveredNode;
   Offset _panStart = Offset.zero;
-  int? _dragNodeId;
-  Offset _dragStartPos = Offset.zero;
+  Offset _lastFocal = Offset.zero;
+  bool _needsPaint = true;
+
+  // Default tag color palette (fallback when tag has no color)
+  static const _defaultColors = [
+    Color(0xFFc96442), // terracotta
+    Color(0xFF4a9e8a), // teal
+    Color(0xFF8b6bbf), // purple
+    Color(0xFFd4a843), // gold
+    Color(0xFF5b8abf), // blue
+    Color(0xFFbf6b8a), // pink
+    Color(0xFF6bbf4a), // green
+    Color(0xFFbf8a5b), // brown
+  ];
 
   @override
   void initState() {
     super.initState();
-    _nodePositions = {};
-    _layoutNodes();
+    _initGraph();
+    _ticker = Ticker(_onTick)..start();
   }
 
   @override
   void didUpdateWidget(_GraphWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.nodes != widget.nodes) {
-      _layoutNodes();
+      _initGraph();
     }
   }
 
-  void _layoutNodes() {
-    if (widget.nodes.isEmpty) return;
+  void _initGraph() {
+    _graphNodes = [];
+    _nodeMap = {};
+    _graphEdges = [];
 
-    final nodeRadius = 24.0;
-    final padding = 40.0;
+    // Build tag color map
+    final tagColorMap = <String, Color>{};
+    final allTags = <String>{};
+    for (final n in widget.nodes) {
+      final tags = (n['tags'] as List?)?.cast<String>() ?? [];
+      if (tags.isNotEmpty) allTags.add(tags.first);
+    }
+    var colorIdx = 0;
+    for (final tag in allTags) {
+      tagColorMap[tag] = _defaultColors[colorIdx % _defaultColors.length];
+      colorIdx++;
+    }
 
-    // Layout radius based on node count
-    final radius = (widget.nodes.length * 8.0 + padding + nodeRadius).clamp(120.0, 350.0);
+    // Create nodes in a circle
+    final cx = 0.0, cy = 0.0, r = 200.0;
+    for (var i = 0; i < widget.nodes.length; i++) {
+      final n = widget.nodes[i];
+      final tags = (n['tags'] as List?)?.cast<String>() ?? [];
+      final firstTag = tags.isNotEmpty ? tags.first : null;
+      final color = firstTag != null
+          ? (tagColorMap[firstTag] ?? const Color(0xFF8d9e8a))
+          : const Color(0xFF8d9e8a);
+      final angle = (2 * pi * i) / widget.nodes.length;
+      final node = _GraphNode(
+        id: n['id'],
+        title: n['title'] ?? '无标题',
+        tags: tags,
+        color: color,
+        x: cx + r * cos(angle),
+        y: cy + r * sin(angle),
+      );
+      _graphNodes.add(node);
+      _nodeMap[node.id] = node;
+    }
 
-    // Layout centered at origin (0, 0)
-    if (widget.nodes.length <= 15) {
-      for (var i = 0; i < widget.nodes.length; i++) {
-        final angle = (2 * pi * i) / widget.nodes.length - pi / 2;
-        _nodePositions[widget.nodes[i]['id']] = Offset(
-          radius * cos(angle),
-          radius * sin(angle),
-        );
+    // Create edges and compute degree
+    for (final e in widget.edges) {
+      final srcId = e['source'] ?? e['from'];
+      final tgtId = e['target'] ?? e['to'];
+      final src = _nodeMap[srcId];
+      final tgt = _nodeMap[tgtId];
+      if (src != null && tgt != null) {
+        _graphEdges.add(_Edge(src, tgt));
+        src.degree++;
+        tgt.degree++;
       }
-    } else {
-      final innerCount = (widget.nodes.length * 0.25).round().clamp(5, 12);
-      final outerCount = widget.nodes.length - innerCount;
-      final innerRadius = radius * 0.35;
-      final outerRadius = radius;
+    }
 
-      for (var i = 0; i < innerCount; i++) {
-        final angle = (2 * pi * i) / innerCount - pi / 2;
-        _nodePositions[widget.nodes[i]['id']] = Offset(
-          innerRadius * cos(angle),
-          innerRadius * sin(angle),
-        );
-      }
+    _needsPaint = true;
+  }
 
-      for (var i = 0; i < outerCount; i++) {
-        final angle = (2 * pi * i) / outerCount - pi / 2;
-        _nodePositions[widget.nodes[innerCount + i]['id']] = Offset(
-          outerRadius * cos(angle),
-          outerRadius * sin(angle),
-        );
-      }
+  void _onTick(Duration elapsed) {
+    if (!mounted) return;
+    _tick();
+    if (_needsPaint) {
+      setState(() {
+        _needsPaint = false;
+      });
     }
   }
 
-  int? _getNodeAtPosition(Offset screenPos, Size widgetSize) {
-    final nodeRadius = 24.0;
-    // Convert screen position to graph space
-    final graphPos = (screenPos - Offset(widgetSize.width / 2, widgetSize.height / 2) - _offset) / _scale;
-    for (final node in widget.nodes) {
-      final nodePos = _nodePositions[node['id']];
-      if (nodePos == null) continue;
-      final distance = (graphPos - nodePos).distance;
-      if (distance <= nodeRadius * 1.5) {
-        return node['id'];
+  void _tick() {
+    if (_graphNodes.isEmpty) return;
+    const alpha = 0.25;
+    final w = context.size?.width ?? 400.0;
+    final h = context.size?.height ?? 600.0;
+
+    // Damping
+    for (final n in _graphNodes) {
+      n.vx *= 0.9;
+      n.vy *= 0.9;
+    }
+
+    // Node repulsion
+    for (var i = 0; i < _graphNodes.length; i++) {
+      for (var j = i + 1; j < _graphNodes.length; j++) {
+        final a = _graphNodes[i], b = _graphNodes[j];
+        final dx = a.x - b.x, dy = a.y - b.y;
+        final dist = sqrt(dx * dx + dy * dy);
+        if (dist < 180 && dist > 0) {
+          final f = (180 - dist) * 0.04 * alpha;
+          a.vx += dx / dist * f;
+          a.vy += dy / dist * f;
+          b.vx -= dx / dist * f;
+          b.vy -= dy / dist * f;
+        }
+      }
+    }
+
+    // Edge springs
+    for (final e in _graphEdges) {
+      final dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
+      final dist = sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        final f = (dist - 100) * 0.006 * alpha;
+        e.a.vx += dx / dist * f;
+        e.a.vy += dy / dist * f;
+        e.b.vx -= dx / dist * f;
+        e.b.vy -= dy / dist * f;
+      }
+    }
+
+    // Center gravity
+    for (final n in _graphNodes) {
+      n.vx += (0 - n.x) * 0.0005 * alpha;
+      n.vy += (0 - n.y) * 0.0005 * alpha;
+    }
+
+    // Apply velocity (skip dragged node)
+    for (final n in _graphNodes) {
+      if (n == _dragNode) continue;
+      n.x += n.vx;
+      n.y += n.vy;
+    }
+
+    _needsPaint = true;
+  }
+
+  _GraphNode? _findNode(Offset screenPos, Size widgetSize) {
+    // Convert screen to graph space
+    final gp =
+        (screenPos - Offset(widgetSize.width / 2, widgetSize.height / 2) -
+                _pan) /
+            _scale;
+    for (final n in _graphNodes) {
+      final dx = gp.dx - n.x, dy = gp.dy - n.y;
+      if (dx * dx + dy * dy < (n.radius + 8) * (n.radius + 8)) {
+        return n;
       }
     }
     return null;
   }
 
   @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
-        return GestureDetector(
-          onScaleStart: (details) {
-            _panStart = details.focalPoint;
-            _dragNodeId = _getNodeAtPosition(details.focalPoint, widgetSize);
-            if (_dragNodeId != null) {
-              _dragStartPos = _nodePositions[_dragNodeId!]!;
-            }
-          },
-          onScaleUpdate: (details) {
-            setState(() {
-              if (_dragNodeId != null) {
-                // Drag node: convert screen delta to graph space
-                final delta = (details.focalPoint - _panStart) / _scale;
-                _nodePositions[_dragNodeId!] = _dragStartPos + delta;
-              } else {
-                // Pan canvas: accumulate in screen space
-                _offset += details.focalPoint - _panStart;
-                _panStart = details.focalPoint;
-                if (details.scale != 1.0) {
-                  _scale = (_scale * details.scale).clamp(0.3, 3.0);
-                }
-              }
-            });
-          },
-          onScaleEnd: (details) {
-            if (_dragNodeId != null) {
-              final distance =
-                  (_nodePositions[_dragNodeId!]! - _dragStartPos).distance;
-              if (distance < 5 / _scale) {
-                // Tap (threshold adjusted for scale)
-                widget.onNodeTap(_dragNodeId!);
+    return LayoutBuilder(builder: (context, constraints) {
+      final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
+      return GestureDetector(
+        onScaleStart: (details) {
+          _lastFocal = details.focalPoint;
+          _dragNode = _findNode(details.focalPoint, widgetSize);
+          if (_dragNode != null) {
+            _hoveredNode = _dragNode;
+          } else {
+            _panStart = details.focalPoint - _pan;
+          }
+        },
+        onScaleUpdate: (details) {
+          setState(() {
+            if (_dragNode != null) {
+              final delta = (details.focalPoint - _lastFocal) / _scale;
+              _dragNode!.x += delta.dx;
+              _dragNode!.y += delta.dy;
+              _dragNode!.vx = 0;
+              _dragNode!.vy = 0;
+            } else {
+              _pan = details.focalPoint - _panStart;
+              if (details.scale != 1.0) {
+                _scale = (_scale * details.scale).clamp(0.3, 3.0);
               }
             }
-            _dragNodeId = null;
-          },
-          child: CustomPaint(
-            size: Size.infinite,
-            painter: _GraphPainter(
-              nodes: widget.nodes,
-              edges: widget.edges,
-              nodePositions: _nodePositions,
-              primaryColor: widget.primaryColor,
-              textColor: widget.textColor,
-              offset: _offset,
-              scale: _scale,
-            ),
+            _lastFocal = details.focalPoint;
+          });
+        },
+        onScaleEnd: (details) {
+          if (_dragNode != null) {
+            // Check if it was a tap (not a drag)
+            final node = _dragNode!;
+            _dragNode = null;
+            // Single pointer = potential tap
+            if (details.pointerCount == 1) {
+              widget.onNodeTap(node.id);
+            }
+          }
+          _dragNode = null;
+        },
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: _GraphPainter(
+            nodes: _graphNodes,
+            edges: _graphEdges,
+            nodeMap: _nodeMap,
+            pan: _pan,
+            scale: _scale,
+            hoveredNode: _hoveredNode,
+            isDark: widget.isDark,
+            widgetSize: widgetSize,
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
   }
 }
 
+class _Edge {
+  final _GraphNode a, b;
+  _Edge(this.a, this.b);
+}
+
 class _GraphPainter extends CustomPainter {
-  final List<Map<String, dynamic>> nodes;
-  final List<Map<String, dynamic>> edges;
-  final Map<int, Offset> nodePositions;
-  final Color primaryColor;
-  final Color textColor;
-  final Offset offset;
+  final List<_GraphNode> nodes;
+  final List<_Edge> edges;
+  final Map<int, _GraphNode> nodeMap;
+  final Offset pan;
   final double scale;
+  final _GraphNode? hoveredNode;
+  final bool isDark;
+  final Size widgetSize;
 
   _GraphPainter({
     required this.nodes,
     required this.edges,
-    required this.nodePositions,
-    required this.primaryColor,
-    required this.textColor,
-    required this.offset,
+    required this.nodeMap,
+    required this.pan,
     required this.scale,
+    required this.hoveredNode,
+    required this.isDark,
+    required this.widgetSize,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (nodes.isEmpty) return;
 
-    final nodeRadius = 24.0;
+    final bg = isDark ? const Color(0xFF141413) : const Color(0xFFf5f4ed);
+    final fg = isDark ? const Color(0xFFe4ece0) : const Color(0xFF141413);
+
+    // Background
+    canvas.drawRect(
+        Rect.fromLTWH(0, 0, size.width, size.height), Paint()..color = bg);
 
     canvas.save();
-    // Center graph on widget, then apply pan and zoom
-    canvas.translate(size.width / 2 + offset.dx, size.height / 2 + offset.dy);
+    canvas.translate(size.width / 2 + pan.dx, size.height / 2 + pan.dy);
     canvas.scale(scale);
 
-    // Draw edges
-    final edgePaint = Paint()
-      ..color = primaryColor.withOpacity(0.15)
-      ..strokeWidth = 1.5;
+    // Grid
+    _drawGrid(canvas, size, fg);
 
-    for (final edge in edges) {
-      final fromId = edge['source'] ?? edge['from'];
-      final toId = edge['target'] ?? edge['to'];
-      final from = nodePositions[fromId];
-      final to = nodePositions[toId];
-      if (from != null && to != null) {
-        canvas.drawLine(from, to, edgePaint);
+    // Edges
+    for (final e in edges) {
+      final isHov = hoveredNode != null &&
+          (hoveredNode!.id == e.a.id || hoveredNode!.id == e.b.id);
+      final edgePaint = Paint()
+        ..color = fg.withOpacity(isHov ? 0.35 : 0.12)
+        ..strokeWidth = isHov ? 1.8 : 1.0;
+      canvas.drawLine(Offset(e.a.x, e.a.y), Offset(e.b.x, e.b.y), edgePaint);
+    }
+
+    // Compute max degree for normalization
+    final maxDeg =
+        nodes.fold<int>(0, (m, n) => n.degree > m ? n.degree : m).toDouble();
+    if (maxDeg == 0) return;
+
+    // Nodes
+    for (final n in nodes) {
+      final isHov = hoveredNode?.id == n.id;
+      final normalizedDeg = n.degree / maxDeg;
+      final r = isHov ? 6.0 : (3.0 + normalizedDeg * 13.0);
+
+      // Glow for hovered or high-degree nodes
+      if (isHov || n.degree >= 4) {
+        final glowR = r + (isHov ? 16.0 : 10.0);
+        final glowAlpha = isHov ? 0.25 : 0.12;
+        final grad = ui.Gradient.radial(
+          Offset(n.x, n.y),
+          glowR,
+          [
+            n.color.withOpacity(glowAlpha),
+            n.color.withOpacity(0.0),
+          ],
+        );
+        canvas.drawCircle(Offset(n.x, n.y), glowR, Paint()..shader = grad);
+      }
+
+      // Ring for degree >= 3
+      if (n.degree >= 3 && !isHov) {
+        canvas.drawCircle(
+          Offset(n.x, n.y),
+          r + 2,
+          Paint()
+            ..color = n.color.withOpacity(0.3)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1,
+        );
+      }
+
+      // Node fill
+      canvas.drawCircle(
+        Offset(n.x, n.y),
+        r,
+        Paint()..color = isHov ? fg : n.color,
+      );
+
+      // Highlight dot for larger nodes
+      if (r >= 6) {
+        canvas.drawCircle(
+          Offset(n.x - r * 0.25, n.y - r * 0.25),
+          r * 0.35,
+          Paint()..color = Colors.white.withOpacity(0.15),
+        );
+      }
+
+      // Label for hovered or high-degree nodes
+      if (isHov || n.degree >= 5) {
+        final fontSize = max(10.0, min(13.0, 9.0 + normalizedDeg * 4.0));
+        final label =
+            n.title.length > 20 ? '${n.title.substring(0, 20)}...' : n.title;
+        final tp = TextPainter(
+          text: TextSpan(
+            text: label,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: isHov ? FontWeight.w600 : FontWeight.w500,
+              color: fg.withOpacity(isHov ? 1.0 : 0.5 + normalizedDeg * 0.4),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(canvas, Offset(n.x - tp.width / 2, n.y + r + 10));
       }
     }
 
-    // Draw nodes
-    for (final node in nodes) {
-      final pos = nodePositions[node['id']];
-      if (pos == null) continue;
+    canvas.restore();
 
-      // Node circle shadow
-      final shadowPaint = Paint()
-        ..color = primaryColor.withOpacity(0.1)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-      canvas.drawCircle(pos + const Offset(2, 2), nodeRadius, shadowPaint);
+    // Tag legend (outside graph transform)
+    _drawTagLegend(canvas, size, fg);
+  }
 
-      // Node circle fill
-      final nodePaint = Paint()
-        ..color = primaryColor.withOpacity(0.12)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(pos, nodeRadius, nodePaint);
+  void _drawGrid(Canvas canvas, Size size, Color fg) {
+    const gridSize = 60.0;
+    // Calculate visible range in graph space
+    final left = (-size.width / 2 - pan.dx) / scale;
+    final top = (-size.height / 2 - pan.dy) / scale;
+    final right = (size.width / 2 - pan.dx) / scale;
+    final bottom = (size.height / 2 - pan.dy) / scale;
 
-      // Node circle border
-      final borderPaint = Paint()
-        ..color = primaryColor.withOpacity(0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-      canvas.drawCircle(pos, nodeRadius, borderPaint);
+    final startX = (left / gridSize).floor() * gridSize;
+    final startY = (top / gridSize).floor() * gridSize;
 
-      // Node label
-      final title = node['title'] ?? '';
-      final displayTitle =
-          title.length > 6 ? '${title.substring(0, 6)}..' : title;
-      final textPainter = TextPainter(
+    final gridPaint = Paint()
+      ..color = fg.withOpacity(0.06)
+      ..strokeWidth = 0.5;
+
+    for (var x = startX; x <= right; x += gridSize) {
+      canvas.drawLine(Offset(x, top), Offset(x, bottom), gridPaint);
+    }
+    for (var y = startY; y <= bottom; y += gridSize) {
+      canvas.drawLine(Offset(left, y), Offset(right, y), gridPaint);
+    }
+  }
+
+  void _drawTagLegend(Canvas canvas, Size size, Color fg) {
+    final usedTags = <String, Color>{};
+    for (final n in nodes) {
+      if (n.tags.isNotEmpty) {
+        usedTags.putIfAbsent(n.tags.first, () => n.color);
+      }
+    }
+    if (usedTags.length <= 1) return;
+
+    final entries = usedTags.entries.toList();
+    const pad = 10.0;
+    const lh = 18.0;
+    const titleH = 16.0;
+
+    final maxW = entries
+        .map((e) => e.key.length * 7.0)
+        .reduce((a, b) => a > b ? a : b);
+    final boxW = pad * 2 + 10 + maxW;
+    final boxH = pad * 2 + titleH + entries.length * lh;
+    final bx = size.width - boxW - 12;
+    final by = size.height - boxH - 12;
+
+    // Box background
+    final bgRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(bx, by, boxW, boxH), const Radius.circular(6));
+    canvas.drawRRect(
+        bgRect,
+        Paint()
+          ..color = (isDark
+              ? const Color(0xFF1c1c1a)
+              : Colors.white)
+              .withOpacity(0.95));
+    canvas.drawRRect(
+        bgRect,
+        Paint()
+          ..color = fg.withOpacity(0.08)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1);
+
+    // Title
+    final titleTp = TextPainter(
+      text: TextSpan(
+        text: 'TAGS',
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: fg.withOpacity(0.4),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    titleTp.paint(canvas, Offset(bx + pad, by + pad + 4));
+
+    // Tag entries
+    for (var i = 0; i < entries.length; i++) {
+      final iy = by + titleH + pad + i * lh + 4;
+      canvas.drawCircle(Offset(bx + pad + 4, iy), 3,
+          Paint()..color = entries[i].value);
+      final tagTp = TextPainter(
         text: TextSpan(
-          text: displayTitle,
+          text: entries[i].key,
           style: TextStyle(
-            color: textColor.withOpacity(0.8),
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
+            fontSize: 11,
+            color: fg.withOpacity(0.6),
           ),
         ),
         textDirection: TextDirection.ltr,
-        textAlign: TextAlign.center,
-      );
-      textPainter.layout(maxWidth: nodeRadius * 2.5);
-      textPainter.paint(
-        canvas,
-        Offset(pos.dx - textPainter.width / 2, pos.dy + nodeRadius + 6),
-      );
+      )..layout();
+      tagTp.paint(canvas, Offset(bx + pad + 12, iy - 5));
     }
-
-    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _GraphPainter oldDelegate) => true;
 }
