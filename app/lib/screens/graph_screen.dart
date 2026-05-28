@@ -164,6 +164,9 @@ class _GraphWidgetState extends State<_GraphWidget>
   _GraphNode? _hoveredNode;
   Offset _panStart = Offset.zero;
   Offset _lastFocal = Offset.zero;
+  Offset _dragStartScreen = Offset.zero;
+  bool _isDragging = false;
+  int _pointerCount = 0;
   final _random = Random();
 
   static const _defaultColors = [
@@ -256,6 +259,15 @@ class _GraphWidgetState extends State<_GraphWidget>
     setState(() {});
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ensure animation keeps running after gestures
+    if (!_animController.isAnimating) {
+      _animController.repeat();
+    }
+  }
+
   void _simulate() {
     const alpha = 0.3;
 
@@ -341,23 +353,35 @@ class _GraphWidgetState extends State<_GraphWidget>
       final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
       return GestureDetector(
         onScaleStart: (details) {
+          _pointerCount = details.pointerCount;
           _lastFocal = details.focalPoint;
-          _dragNode = _findNode(details.focalPoint, widgetSize);
-          if (_dragNode != null) {
-            _hoveredNode = _dragNode;
-          } else {
+          _dragStartScreen = details.focalPoint;
+          _isDragging = false;
+          // Only pick up node for single-pointer gesture
+          if (details.pointerCount == 1) {
+            _dragNode = _findNode(details.focalPoint, widgetSize);
+            if (_dragNode != null) {
+              _hoveredNode = _dragNode;
+            }
+          }
+          if (_dragNode == null) {
             _panStart = details.focalPoint - _pan;
           }
         },
         onScaleUpdate: (details) {
+          _pointerCount = details.pointerCount;
+          final moved = (details.focalPoint - _dragStartScreen).distance;
+          if (moved > 8) _isDragging = true;
+
           setState(() {
-            if (_dragNode != null) {
+            if (_dragNode != null && details.pointerCount == 1) {
               final delta = (details.focalPoint - _lastFocal) / _scale;
               _dragNode!.x += delta.dx;
               _dragNode!.y += delta.dy;
               _dragNode!.vx = 0;
               _dragNode!.vy = 0;
             } else {
+              _dragNode = null; // Multi-pointer: cancel node drag
               _pan = details.focalPoint - _panStart;
               if (details.scale != 1.0) {
                 _scale = (_scale * details.scale).clamp(0.3, 3.0);
@@ -367,10 +391,12 @@ class _GraphWidgetState extends State<_GraphWidget>
           });
         },
         onScaleEnd: (details) {
-          if (_dragNode != null && details.pointerCount == 1) {
+          // Only fire tap if: had a node, single pointer, didn't drag
+          if (_dragNode != null && !_isDragging && _pointerCount == 1) {
             widget.onNodeTap(_dragNode!.id);
           }
           _dragNode = null;
+          _isDragging = false;
         },
         child: CustomPaint(
           size: Size.infinite,

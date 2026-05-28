@@ -4,11 +4,11 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- K monogram matching web logo-mini.svg -->
+    <!-- K monogram matching web logo-mini.svg, bold and centered -->
     <path
         android:pathData="M33,29 L33,79 M33,54 L59,29 M33,54 L59,79"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="5.5"
+        android:strokeWidth="7.5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
 </vector>
