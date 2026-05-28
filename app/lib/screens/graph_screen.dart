@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -52,11 +53,12 @@ class _GraphScreenState extends State<GraphScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SafeArea(
+    return Container(
+      color: colorScheme.surface,
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 12),
             color: colorScheme.surface,
             child: Row(
               children: [
@@ -170,6 +172,7 @@ class _GraphWidgetState extends State<_GraphWidget>
   Offset _panStart = Offset.zero;
   Offset _lastFocal = Offset.zero;
   Offset _dragStartScreen = Offset.zero;
+  Timer? _resumeTimer;
   final _random = Random();
 
   static const _defaultColors = [
@@ -333,6 +336,7 @@ class _GraphWidgetState extends State<_GraphWidget>
 
   @override
   void dispose() {
+    _resumeTimer?.cancel();
     _ticker.dispose();
     super.dispose();
   }
@@ -358,6 +362,7 @@ class _GraphWidgetState extends State<_GraphWidget>
           _dragNode = null;
         },
         onScaleStart: (details) {
+          _resumeTimer?.cancel();
           _lastFocal = details.focalPoint;
           _panStart = details.focalPoint - _pan;
         },
@@ -381,7 +386,10 @@ class _GraphWidgetState extends State<_GraphWidget>
         },
         onScaleEnd: (details) {
           _dragNode = null;
-          if (!_ticker.isActive) _ticker.start();
+          _resumeTimer?.cancel();
+          _resumeTimer = Timer(const Duration(milliseconds: 500), () {
+            if (!_ticker.isActive) _ticker.start();
+          });
         },
         child: CustomPaint(
           size: Size.infinite,

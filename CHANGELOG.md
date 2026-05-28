@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.0+11 (2026-05-28)
+
+### Fixes
+- Status bar: immersive on all pages (home, graph, lint, note detail)
+- Graph: auto-resume animation 500ms after pinch/zoom/drag ends
+- Graph: cancel resume timer when new gesture starts
+
 ## v1.0.9+10 (2026-05-28)
 
 ### Fixes
