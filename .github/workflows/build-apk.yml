@@ -31,6 +31,13 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor
 
+      - name: Get version from pubspec
+        id: version
+        working-directory: ./app
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Install dependencies
         working-directory: ./app
         run: flutter pub get
@@ -39,20 +46,25 @@ jobs:
         working-directory: ./app
         run: flutter build apk --release
 
+      - name: Rename APK
+        run: |
+          mv app/build/app/outputs/flutter-apk/app-release.apk \
+             app/build/app/outputs/flutter-apk/knowledge-base-v${{ steps.version.outputs.version }}.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: knowledge-base-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+          name: knowledge-base-v${{ steps.version.outputs.version }}
+          path: app/build/app/outputs/flutter-apk/knowledge-base-v${{ steps.version.outputs.version }}.apk
           retention-days: 30
 
       - name: Create Release
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ github.run_number }}
-          name: Release v${{ github.run_number }}
-          files: app/build/app/outputs/flutter-apk/app-release.apk
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Knowledge Base v${{ steps.version.outputs.version }}
+          files: app/build/app/outputs/flutter-apk/knowledge-base-v${{ steps.version.outputs.version }}.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

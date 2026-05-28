@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'note_detail_screen.dart';
 
 class GraphScreen extends StatefulWidget {
   const GraphScreen({super.key});
@@ -81,19 +82,20 @@ class _GraphScreenState extends State<GraphScreen> {
                           ),
                         ),
                       )
-                    : InteractiveViewer(
-                        minScale: 0.3,
-                        maxScale: 3.0,
-                        child: CustomPaint(
-                          size: const Size(2000, 2000),
-                          painter: GraphPainter(
-                            nodes: _nodes,
-                            edges: _edges,
-                            primaryColor: colorScheme.primary,
-                            textColor: colorScheme.onSurface,
-                            surfaceColor: colorScheme.surface,
-                          ),
-                        ),
+                    : _GraphWidget(
+                        nodes: _nodes,
+                        edges: _edges,
+                        primaryColor: colorScheme.primary,
+                        textColor: colorScheme.onSurface,
+                        surfaceColor: colorScheme.surface,
+                        onNodeTap: (nodeId) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NoteDetailScreen(noteId: nodeId),
+                            ),
+                          );
+                        },
                       ),
           ),
         ],
@@ -102,59 +104,82 @@ class _GraphScreenState extends State<GraphScreen> {
   }
 }
 
-class GraphPainter extends CustomPainter {
+class _GraphWidget extends StatefulWidget {
   final List<Map<String, dynamic>> nodes;
   final List<Map<String, dynamic>> edges;
   final Color primaryColor;
   final Color textColor;
   final Color surfaceColor;
+  final Function(int) onNodeTap;
 
-  GraphPainter({
+  const _GraphWidget({
     required this.nodes,
     required this.edges,
     required this.primaryColor,
     required this.textColor,
     required this.surfaceColor,
+    required this.onNodeTap,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    if (nodes.isEmpty) return;
+  State<_GraphWidget> createState() => _GraphWidgetState();
+}
 
-    final nodePositions = <int, Offset>{};
-    final nodeRadius = 20.0;
+class _GraphWidgetState extends State<_GraphWidget> {
+  late Map<int, Offset> _nodePositions;
+  Offset _offset = Offset.zero;
+  double _scale = 1.0;
+  Offset _panStart = Offset.zero;
+  int? _dragNodeId;
+  Offset _dragStartPos = Offset.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _nodePositions = {};
+    _layoutNodes();
+  }
+
+  @override
+  void didUpdateWidget(_GraphWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.nodes != widget.nodes) {
+      _layoutNodes();
+    }
+  }
+
+  void _layoutNodes() {
+    if (widget.nodes.isEmpty) return;
+
+    final nodeRadius = 24.0;
     final padding = 40.0;
 
-    // Calculate center and radius based on node count
-    final center = Offset(size.width / 2, size.height / 2);
-    final minDim = size.width < size.height ? size.width : size.height;
+    // Calculate canvas size based on node count
+    final canvasSize = max(800.0, widget.nodes.length * 15.0);
+    final center = Offset(canvasSize / 2, canvasSize / 2);
+    final radius = (canvasSize / 2 - padding - nodeRadius).clamp(100.0, 400.0);
 
-    // Adaptive radius based on node count
-    final effectiveRadius = nodes.length > 50
-        ? (minDim / 2 - padding - nodeRadius).clamp(100.0, 500.0)
-        : (minDim / 2 - padding - nodeRadius).clamp(80.0, 300.0);
-
-    // Layout nodes in concentric circles for better distribution
-    if (nodes.length <= 20) {
-      // Single circle for small graphs
-      for (var i = 0; i < nodes.length; i++) {
-        final angle = (2 * 3.14159 * i) / nodes.length - 3.14159 / 2;
-        nodePositions[nodes[i]['id']] = Offset(
-          center.dx + effectiveRadius * cos(angle),
-          center.dy + effectiveRadius * sin(angle),
+    // Layout in concentric circles
+    if (widget.nodes.length <= 15) {
+      // Single circle
+      for (var i = 0; i < widget.nodes.length; i++) {
+        final angle = (2 * pi * i) / widget.nodes.length - pi / 2;
+        _nodePositions[widget.nodes[i]['id']] = Offset(
+          center.dx + radius * cos(angle),
+          center.dy + radius * sin(angle),
         );
       }
     } else {
-      // Multiple concentric circles for larger graphs
-      final innerCount = (nodes.length * 0.3).round().clamp(5, 15);
-      final outerCount = nodes.length - innerCount;
-      final innerRadius = effectiveRadius * 0.4;
-      final outerRadius = effectiveRadius;
+      // Multiple concentric circles
+      final innerCount = (widget.nodes.length * 0.25).round().clamp(5, 12);
+      final outerCount = widget.nodes.length - innerCount;
+      final innerRadius = radius * 0.35;
+      final outerRadius = radius;
 
       // Inner circle
       for (var i = 0; i < innerCount; i++) {
-        final angle = (2 * 3.14159 * i) / innerCount - 3.14159 / 2;
-        nodePositions[nodes[i]['id']] = Offset(
+        final angle = (2 * pi * i) / innerCount - pi / 2;
+        _nodePositions[widget.nodes[i]['id']] = Offset(
           center.dx + innerRadius * cos(angle),
           center.dy + innerRadius * sin(angle),
         );
@@ -162,22 +187,127 @@ class GraphPainter extends CustomPainter {
 
       // Outer circle
       for (var i = 0; i < outerCount; i++) {
-        final angle = (2 * 3.14159 * i) / outerCount - 3.14159 / 2;
-        nodePositions[nodes[innerCount + i]['id']] = Offset(
+        final angle = (2 * pi * i) / outerCount - pi / 2;
+        _nodePositions[widget.nodes[innerCount + i]['id']] = Offset(
           center.dx + outerRadius * cos(angle),
           center.dy + outerRadius * sin(angle),
         );
       }
     }
+  }
+
+  int? _getNodeAtPosition(Offset pos) {
+    final nodeRadius = 24.0;
+    for (final node in widget.nodes) {
+      final nodePos = _nodePositions[node['id']];
+      if (nodePos == null) continue;
+      final distance = (pos - nodePos).distance;
+      if (distance <= nodeRadius * 1.5) {
+        return node['id'];
+      }
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onScaleStart: (details) {
+        _panStart = details.focalPoint;
+        _dragNodeId = _getNodeAtPosition(
+          (details.focalPoint - _offset) / _scale,
+        );
+        if (_dragNodeId != null) {
+          _dragStartPos = _nodePositions[_dragNodeId!]!;
+        }
+      },
+      onScaleUpdate: (details) {
+        setState(() {
+          if (_dragNodeId != null) {
+            // Drag node
+            final delta = (details.focalPoint - _panStart) / _scale;
+            _nodePositions[_dragNodeId!] = _dragStartPos + delta;
+          } else {
+            // Pan canvas
+            _offset += details.focalPoint - _panStart;
+            _panStart = details.focalPoint;
+            if (details.scale != 1.0) {
+              _scale = (_scale * details.scale).clamp(0.3, 3.0);
+            }
+          }
+        });
+      },
+      onScaleEnd: (details) {
+        if (_dragNodeId != null) {
+          final distance =
+              (_nodePositions[_dragNodeId!]! - _dragStartPos).distance;
+          if (distance < 5) {
+            // Tap
+            widget.onNodeTap(_dragNodeId!);
+          }
+        }
+        _dragNodeId = null;
+      },
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _GraphPainter(
+          nodes: widget.nodes,
+          edges: widget.edges,
+          nodePositions: _nodePositions,
+          primaryColor: widget.primaryColor,
+          textColor: widget.textColor,
+          offset: _offset,
+          scale: _scale,
+        ),
+      ),
+    );
+  }
+}
+
+class _GraphPainter extends CustomPainter {
+  final List<Map<String, dynamic>> nodes;
+  final List<Map<String, dynamic>> edges;
+  final Map<int, Offset> nodePositions;
+  final Color primaryColor;
+  final Color textColor;
+  final Offset offset;
+  final double scale;
+
+  _GraphPainter({
+    required this.nodes,
+    required this.edges,
+    required this.nodePositions,
+    required this.primaryColor,
+    required this.textColor,
+    required this.offset,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (nodes.isEmpty) return;
+
+    final nodeRadius = 24.0;
+
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+    canvas.scale(scale);
+
+    // Center the graph
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    canvas.translate(centerX, centerY);
 
     // Draw edges
     final edgePaint = Paint()
-      ..color = primaryColor.withOpacity(0.2)
+      ..color = primaryColor.withOpacity(0.15)
       ..strokeWidth = 1.5;
 
     for (final edge in edges) {
-      final from = nodePositions[edge['source'] ?? edge['from']];
-      final to = nodePositions[edge['target'] ?? edge['to']];
+      final fromId = edge['source'] ?? edge['from'];
+      final toId = edge['target'] ?? edge['to'];
+      final from = nodePositions[fromId];
+      final to = nodePositions[toId];
       if (from != null && to != null) {
         canvas.drawLine(from, to, edgePaint);
       }
@@ -188,39 +318,49 @@ class GraphPainter extends CustomPainter {
       final pos = nodePositions[node['id']];
       if (pos == null) continue;
 
-      // Node circle
+      // Node circle shadow
+      final shadowPaint = Paint()
+        ..color = primaryColor.withOpacity(0.1)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawCircle(pos + const Offset(2, 2), nodeRadius, shadowPaint);
+
+      // Node circle fill
       final nodePaint = Paint()
-        ..color = primaryColor.withOpacity(0.15)
+        ..color = primaryColor.withOpacity(0.12)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(pos, nodeRadius, nodePaint);
 
+      // Node circle border
       final borderPaint = Paint()
-        ..color = primaryColor
+        ..color = primaryColor.withOpacity(0.6)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
       canvas.drawCircle(pos, nodeRadius, borderPaint);
 
       // Node label
       final title = node['title'] ?? '';
-      final displayTitle = title.length > 8 ? '${title.substring(0, 8)}...' : title;
+      final displayTitle =
+          title.length > 6 ? '${title.substring(0, 6)}..' : title;
       final textPainter = TextPainter(
         text: TextSpan(
           text: displayTitle,
           style: TextStyle(
-            color: textColor,
-            fontSize: 9,
+            color: textColor.withOpacity(0.8),
+            fontSize: 10,
             fontWeight: FontWeight.w500,
           ),
         ),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
       );
-      textPainter.layout(maxWidth: nodeRadius * 3);
+      textPainter.layout(maxWidth: nodeRadius * 2.5);
       textPainter.paint(
         canvas,
-        Offset(pos.dx - textPainter.width / 2, pos.dy + nodeRadius + 4),
+        Offset(pos.dx - textPainter.width / 2, pos.dy + nodeRadius + 6),
       );
     }
+
+    canvas.restore();
   }
 
   @override
