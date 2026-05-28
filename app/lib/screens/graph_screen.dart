@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
@@ -118,28 +119,23 @@ class GraphPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (nodes.isEmpty) return;
+
     final nodePositions = <int, Offset>{};
-    final nodeRadius = 20.0;
+    final nodeRadius = 24.0;
+    final padding = 60.0;
 
-    // Layout nodes in a circle
+    // Calculate center and radius based on node count
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width * 0.35;
+    final minDim = size.width < size.height ? size.width : size.height;
+    final radius = (minDim / 2 - padding - nodeRadius).clamp(80.0, 400.0);
 
+    // Layout nodes in a proper circle
     for (var i = 0; i < nodes.length; i++) {
       final angle = (2 * 3.14159 * i) / nodes.length - 3.14159 / 2;
-      final x = center.dx + radius * (i % 2 == 0 ? 1 : 0.7) *
-          (i % 3 == 0 ? 1.2 : 1) *
-          (1 + 0.2 * (i % 5 - 2)) *
-          (1 + 0.1 * (i % 7 - 3)) *
-          (1 + 0.05 * (i % 11 - 5));
-      final y = center.dy + radius * (i % 2 == 0 ? 0.7 : 1) *
-          (i % 3 == 0 ? 1.2 : 1) *
-          (1 + 0.2 * (i % 5 - 2)) *
-          (1 + 0.1 * (i % 7 - 3)) *
-          (1 + 0.05 * (i % 11 - 5));
       nodePositions[nodes[i]['id']] = Offset(
-        center.dx + radius * 0.8 * (i % 2 == 0 ? 1 : -0.6) * (1 + 0.3 * (i % 3)),
-        center.dy + radius * 0.8 * (i % 2 == 0 ? -0.6 : 1) * (1 + 0.3 * (i % 4)),
+        center.dx + radius * cos(angle),
+        center.dy + radius * sin(angle),
       );
     }
 
