@@ -36,3 +36,12 @@ Thumbs.db
 
 # Backups
 *.bak.*
+
+# Uploads (large binary files)
+uploads/*.exe
+uploads/*.msi
+uploads/*.dmg
+uploads/*.zip
+
+# Database
+data/knowledge.db
