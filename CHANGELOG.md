@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.3+14 (2026-05-28)
+
+### Fixes
+- Status bar: true immersive — content extends behind status bar
+- edgeToEdge mode + each page's surface color fills status bar area
+- Status bar appears solid (header color), not transparent
+- All pages: home, graph, lint, note detail
+
 ## v1.1.2+13 (2026-05-28)
 
 ### Fixes

@@ -53,11 +53,12 @@ class _GraphScreenState extends State<GraphScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SafeArea(
+    return Container(
+      color: colorScheme.surface,
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 12),
             color: colorScheme.surface,
             child: Row(
               children: [

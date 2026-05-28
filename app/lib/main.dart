@@ -8,9 +8,10 @@ import 'services/api_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set status bar color to match header (solid, not transparent)
+  // Edge-to-edge: content extends behind status bar
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Color(0xFFFFFFFF),
+    statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
     statusBarBrightness: Brightness.light,
   ));
@@ -38,16 +39,16 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
       _themeMode =
           _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
-    // Update status bar color to match theme
+    // Update status bar icons for theme
     SystemChrome.setSystemUIOverlayStyle(
       _themeMode == ThemeMode.dark
           ? const SystemUiOverlayStyle(
-              statusBarColor: Color(0xFF1c1c1a),
+              statusBarColor: Colors.transparent,
               statusBarIconBrightness: Brightness.light,
               statusBarBrightness: Brightness.dark,
             )
           : const SystemUiOverlayStyle(
-              statusBarColor: Color(0xFFFFFFFF),
+              statusBarColor: Colors.transparent,
               statusBarIconBrightness: Brightness.dark,
               statusBarBrightness: Brightness.light,
             ),
