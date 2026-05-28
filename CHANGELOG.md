@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.4+15 (2026-05-28)
+
+### Fixes
+- Note detail: status bar now solid surface color (not transparent)
+- Wrapped Scaffold in Container(color: surface) for consistent status bar
+- AppBar background matches surface color
+
 ## v1.1.3+14 (2026-05-28)
 
 ### Fixes

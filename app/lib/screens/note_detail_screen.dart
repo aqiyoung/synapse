@@ -47,10 +47,12 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
+    return Container(
+      color: colorScheme.surface,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -70,6 +72,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           : _note == null
               ? const Center(child: Text('笔记不存在'))
               : _buildContent(colorScheme),
+      ),
     );
   }
 
