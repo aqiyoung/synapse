@@ -45,6 +45,19 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     }
   }
 
+  String get _noteUrl {
+    final base = ApiService.baseUrl.replaceAll('/api', '');
+    return '$base/note/${widget.noteId}';
+  }
+
+  Future<void> _shareLink() async {
+    if (_note == null) return;
+    await Share.share(
+      '${_note!.title}\n$_noteUrl',
+      subject: _note!.title,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -53,27 +66,27 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       color: colorScheme.surface,
       child: Scaffold(
         extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(_note?.title ?? '笔记详情'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () {},
+        appBar: AppBar(
+          backgroundColor: colorScheme.surface,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
           ),
-        ],
-      ),
-      body: _loading
-          ? Center(
-              child: CircularProgressIndicator(color: colorScheme.primary))
-          : _note == null
-              ? const Center(child: Text('笔记不存在'))
-              : _buildContent(colorScheme),
+          title: Text(_note?.title ?? '笔记详情'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              onPressed: _note != null ? _shareLink : null,
+            ),
+          ],
+        ),
+        body: _loading
+            ? Center(
+                child: CircularProgressIndicator(color: colorScheme.primary))
+            : _note == null
+                ? const Center(child: Text('笔记不存在'))
+                : _buildContent(colorScheme),
       ),
     );
   }
@@ -138,47 +151,47 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                 (m) => m.group(1) ?? '',
               ),
               styleSheet: MarkdownStyleSheet(
-              p: TextStyle(
-                fontSize: 15,
-                height: 1.75,
-                color: colorScheme.onSurface,
-              ),
-              h2: TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
-              h3: TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 17,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
-              code: TextStyle(
-                backgroundColor: colorScheme.surface,
-                color: colorScheme.primary,
-                fontSize: 13,
-              ),
-              codeblockDecoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.1),
+                p: TextStyle(
+                  fontSize: 15,
+                  height: 1.75,
+                  color: colorScheme.onSurface,
                 ),
-              ),
-              blockquoteDecoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: colorScheme.primary,
-                    width: 3,
+                h2: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+                h3: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 17,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+                code: TextStyle(
+                  backgroundColor: colorScheme.surface,
+                  color: colorScheme.primary,
+                  fontSize: 13,
+                ),
+                codeblockDecoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.1),
                   ),
                 ),
+                blockquoteDecoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: colorScheme.primary,
+                      width: 3,
+                    ),
+                  ),
+                ),
+                blockquotePadding:
+                    const EdgeInsets.only(left: 16, top: 8, bottom: 8),
               ),
-              blockquotePadding:
-                  const EdgeInsets.only(left: 16, top: 8, bottom: 8),
             ),
-          ),
           ),
           // Relations
           if (_relations != null &&
