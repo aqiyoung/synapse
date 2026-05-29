@@ -130,7 +130,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           const SizedBox(height: 24),
           // Content
           MarkdownBody(
-            data: _note!.content,
+            data: _note!.content.replaceAllMapped(
+              RegExp(r'\[\[(.+?)\]\]'),
+              (m) => m.group(1) ?? '',
+            ),
             styleSheet: MarkdownStyleSheet(
               p: TextStyle(
                 fontSize: 15,
