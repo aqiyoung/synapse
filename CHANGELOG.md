@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.9+20 (2026-05-29)
+
+### Fixes
+- Note model: add slug field for date-based routing
+
 ## v1.1.8+19 (2026-05-29)
 
 ### Features
