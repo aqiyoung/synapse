@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.7+18 (2026-05-29)
+
+### Fixes
+- App icon: center K monogram horizontally
+- Note content: wrap in SelectionArea for text selection/copy
+
 ## v1.1.6+17 (2026-05-29)
 
 ### Fixes
