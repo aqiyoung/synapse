@@ -1,5 +1,6 @@
 class Note {
   final int id;
+  final String slug;
   final String title;
   final String content;
   final String summary;
@@ -9,6 +10,7 @@ class Note {
 
   Note({
     required this.id,
+    required this.slug,
     required this.title,
     this.content = '',
     this.summary = '',
@@ -20,6 +22,7 @@ class Note {
   factory Note.fromJson(Map<String, dynamic> json) {
     return Note(
       id: json['id'] ?? 0,
+      slug: json['slug'] ?? '',
       title: json['title'] ?? '无标题',
       content: json['content'] ?? '',
       summary: json['summary'] ?? '',
