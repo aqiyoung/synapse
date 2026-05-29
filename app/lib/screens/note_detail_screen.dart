@@ -47,7 +47,8 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   String get _noteUrl {
     final base = ApiService.baseUrl.replaceAll('/api', '');
-    return '$base/note/${widget.noteId}';
+    final slug = _note?.slug ?? widget.noteId.toString();
+    return '$base/#/note/$slug';
   }
 
   Future<void> _shareLink() async {

@@ -60,9 +60,26 @@ def get_db():
 
 # ===== 笔记 CRUD =====
 
+def _generate_slug(db: Session, created_at: datetime) -> str:
+    """生成日期slug: YYYYMMDDNNN（当天序号）"""
+    date_str = created_at.strftime("%Y%m%d")
+    date_start = created_at.replace(hour=0, minute=0, second=0, microsecond=0)
+    date_end = created_at.replace(hour=23, minute=59, second=59, microsecond=0)
+    count = db.query(Note).filter(
+        Note.created_at >= date_start,
+        Note.created_at <= date_end,
+    ).count()
+    return f"{date_str}{count + 1:03d}"
+
+
 def create_note(db: Session, title: str, content: str, tag_names: list = None) -> Note:
     """创建笔记"""
-    note = Note(title=title, content=content)
+    now = datetime.now(tz=timezone(timedelta(hours=8)))
+    note = Note(title=title, content=content, created_at=now)
+    # 先提交拿到 created_at，再生成 slug
+    db.add(note)
+    db.flush()
+    note.slug = _generate_slug(db, note.created_at)
     if tag_names:
         for name in tag_names:
             tag = db.query(Tag).filter(Tag.name == name).first()
@@ -79,6 +96,36 @@ def create_note(db: Session, title: str, content: str, tag_names: list = None) -
 def get_note(db: Session, note_id: int) -> Note:
     """获取单条笔记"""
     return db.query(Note).filter(Note.id == note_id).first()
+
+
+def get_note_by_slug(db: Session, slug: str) -> Note:
+    """通过 slug 获取笔记"""
+    return db.query(Note).filter(Note.slug == slug, Note.deleted_at.is_(None)).first()
+
+
+def backfill_slugs(db: Session) -> int:
+    """为没有 slug 的笔记生成 slug，返回迁移数量"""
+    from sqlalchemy import text as sa_text
+    # 检查列是否存在
+    result = db.execute(sa_text("PRAGMA table_info(notes)")).fetchall()
+    if "slug" not in [r[1] for r in result]:
+        db.execute(sa_text("ALTER TABLE notes ADD COLUMN slug VARCHAR(20)"))
+        db.commit()
+
+    notes = db.query(Note).filter((Note.slug.is_(None)) | (Note.slug == "")).order_by(Note.created_at.asc()).all()
+    if not notes:
+        return 0
+
+    date_counter = {}
+    migrated = 0
+    for note in notes:
+        date_str = note.created_at.strftime("%Y%m%d")
+        date_counter[date_str] = date_counter.get(date_str, 0) + 1
+        note.slug = f"{date_str}{date_counter[date_str]:03d}"
+        migrated += 1
+
+    db.commit()
+    return migrated
 
 
 def list_notes(db: Session, skip: int = 0, limit: int = 50, tag: str = None, keyword: str = None, include_deleted: bool = False, title_only: bool = False):

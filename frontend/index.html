@@ -1209,6 +1209,7 @@ createApp({
 
         const note = await fetchJSON(API + '/notes/' + n.id);
         curNote.value = note;
+        if (note && note.slug) { location.hash = "/note/" + note.slug; }
 
         try {
           relationsData.value = await fetchJSON(API + '/notes/' + n.id + '/relations');
@@ -1648,6 +1649,26 @@ createApp({
       if (isDark.value) document.documentElement.setAttribute('data-theme', 'dark');
       Promise.all([loadNotes(), loadTags(), loadStats()]).finally(() => {
         loading.value = false;
+      // Hash routing: parse #/note/slug on load
+      const hash = location.hash;
+      if (hash.startsWith("#/note/")) {
+        const slug = hash.replace("#/note/", "");
+        const allNotes = notes.value;
+        const found = allNotes.find(n => n.slug === slug);
+        if (found) openNote(found);
+      }
+      // Listen for hash changes (back/forward)
+      window.addEventListener("hashchange", () => {
+        const h = location.hash;
+        if (h.startsWith("#/note/")) {
+          const slug = h.replace("#/note/", "");
+          const found = notes.value.find(n => n.slug === slug);
+          if (found) openNote(found);
+        } else {
+          curNote.value = null;
+          mobileShowList.value = true;
+        }
+      });
       });
       document.addEventListener('click', (e) => {
         const wl = e.target.closest('.wikilink');

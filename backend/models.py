@@ -19,6 +19,7 @@ class Note(Base):
     __tablename__ = "notes"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    slug = Column(String(20), unique=True, nullable=False, index=True)
     title = Column(String(500), nullable=False, default="无标题")
     content = Column(Text, nullable=False, default="")
     summary = Column(String(500), default="")
@@ -33,6 +34,7 @@ class Note(Base):
     def to_dict(self):
         return {
             "id": self.id,
+            "slug": self.slug,
             "title": self.title,
             "content": self.content,
             "summary": self.summary,

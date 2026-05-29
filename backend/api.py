@@ -12,15 +12,25 @@ from typing import List, Optional
 import os, shutil, uuid, zipfile, io
 
 from crud import (
-    init_db, get_db, create_note, get_note, list_notes,
+    init_db, get_db, create_note, get_note, get_note_by_slug, list_notes,
     update_note, delete_note, list_tags, get_or_create_tag,
-    restore_note, permanent_delete_note, list_deleted_notes,
+    restore_note, permanent_delete_note, list_deleted_notes, backfill_slugs,
 )
 from config import LLM_MODEL, LLM_ENABLED, RAG_MAX_NOTES, RAG_MAX_CHARS, API_TOKEN
 import llm
 
 # 初始化数据库
 init_db()
+
+# 自动迁移 slug
+from crud import SessionLocal, backfill_slugs
+_mig_db = SessionLocal()
+try:
+    _count = backfill_slugs(_mig_db)
+    if _count:
+        print(f"[迁移] 已为 {_count} 篇笔记生成 slug")
+finally:
+    _mig_db.close()
 
 app = FastAPI(title="知识库 API", version="1.0.0")
 
