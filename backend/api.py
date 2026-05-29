@@ -137,6 +137,15 @@ def api_list_notes(
     }
 
 
+
+@app.get("/api/notes/by-slug/{slug}")
+def api_get_note_by_slug(slug: str, db: Session = Depends(get_db)):
+    """通过 slug 获取笔记"""
+    note = get_note_by_slug(db, slug)
+    if not note:
+        raise HTTPException(status_code=404, detail="笔记不存在")
+    return note.to_dict()
+
 @app.get("/api/notes/{note_id}")
 def api_get_note(note_id: int, db: Session = Depends(get_db)):
     """获取单条笔记"""
