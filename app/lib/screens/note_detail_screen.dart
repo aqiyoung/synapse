@@ -130,15 +130,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           Divider(color: colorScheme.outline.withOpacity(0.1)),
           const SizedBox(height: 24),
           // Content
-          MarkdownBody(
-            data: _note!.content.replaceAllMapped(
-              RegExp(r'\[\[(.+?)\]\]'),
-              (m) => m.group(1) ?? '',
-            ),
-            builders: {
-              'code': _CodeBlockBuilder(colorScheme: colorScheme),
-            },
-            styleSheet: MarkdownStyleSheet(
+          SelectionArea(
+            child: MarkdownBody(
+              data: _note!.content.replaceAllMapped(
+                RegExp(r'\[\[(.+?)\]\]'),
+                (m) => m.group(1) ?? '',
+              ),
+              styleSheet: MarkdownStyleSheet(
               p: TextStyle(
                 fontSize: 15,
                 height: 1.75,
@@ -179,6 +177,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               blockquotePadding:
                   const EdgeInsets.only(left: 16, top: 8, bottom: 8),
             ),
+          ),
           ),
           // Relations
           if (_relations != null &&
