@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.8+19 (2026-05-29)
+
+### Features
+- Note detail: share button now shares note link
+
 ## v1.1.7+18 (2026-05-29)
 
 ### Fixes
