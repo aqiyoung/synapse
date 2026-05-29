@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.6+17 (2026-05-29)
+
+### Fixes
+- Note content: strip wiki-link brackets [[xxx]] → xxx
+
 ## v1.1.5+16 (2026-05-29)
 
 ### Fixes
