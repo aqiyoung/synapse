@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
@@ -134,6 +135,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               RegExp(r'\[\[(.+?)\]\]'),
               (m) => m.group(1) ?? '',
             ),
+            builders: {
+              'code': _CodeBlockBuilder(colorScheme: colorScheme),
+            },
             styleSheet: MarkdownStyleSheet(
               p: TextStyle(
                 fontSize: 15,
