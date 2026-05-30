@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
@@ -94,6 +95,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadData();
   }
 
+  bool get _isChinese {
+    final locale = ui.PlatformDispatcher.instance.locale;
+    return locale.languageCode == 'zh';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -117,20 +123,20 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.library_books_outlined,
                 color: colorScheme.onSurface.withOpacity(0.6)),
             selectedIcon: Icon(Icons.library_books, color: colorScheme.primary),
-            label: '知识库',
+            label: _isChinese ? '笔记' : 'Notes',
           ),
           NavigationDestination(
             icon: Icon(Icons.hub_outlined,
                 color: colorScheme.onSurface.withOpacity(0.6)),
             selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
-            label: '图谱',
+            label: _isChinese ? '图谱' : 'Graph',
           ),
           NavigationDestination(
             icon: Icon(Icons.health_and_safety_outlined,
                 color: colorScheme.onSurface.withOpacity(0.6)),
             selectedIcon:
                 Icon(Icons.health_and_safety, color: colorScheme.primary),
-            label: '检查',
+            label: _isChinese ? '检查' : 'Health',
           ),
         ],
       ),
@@ -160,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: [
                     Text(
-                      '知识库',
+                      'Synapse',
                       style: TextStyle(
                         fontFamily: 'MiSans',
                         fontSize: 24,

@@ -55,7 +55,7 @@ class _LintScreenState extends State<LintScreen> {
             child: Row(
               children: [
                 Text(
-                  '健康检查',
+                  'Health Check',
                   style: TextStyle(
                     fontFamily: 'MiSans',
                     fontSize: 24,

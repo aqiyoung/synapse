@@ -63,7 +63,7 @@ class _GraphScreenState extends State<GraphScreen> {
             child: Row(
               children: [
                 Text(
-                  '知识图谱',
+                  'Graph',
                   style: TextStyle(
                     fontFamily: 'MiSans',
                     fontSize: 24,
