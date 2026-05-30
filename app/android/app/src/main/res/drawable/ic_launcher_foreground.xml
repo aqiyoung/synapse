@@ -11,37 +11,37 @@
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2.5"
         android:strokeLineCap="round"
-        android:opacity="0.7"/>
+        android:strokeAlpha="0.7"/>
     <path
         android:pathData="M54,34 L74,54"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2.5"
         android:strokeLineCap="round"
-        android:opacity="0.7"/>
+        android:strokeAlpha="0.7"/>
     <path
         android:pathData="M34,54 L54,74"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2.5"
         android:strokeLineCap="round"
-        android:opacity="0.7"/>
+        android:strokeAlpha="0.7"/>
     <path
         android:pathData="M74,54 L54,74"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2.5"
         android:strokeLineCap="round"
-        android:opacity="0.7"/>
+        android:strokeAlpha="0.7"/>
     <path
         android:pathData="M34,54 L74,54"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
         android:strokeLineCap="round"
-        android:opacity="0.5"/>
+        android:strokeAlpha="0.5"/>
     <path
         android:pathData="M54,34 L54,74"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
         android:strokeLineCap="round"
-        android:opacity="0.5"/>
+        android:strokeAlpha="0.5"/>
     <!-- Central node (largest - the synapse) -->
     <path
         android:pathData="M54,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"
