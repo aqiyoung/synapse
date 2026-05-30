@@ -522,8 +522,14 @@ def api_get_upload(filename: str):
 # ===== 健康检查 =====
 
 @app.get("/api/health")
-def api_health():
-    return {"status": "ok", "version": "1.0.0"}
+def api_health(db: Session = Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        db.execute(text("SELECT 1"))
+        db_status = "ok"
+    except Exception as e:
+        db_status = str(e)
+    return {"status": "ok" if db_status == "ok" else "error", "db": db_status, "version": "1.0.0"}
 
 
 # ===== AI API =====
