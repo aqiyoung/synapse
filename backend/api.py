@@ -37,7 +37,7 @@ app = FastAPI(title="知识库 API", version="1.0.0")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://wiki.threel.site"],
+    allow_origins=["*"],  # Configure for your domain in production
     allow_methods=["*"],
     allow_headers=["*"],
 )

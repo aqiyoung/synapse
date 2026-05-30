@@ -73,7 +73,7 @@
 ## v1.0.8+9 (2026-05-28)
 
 ### Changes
-- Removed hardcoded default server URL (no more `wiki.threel.site` in source)
+- Removed hardcoded default server URL
 - App requires server configuration on first launch
 - Search queries now properly URL-encoded (fixes Chinese character search)
 - Added CHANGELOG.md

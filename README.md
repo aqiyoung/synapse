@@ -1,57 +1,93 @@
 # Knowledge Base
 
-A personal knowledge management system with web, mobile, and browser extension clients.
+一个轻量级的个人知识管理系统，支持 Web、移动端和浏览器扩展。
 
-## Features
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Flutter](https://img.shields.io/badge/Flutter-3.x-blue)
+![Python](https://img.shields.io/badge/Python-3.11+-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688)
 
-- **Note Management** — Create, edit, and organize notes with Markdown support
-- **Tags** — Categorize notes with tags for easy filtering
-- **Search** — Full-text search across all notes
-- **Knowledge Graph** — Interactive force-directed graph visualization of note connections
-- **Wikilinks** — Link notes together with `[[wiki-style]]` syntax
-- **Health Check** — AI-powered lint for broken links, orphan notes, and content issues
-- **Dark Mode** — Light/dark theme toggle
-- **Multi-platform** — Web UI, Android app, browser extension
+## 功能特性
 
-## Tech Stack
+- 📝 **笔记管理** — 支持 Markdown 的创建、编辑和组织
+- 🏷️ **标签系统** — 用标签分类笔记，便于筛选
+- 🔍 **全文搜索** — 跨所有笔记的全文搜索
+- 🕸️ **知识图谱** — 交互式力导向图可视化笔记关联
+- 🔗 **Wiki 链接** — 用 `[[wiki-style]]` 语法链接笔记
+- 🏥 **健康检查** — AI 驱动的断链检测、孤立笔记检测
+- 🌙 **暗色模式** — 明暗主题切换
+- 📱 **多平台** — Web UI、Android 应用、浏览器扩展
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Python, FastAPI, SQLite |
-| Web Frontend | Vue 3, Markdown-it |
-| Mobile App | Flutter, Dart |
-| Browser Extension | Chrome Extension (Manifest V3) |
+## 技术栈
 
-## Project Structure
+| 层级 | 技术 |
+|------|------|
+| 后端 | Python, FastAPI, SQLite |
+| Web 前端 | HTML/CSS/JS, Vue 3, Markdown-it |
+| 移动应用 | Flutter, Dart |
+| 浏览器扩展 | Chrome Extension (Manifest V3) |
+
+## 项目结构
 
 ```
-├── backend/          # FastAPI server
-├── frontend/         # Web frontend (Vue 3)
-├── app/              # Flutter mobile app
-├── extension/        # Chrome browser extension
-├── data/             # SQLite database
-├── uploads/          # User uploads
-├── nginx.conf        # Nginx reverse proxy config
-└── start.sh          # Server startup script
+knowledge-base/
+├── backend/              # FastAPI 后端服务
+│   ├── api.py            # API 路由
+│   ├── config.py         # 配置管理
+│   ├── llm.py            # LLM 集成
+│   ├── models.py         # 数据模型
+│   └── main.py           # 入口文件
+├── frontend/             # Web 前端
+│   └── index.html        # 单文件 SPA
+├── app/                  # Flutter 移动应用
+│   └── lib/
+│       ├── main.dart     # 应用入口
+│       ├── screens/      # 页面组件
+│       ├── services/     # API 服务
+│       └── models/       # 数据模型
+├── extension/            # Chrome 浏览器扩展
+├── data/                 # SQLite 数据库
+├── uploads/              # 用户上传文件
+├── nginx.conf            # Nginx 反向代理配置
+└── start.sh              # 服务启动脚本
 ```
 
-## Getting Started
+## 快速开始
 
-### Backend
+### 环境要求
+
+- Python 3.11+
+- Flutter 3.x（移动端开发）
+- Node.js（可选，用于前端开发）
+
+### 后端启动
 
 ```bash
+# 安装依赖
 cd backend
 pip install -r requirements.txt
+
+# 启动服务
 python main.py
+# 或
+uvicorn main:app --host 0.0.0.0 --port 18800 --reload
 ```
 
-The API server runs at `http://localhost:8000` by default.
+API 服务默认运行在 `http://localhost:18800`
 
-### Web Frontend
+### Web 前端
 
-Open `frontend/index.html` in a browser, or serve with nginx using the provided config.
+直接在浏览器中打开 `frontend/index.html`，或使用 nginx 配置：
 
-### Mobile App
+```bash
+# 复制并修改 nginx 配置
+cp nginx.conf /etc/nginx/sites-available/knowledge-base
+# 修改路径后启用
+sudo ln -s /etc/nginx/sites-available/knowledge-base /etc/nginx/sites-enabled/
+sudo nginx -t && sudo nginx -s reload
+```
+
+### 移动应用
 
 ```bash
 cd app
@@ -59,30 +95,51 @@ flutter pub get
 flutter run
 ```
 
-On first launch, configure the server URL in Settings.
+首次启动时，在设置页面配置服务器地址。
 
-### Browser Extension
+### 浏览器扩展
 
-1. Open Chrome → Extensions → Load unpacked
-2. Select the `extension/` directory
+1. 打开 Chrome → 扩展程序 → 加载已解压的扩展程序
+2. 选择 `extension/` 目录
 
-## API
+## 环境变量
 
-The backend exposes a REST API:
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `LLM_API_KEY` | LLM API 密钥 | 空 |
+| `LLM_BASE_URL` | LLM API 地址 | `https://api.openai.com/v1` |
+| `LLM_MODEL` | LLM 模型名称 | `gpt-4` |
+| `WIKI_API_TOKEN` | API 访问令牌（留空则不启用认证） | 空 |
+| `RAG_MAX_NOTES` | RAG 最大笔记数 | `5` |
+| `RAG_MAX_CHARS` | 每篇笔记最大字符数 | `8000` |
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/notes` | List notes (supports `?search=` and `?tag=`) |
-| GET | `/api/notes/:id` | Get note detail |
-| GET | `/api/notes/:id/relations` | Get note relations |
-| GET | `/api/tags` | List all tags |
-| GET | `/api/graph` | Get graph data (nodes + edges) |
-| POST | `/api/ai/lint` | Run AI health check |
+## API 文档
 
-## Building the Android APK
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/notes` | 获取笔记列表（支持 `?search=` 和 `?tag=`） |
+| GET | `/api/notes/:id` | 获取笔记详情 |
+| GET | `/api/notes/:id/relations` | 获取笔记关联 |
+| GET | `/api/tags` | 获取所有标签 |
+| GET | `/api/graph` | 获取图谱数据 |
+| POST | `/api/ai/lint` | 运行 AI 健康检查 |
+| POST | `/api/ai/chat` | AI 对话 |
+| POST | `/api/ai/auto-tag` | AI 自动标签 |
+| POST | `/api/upload` | 上传文件 |
 
-APKs are built automatically via GitHub Actions on every push to `main`. Download the latest from [Releases](../../releases).
+## 构建 APK
+
+APK 通过 GitHub Actions 自动构建。推送到 `main` 分支后会自动：
+1. 编译 Release APK
+2. 上传到 Artifacts
+3. 创建 Release（带 APK 附件）
+
+从 [Releases](../../releases) 下载最新版本。
+
+## 开发指南
+
+详见 [DEV.md](DEV.md)
 
 ## License
 
-Private project.
+MIT

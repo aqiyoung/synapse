@@ -15,9 +15,9 @@ void main() async {
     statusBarBrightness: Brightness.light,
   ));
 
-  // Load saved server URL (default to wiki.threel.site)
+  // Load saved server URL (default to localhost for development)
   final prefs = await SharedPreferences.getInstance();
-  final server = prefs.getString('server') ?? 'https://wiki.threel.site';
+  final server = prefs.getString('server') ?? 'http://localhost:18800';
   await ApiService.setServer(server);
 
   runApp(const KnowledgeBaseApp());

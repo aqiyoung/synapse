@@ -3,8 +3,8 @@ import os
 
 # LLM 配置 — 通过环境变量设置
 LLM_API_KEY = os.environ.get("LLM_API_KEY", os.environ.get("ANTHROPIC_AUTH_TOKEN", ""))
-LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.longcat.chat/openai/v1")
-LLM_MODEL = os.environ.get("LLM_MODEL", "LongCat-2.0-Preview")
+LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
+LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4")
 LLM_ENABLED = bool(LLM_API_KEY)
 
 # RAG 配置

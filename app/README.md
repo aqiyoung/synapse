@@ -52,4 +52,4 @@ app/
 
 ## 配置
 
-App 默认连接 `https://wiki.threel.site`，可在设置页面修改服务器地址。
+App 默认连接 `http://localhost:18800`，可在设置页面修改服务器地址。
