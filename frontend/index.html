@@ -998,7 +998,9 @@ function renderMdImpl(md) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
   h = h
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<div class="code-block"><div class="code-lang">$1</div><pre><code>$2</code></pre><button class="copy-btn" onclick="copyCode(this)">复制</button></div>')
+    .replace(/```(\w*)\n([\s\S]*?)\n```/g, function(m, lang, code) {
+      return '<div class="code-block"><div class="code-lang">' + lang + '</div><pre><code>' + code.replace(/\n/g, '\x00') + '</code></pre><button class="copy-btn" onclick="copyCode(this)">复制</button></div>';
+    })
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -1030,6 +1032,8 @@ function renderMdImpl(md) {
   h = h.replace(/<p>(<hr>)<\/p>/g, '$1');
   h = h.replace(/<p>(<li>)/g, '<ul>$1');
   h = h.replace(/(<\/li>)<\/p>/g, '$1</ul>');
+  // 恢复代码块内容中的换行符（之前用 \x00 占位防止被全局替换影响）
+  h = h.replace(/\x00/g, '\n');
   return h;
 }
 
