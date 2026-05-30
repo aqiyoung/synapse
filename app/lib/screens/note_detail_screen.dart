@@ -203,62 +203,72 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
     final children = <Widget>[];
     for (int i = 0; i < parts.length; i++) {
-      // Add markdown segment
       if (parts[i].trim().isNotEmpty) {
-        // flutter_markdown 把 --- 后的空行误解析为加粗，换成 *** 避免歧义
-        var mdData = parts[i].replaceAllMapped(
-          RegExp(r'^---\s*$', multiLine: true),
-          (m) => '***',
-        );
-        children.add(
-          SelectionArea(
-            child: MarkdownBody(
-              data: mdData,
-              styleSheet: MarkdownStyleSheet(
-                p: TextStyle(
-                  fontSize: 15,
-                  height: 1.75,
-                  color: colorScheme.onSurface,
-                ),
-                h2: TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
-                ),
-                h3: TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
-                ),
-                code: TextStyle(
-                  backgroundColor: colorScheme.surface,
-                  color: colorScheme.primary,
-                  fontSize: 13,
-                ),
-                codeblockDecoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.1),
-                  ),
-                ),
-                blockquoteDecoration: BoxDecoration(
-                  border: Border(
-                    left: BorderSide(
-                      color: colorScheme.primary,
-                      width: 3,
+        // Split by --- (thematic break) and render each part separately
+        // to avoid flutter_markdown misinterpreting --- as bold
+        final mdSegments = parts[i].split(RegExp(r'^---\s*$', multiLine: true));
+        for (var si = 0; si < mdSegments.length; si++) {
+          if (mdSegments[si].trim().isNotEmpty) {
+            children.add(
+              SelectionArea(
+                child: MarkdownBody(
+                  data: mdSegments[si],
+                  styleSheet: MarkdownStyleSheet(
+                    p: TextStyle(
+                      fontSize: 15,
+                      height: 1.75,
+                      color: colorScheme.onSurface,
                     ),
+                    h2: TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface,
+                    ),
+                    h3: TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface,
+                    ),
+                    code: TextStyle(
+                      backgroundColor: colorScheme.surface,
+                      color: colorScheme.primary,
+                      fontSize: 13,
+                    ),
+                    codeblockDecoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: colorScheme.outline.withOpacity(0.1),
+                      ),
+                    ),
+                    blockquoteDecoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: colorScheme.primary,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    blockquotePadding:
+                        const EdgeInsets.only(left: 16, top: 8, bottom: 8),
                   ),
                 ),
-                blockquotePadding:
-                    const EdgeInsets.only(left: 16, top: 8, bottom: 8),
-
               ),
-            ),
-          ),
-        );
+            );
+          }
+          // Insert a divider between segments (not after the last one)
+          if (si < mdSegments.length - 1) {
+            children.add(Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Divider(
+                height: 1,
+                color: colorScheme.outline.withOpacity(0.15),
+              ),
+            ));
+          }
+        }
       }
       // Add code block
       if (i < codeBlocks.length) {
