@@ -205,11 +205,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     for (int i = 0; i < parts.length; i++) {
       // Add markdown segment
       if (parts[i].trim().isNotEmpty) {
-        // flutter_markdown 渲染 --- 时会吃掉后面的空行，手动补回
-        var mdData = parts[i];
-        if (mdData.trimRight().endsWith('---')) {
-          mdData = mdData + '\n';
-        }
+        // flutter_markdown 需要 --- 前有空行才能正确渲染为分隔线
+        var mdData = parts[i].replaceAllMapped(
+          RegExp(r'(?<!\n)---\n'),
+          (m) => '\n---\n',
+        );
         children.add(
           SelectionArea(
             child: MarkdownBody(
