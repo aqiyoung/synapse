@@ -1,16 +1,26 @@
 # Knowledge Base
 
-一个轻量级的个人知识管理系统，支持 Web、移动端和浏览器扩展。
+一个 **AI 驱动**的个人知识管理系统。你只管写内容，剩下的全交给 AI——自动标签、自动整理、自动质检、自动关联。后台脚本持续运行，无需人工干预。
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-blue)
 ![Python](https://img.shields.io/badge/Python-3.11+-green)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688)
 
+## 核心理念
+
+**零人工操作** — 所有知识管理工作由 AI 自动完成：
+
+- ✍️ **写入即归档** — 笔记写好后 AI 自动打标签、分类、建立关联
+- 🔗 **自动关联** — AI 分析内容，自动发现并建立笔记间的 `[[wikilink]]`
+- 🏷️ **智能标签** — 根据内容语义自动生成标签，无需手动选择
+- 🏥 **持续质检** — 后台脚本自动检测断链、孤立笔记、内容问题
+- 📊 **知识图谱** — 自动构建和更新笔记关系图谱
+
 ## 功能特性
 
 - 📝 **笔记管理** — 支持 Markdown 的创建、编辑和组织
-- 🏷️ **标签系统** — 用标签分类笔记，便于筛选
+- 🏷️ **标签系统** — AI 自动标签 + 手动标签
 - 🔍 **全文搜索** — 跨所有笔记的全文搜索
 - 🕸️ **知识图谱** — 交互式力导向图可视化笔记关联
 - 🔗 **Wiki 链接** — 用 `[[wiki-style]]` 语法链接笔记
@@ -23,6 +33,7 @@
 | 层级 | 技术 |
 |------|------|
 | 后端 | Python, FastAPI, SQLite |
+| AI | OpenAI API / 兼容接口 |
 | Web 前端 | HTML/CSS/JS, Vue 3, Markdown-it |
 | 移动应用 | Flutter, Dart |
 | 浏览器扩展 | Chrome Extension (Manifest V3) |
@@ -34,7 +45,7 @@ knowledge-base/
 ├── backend/              # FastAPI 后端服务
 │   ├── api.py            # API 路由
 │   ├── config.py         # 配置管理
-│   ├── llm.py            # LLM 集成
+│   ├── llm.py            # LLM 集成（AI 标签、关联、质检）
 │   ├── models.py         # 数据模型
 │   └── main.py           # 入口文件
 ├── frontend/             # Web 前端
@@ -58,7 +69,7 @@ knowledge-base/
 
 - Python 3.11+
 - Flutter 3.x（移动端开发）
-- Node.js（可选，用于前端开发）
+- LLM API 密钥（OpenAI 或兼容接口）
 
 ### 后端启动
 
@@ -67,22 +78,21 @@ knowledge-base/
 cd backend
 pip install -r requirements.txt
 
-# 启动服务
-python main.py
-# 或
-uvicorn main:app --host 0.0.0.0 --port 18800 --reload
-```
+# 配置环境变量
+export LLM_API_KEY="your-api-key"
+export LLM_BASE_URL="https://api.openai.com/v1"  # 或兼容接口
+export LLM_MODEL="gpt-4"
 
-API 服务默认运行在 `http://localhost:18800`
+# 启动服务（AI 后台任务会自动运行）
+python main.py
+```
 
 ### Web 前端
 
 直接在浏览器中打开 `frontend/index.html`，或使用 nginx 配置：
 
 ```bash
-# 复制并修改 nginx 配置
 cp nginx.conf /etc/nginx/sites-available/knowledge-base
-# 修改路径后启用
 sudo ln -s /etc/nginx/sites-available/knowledge-base /etc/nginx/sites-enabled/
 sudo nginx -t && sudo nginx -s reload
 ```
@@ -106,12 +116,22 @@ flutter run
 
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
-| `LLM_API_KEY` | LLM API 密钥 | 空 |
+| `LLM_API_KEY` | LLM API 密钥（必填） | 空 |
 | `LLM_BASE_URL` | LLM API 地址 | `https://api.openai.com/v1` |
 | `LLM_MODEL` | LLM 模型名称 | `gpt-4` |
 | `WIKI_API_TOKEN` | API 访问令牌（留空则不启用认证） | 空 |
 | `RAG_MAX_NOTES` | RAG 最大笔记数 | `5` |
 | `RAG_MAX_CHARS` | 每篇笔记最大字符数 | `8000` |
+
+## AI 自动化流程
+
+```
+用户写笔记 → AI 自动打标签 → AI 建立关联 → 后台质检 → 图谱更新
+     ↓              ↓              ↓            ↓           ↓
+   存入数据库    标签写入      wikilink生成   断链修复    力导向图
+```
+
+所有操作由后台脚本自动完成，用户无需任何额外操作。
 
 ## API 文档
 
