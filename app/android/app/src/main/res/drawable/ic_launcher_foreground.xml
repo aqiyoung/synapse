@@ -4,11 +4,83 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- K monogram matching web logo-mini.svg, bold and centered -->
+    <!-- Synapse neural network icon -->
+    <!-- Connection lines -->
     <path
-        android:pathData="M41,29 L41,79 M41,54 L67,29 M41,54 L67,79"
+        android:pathData="M54,34 L34,54"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="7.5"
+        android:strokeWidth="2.5"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"/>
+        android:opacity="0.7"/>
+    <path
+        android:pathData="M54,34 L74,54"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:opacity="0.7"/>
+    <path
+        android:pathData="M34,54 L54,74"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:opacity="0.7"/>
+    <path
+        android:pathData="M74,54 L54,74"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:opacity="0.7"/>
+    <path
+        android:pathData="M34,54 L74,54"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:opacity="0.5"/>
+    <path
+        android:pathData="M54,34 L54,74"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:opacity="0.5"/>
+    <!-- Central node (largest - the synapse) -->
+    <path
+        android:pathData="M54,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"
+        android:fillColor="#FFFFFF"/>
+    <!-- Top node -->
+    <path
+        android:pathData="M54,34m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.85"/>
+    <!-- Left node -->
+    <path
+        android:pathData="M34,54m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.85"/>
+    <!-- Right node -->
+    <path
+        android:pathData="M74,54m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.85"/>
+    <!-- Bottom node -->
+    <path
+        android:pathData="M54,74m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.85"/>
+    <!-- Small accent nodes -->
+    <path
+        android:pathData="M42,42m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5"/>
+    <path
+        android:pathData="M66,42m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5"/>
+    <path
+        android:pathData="M42,66m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5"/>
+    <path
+        android:pathData="M66,66m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5"/>
 </vector>
