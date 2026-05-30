@@ -207,10 +207,15 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     for (int i = 0; i < parts.length; i++) {
       // Add markdown segment
       if (parts[i].trim().isNotEmpty) {
+        // flutter_markdown 渲染 --- 时会吃掉后面的空行，手动补回
+        var mdData = parts[i];
+        if (mdData.trimRight().endsWith('---')) {
+          mdData = mdData + '\n';
+        }
         children.add(
           SelectionArea(
             child: MarkdownBody(
-              data: parts[i],
+              data: mdData,
               styleSheet: MarkdownStyleSheet(
                 p: TextStyle(
                   fontSize: 15,
@@ -251,6 +256,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                 ),
                 blockquotePadding:
                     const EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                hr: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: colorScheme.outline.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
