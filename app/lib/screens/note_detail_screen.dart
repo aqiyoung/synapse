@@ -39,9 +39,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('加载失败: $e')),
-          ),
+          SnackBar(content: Text('加载失败: $e')),
         );
       }
     }
@@ -256,14 +254,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                 ),
                 blockquotePadding:
                     const EdgeInsets.only(left: 16, top: 8, bottom: 8),
-                hr: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: colorScheme.outline.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                ),
+
               ),
             ),
           ),
