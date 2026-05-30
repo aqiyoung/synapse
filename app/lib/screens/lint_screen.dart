@@ -50,12 +50,12 @@ class _LintScreenState extends State<LintScreen> {
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 12),
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 4),
             color: colorScheme.surface,
             child: Row(
               children: [
                 Text(
-                  'Health Check',
+                  '健康检查',
                   style: TextStyle(
                     fontFamily: 'MiSans',
                     fontSize: 24,
@@ -99,7 +99,7 @@ class _LintScreenState extends State<LintScreen> {
     final issues = _lintData!['issues'] ?? [];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       children: [
         // Stats grid
         GridView.count(
