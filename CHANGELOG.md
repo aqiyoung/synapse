@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.0.0+30 (2026-05-30)
+
+### Breaking Changes
+- 项目更名为 **Synapse**
+- 最低 Android SDK 版本提升
+
+### Features
+- 字体替换为 MiSans
+- 分隔线渲染修复（自行拆分 --- 渲染）
+- 代码脱敏，开源准备
+
 ## v1.1.9+20 (2026-05-29)
 
 ### Fixes

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>知识库 · Knowledge Base</title>
+<title>Synapse · AI 知识管理</title>
 <link rel="icon" type="image/svg+xml" href="/logo-mini.svg">
 <style>
 @font-face {
@@ -750,7 +750,7 @@ a:hover { color: var(--text); }
   <div class="content-list" :class="{ 'mobile-hidden': !mobileShowList }" ref="contentList">
     <div class="cl-resize" @mousedown.prevent="startResize"></div>
     <div class="cl-head">
-      <h1>知识库</h1>
+      <h1>Synapse</h1>
     </div>
     <div class="cl-search">
       <input type="text" v-model="searchQ" @input="doSearch" placeholder="搜索笔记..." />

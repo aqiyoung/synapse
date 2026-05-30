@@ -1,6 +1,6 @@
-// 知识库剪藏 - popup 脚本
+// Synapse - popup 脚本
 (function() {
-  const DEFAULT_TAGS = ['网页', '剪藏', '待整理'];
+  const DEFAULT_TAGS = ['网页', '待整理'];
   let selectedTags = new Set(['网页']);
 
   // 初始化
@@ -115,14 +115,14 @@
       status.className = 'status ok';
       status.textContent = `✅ 已保存: #${note.id} ${note.title}`;
       status.style.display = 'block';
-      btn.textContent = '📥 剪藏当前页面';
+      btn.textContent = '📥 保存当前页面';
       btn.disabled = false;
 
     } catch(e) {
       status.className = 'status err';
       status.textContent = `❌ ${e.message}`;
       status.style.display = 'block';
-      btn.textContent = '📥 剪藏当前页面';
+      btn.textContent = '📥 保存当前页面';
       btn.disabled = false;
     }
   }

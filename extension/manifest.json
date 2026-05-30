@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "知识库剪藏",
+  "name": "Synapse",
   "version": "0.1.0",
   "description": "一键剪藏网页内容到知识库",
   "permissions": ["activeTab", "scripting", "storage"],

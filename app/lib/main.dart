@@ -57,7 +57,7 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '知识库',
+      title: 'Synapse',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       theme: ThemeData(
