@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'services/api_service.dart';
@@ -70,7 +69,7 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
           background: const Color(0xFFf5f4ed),
         ),
         scaffoldBackgroundColor: const Color(0xFFf5f4ed),
-        textTheme: GoogleFonts.notoSansScTextTheme(),
+        textTheme: const TextTheme().apply(fontFamily: 'MiSans'),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFFFFFFFF),
           foregroundColor: Color(0xFF141413),
@@ -86,7 +85,7 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
           background: const Color(0xFF141413),
         ),
         scaffoldBackgroundColor: const Color(0xFF141413),
-        textTheme: GoogleFonts.notoSansScTextTheme(ThemeData.dark().textTheme),
+        textTheme: const TextTheme().apply(fontFamily: 'MiSans'),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1c1c1a),
           foregroundColor: Color(0xFFe4ece0),

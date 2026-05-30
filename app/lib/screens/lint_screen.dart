@@ -57,7 +57,7 @@ class _LintScreenState extends State<LintScreen> {
                 Text(
                   '健康检查',
                   style: TextStyle(
-                    fontFamily: 'Georgia',
+                    fontFamily: 'MiSans',
                     fontSize: 24,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface,
@@ -199,7 +199,7 @@ class _LintScreenState extends State<LintScreen> {
               Text(
                 value,
                 style: TextStyle(
-                  fontFamily: 'Georgia',
+                  fontFamily: 'MiSans',
                   fontSize: 22,
                   fontWeight: FontWeight.w500,
                   color: valueColor,

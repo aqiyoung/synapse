@@ -103,7 +103,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           Text(
             _note!.title,
             style: TextStyle(
-              fontFamily: 'Georgia',
+              fontFamily: 'MiSans',
               fontSize: 24,
               fontWeight: FontWeight.w500,
               height: 1.35,
@@ -215,23 +215,25 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                   data: mdSegments[si],
                   styleSheet: MarkdownStyleSheet(
                     p: TextStyle(
+                      fontFamily: 'MiSans',
                       fontSize: 15,
                       height: 1.75,
                       color: colorScheme.onSurface,
                     ),
                     h2: TextStyle(
-                      fontFamily: 'Georgia',
+                      fontFamily: 'MiSans',
                       fontSize: 20,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
                     h3: TextStyle(
-                      fontFamily: 'Georgia',
+                      fontFamily: 'MiSans',
                       fontSize: 17,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
                     code: TextStyle(
+                      fontFamily: 'monospace',
                       backgroundColor: colorScheme.surface,
                       color: colorScheme.primary,
                       fontSize: 13,

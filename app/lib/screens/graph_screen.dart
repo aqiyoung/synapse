@@ -65,7 +65,7 @@ class _GraphScreenState extends State<GraphScreen> {
                 Text(
                   '知识图谱',
                   style: TextStyle(
-                    fontFamily: 'Georgia',
+                    fontFamily: 'MiSans',
                     fontSize: 24,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface,
