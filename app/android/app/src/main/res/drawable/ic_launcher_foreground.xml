@@ -4,7 +4,7 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Synapse neural network icon -->
+    <!-- Synapse neural network icon - white on terracotta -->
     <!-- Connection lines -->
     <path
         android:pathData="M54,34 L34,54"

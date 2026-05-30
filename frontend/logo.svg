@@ -1,32 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
-  <defs>
-    <linearGradient id="warm" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#c96442"/>
-      <stop offset="100%" stop-color="#d4785a"/>
-    </linearGradient>
-  </defs>
   <!-- Background circle -->
-  <circle cx="60" cy="60" r="56" fill="#141413"/>
+  <circle cx="60" cy="60" r="56" fill="#c96442"/>
   <!-- Connection lines -->
-  <line x1="60" y1="30" x2="35" y2="55" stroke="#c96442" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-  <line x1="60" y1="30" x2="85" y2="55" stroke="#c96442" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-  <line x1="35" y1="55" x2="60" y2="80" stroke="#c96442" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-  <line x1="85" y1="55" x2="60" y2="80" stroke="#c96442" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-  <line x1="35" y1="55" x2="85" y2="55" stroke="#c96442" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-  <line x1="60" y1="30" x2="60" y2="80" stroke="#c96442" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+  <line x1="60" y1="30" x2="35" y2="55" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="60" y1="30" x2="85" y2="55" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="35" y1="55" x2="60" y2="80" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="85" y1="55" x2="60" y2="80" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="35" y1="55" x2="85" y2="55" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="60" y1="30" x2="60" y2="80" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
   <!-- Central node (synapse) -->
-  <circle cx="60" cy="55" r="8" fill="#c96442"/>
+  <circle cx="60" cy="55" r="8" fill="#fff"/>
   <!-- Top node -->
-  <circle cx="60" cy="30" r="5" fill="#c96442" opacity="0.85"/>
+  <circle cx="60" cy="30" r="5" fill="#fff" opacity="0.85"/>
   <!-- Left node -->
-  <circle cx="35" cy="55" r="5" fill="#c96442" opacity="0.85"/>
+  <circle cx="35" cy="55" r="5" fill="#fff" opacity="0.85"/>
   <!-- Right node -->
-  <circle cx="85" cy="55" r="5" fill="#c96442" opacity="0.85"/>
+  <circle cx="85" cy="55" r="5" fill="#fff" opacity="0.85"/>
   <!-- Bottom node -->
-  <circle cx="60" cy="80" r="5" fill="#c96442" opacity="0.85"/>
+  <circle cx="60" cy="80" r="5" fill="#fff" opacity="0.85"/>
   <!-- Small accent nodes -->
-  <circle cx="45" cy="40" r="2.5" fill="#c96442" opacity="0.5"/>
-  <circle cx="75" cy="40" r="2.5" fill="#c96442" opacity="0.5"/>
-  <circle cx="45" cy="70" r="2.5" fill="#c96442" opacity="0.5"/>
-  <circle cx="75" cy="70" r="2.5" fill="#c96442" opacity="0.5"/>
+  <circle cx="45" cy="40" r="2.5" fill="#fff" opacity="0.5"/>
+  <circle cx="75" cy="40" r="2.5" fill="#fff" opacity="0.5"/>
+  <circle cx="45" cy="70" r="2.5" fill="#fff" opacity="0.5"/>
+  <circle cx="75" cy="70" r="2.5" fill="#fff" opacity="0.5"/>
 </svg>
