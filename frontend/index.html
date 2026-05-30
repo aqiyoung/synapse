@@ -1014,7 +1014,7 @@ function renderMdImpl(md) {
     })
     .replace(/^- (.+)$/gm, '<li>$1</li>')
     .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    .replace(/^---$/gm, '<hr>')
+    .replace(/^\s*---\s*$/gm, '<hr>')
     .replace(/\|(.+)\|/g, (m) => {
       const cells = m.split('|').filter(Boolean).map(c => c.trim());
       if (cells.every(c => /^[-:]+$/.test(c))) return '';
