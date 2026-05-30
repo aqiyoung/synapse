@@ -99,7 +99,7 @@ class _LintScreenState extends State<LintScreen> {
     final issues = _lintData!['issues'] ?? [];
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
       children: [
         // Stats grid
         GridView.count(
