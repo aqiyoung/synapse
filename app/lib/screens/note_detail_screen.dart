@@ -205,10 +205,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     for (int i = 0; i < parts.length; i++) {
       // Add markdown segment
       if (parts[i].trim().isNotEmpty) {
-        // flutter_markdown 需要 --- 前有空行才能正确渲染为分隔线
+        // flutter_markdown 把 --- 后的空行误解析为加粗，转成 <hr> 更可靠
         var mdData = parts[i].replaceAllMapped(
-          RegExp(r'(?<!\n)---\n'),
-          (m) => '\n---\n',
+          RegExp(r'^---\s*$', multiLine: true),
+          (m) => '<hr>',
         );
         children.add(
           SelectionArea(
