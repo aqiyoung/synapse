@@ -39,7 +39,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('加载失败: $e')),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('加载失败: $e')),
+          ),
         );
       }
     }
@@ -144,13 +146,71 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           const SizedBox(height: 24),
           Divider(color: colorScheme.outline.withOpacity(0.1)),
           const SizedBox(height: 24),
-          // Content
+          // Content - split into markdown segments and code blocks
+          _buildMixedContent(colorScheme),
+          // Relations
+          if (_relations != null &&
+              (_relations!.outgoing.isNotEmpty ||
+                  _relations!.incoming.isNotEmpty)) ...[
+            const SizedBox(height: 32),
+            Divider(color: colorScheme.outline.withOpacity(0.1)),
+            const SizedBox(height: 16),
+            Text(
+              '关联笔记',
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurface.withOpacity(0.5),
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ..._relations!.outgoing.map((r) => _buildRelationChip(
+                      r['title'] ?? '',
+                      colorScheme,
+                      onTap: () => _navigateToNote(r['id']),
+                    )),
+                ..._relations!.incoming.map((r) => _buildRelationChip(
+                      r['title'] ?? '',
+                      colorScheme,
+                      isIncoming: true,
+                      onTap: () => _navigateToNote(r['id']),
+                    )),
+              ],
+            ),
+          ],
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  /// Split note content by code blocks and render each segment.
+  /// Even indices = markdown text, odd indices = code blocks.
+  Widget _buildMixedContent(ColorScheme colorScheme) {
+    final content = _note!.content.replaceAllMapped(
+      RegExp(r'\[\[(.+?)\]\]'),
+      (m) => m.group(1) ?? '',
+    );
+
+    // Split by code blocks: ```lang\n...code...\n```
+    final parts = content.split(RegExp(r'```\w*\n[\s\S]*?\n```'));
+    final codeBlocks = RegExp(r'```(\w*)\n([\s\S]*?)\n```')
+        .allMatches(content)
+        .map((m) => {'lang': m.group(1) ?? '', 'code': m.group(2) ?? ''})
+        .toList();
+
+    final children = <Widget>[];
+    for (int i = 0; i < parts.length; i++) {
+      // Add markdown segment
+      if (parts[i].trim().isNotEmpty) {
+        children.add(
           SelectionArea(
             child: MarkdownBody(
-              data: _note!.content.replaceAllMapped(
-                RegExp(r'\[\[(.+?)\]\]'),
-                (m) => m.group(1) ?? '',
-              ),
+              data: parts[i],
               styleSheet: MarkdownStyleSheet(
                 p: TextStyle(
                   fontSize: 15,
@@ -194,41 +254,116 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
             ),
           ),
-          // Relations
-          if (_relations != null &&
-              (_relations!.outgoing.isNotEmpty ||
-                  _relations!.incoming.isNotEmpty)) ...[
-            const SizedBox(height: 32),
-            Divider(color: colorScheme.outline.withOpacity(0.1)),
-            const SizedBox(height: 16),
-            Text(
-              '关联笔记',
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurface.withOpacity(0.5),
-                letterSpacing: 1,
+        );
+      }
+      // Add code block
+      if (i < codeBlocks.length) {
+        children.add(_buildCodeBlock(
+          codeBlocks[i]['lang']!,
+          codeBlocks[i]['code']!,
+          colorScheme,
+        ));
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  Widget _buildCodeBlock(String lang, String code, ColorScheme colorScheme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with lang label and copy button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: colorScheme.outline.withOpacity(0.1),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            child: Row(
               children: [
-                ..._relations!.outgoing.map((r) => _buildRelationChip(
-                      r['title'] ?? '',
-                      colorScheme,
-                      onTap: () => _navigateToNote(r['id']),
-                    )),
-                ..._relations!.incoming.map((r) => _buildRelationChip(
-                      r['title'] ?? '',
-                      colorScheme,
-                      isIncoming: true,
-                      onTap: () => _navigateToNote(r['id']),
-                    )),
+                if (lang.isNotEmpty)
+                  Text(
+                    lang,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                const Spacer(),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: code));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('代码已复制'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.copy_outlined,
+                          size: 14,
+                          color: colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '复制',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
-          ],
-          const SizedBox(height: 80),
+          ),
+          // Code content
+          SelectionArea(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                code,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                  height: 1.6,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
