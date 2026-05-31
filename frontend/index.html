@@ -800,8 +800,10 @@ a:hover { color: var(--text); }
         <div class="dt">{{ fmt(n.updated_at) }}</div>
       </div>
       <div v-if="!notes.length" style="padding:30px 12px;text-align:center;color:var(--muted);font-size:11px">
-        <div style="font-size:28px;margin-bottom:6px;opacity:.15">📝</div>
-        暂无笔记
+        <div style="font-size:28px;margin-bottom:6px;opacity:.15">{{ loadError ? '⚠️' : '📝' }}</div>
+        <div v-if="loadError" style="color:var(--red);margin-bottom:8px">{{ loadError }}</div>
+        <div v-else>暂无笔记</div>
+        <button v-if="loadError" @click="loadNotes()" style="margin-top:8px;padding:4px 12px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;">重试</button>
       </div>
     </div>
   </div>
@@ -1101,22 +1103,28 @@ function setToken(t) {
   else localStorage.removeItem('wiki:token');
 }
 
-async function fetchJSON(url) {
+async function fetchJSON(url, timeout = 10000) {
   const headers = {};
   const t = getToken();
   if (t) headers['Authorization'] = 'Bearer ' + t;
-  const r = await fetch(url, { headers });
-  if (r.status === 401) {
-    setToken('');
-    const token = prompt('请输入知识库访问 Token：');
-    if (token) {
-      setToken(token);
-      return fetchJSON(url);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const r = await fetch(url, { headers, signal: ctrl.signal });
+    if (r.status === 401) {
+      setToken('');
+      const token = prompt('请输入知识库访问 Token：');
+      if (token) {
+        setToken(token);
+        return fetchJSON(url, timeout);
+      }
+      throw new Error('需要认证 token');
     }
-    throw new Error('需要认证 token');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  } finally {
+    clearTimeout(timer);
   }
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
 }
 
 // ===== App =====
@@ -1200,25 +1208,49 @@ createApp({
       document.addEventListener("mouseup", onUp);
     }
 
+    const loadError = ref('');
+
     async function loadNotes() {
-      try {
-        const data = await fetchJSON(API + '/notes?limit=200');
-        notes.value = data.notes || [];
-      } catch(e) { console.error('加载笔记失败:', e); }
+      loadError.value = '';
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const data = await fetchJSON(API + '/notes?limit=200');
+          notes.value = data.notes || [];
+          return;
+        } catch(e) {
+          console.error('加载笔记失败 (attempt ' + (attempt+1) + '):', e);
+          if (attempt === 1) {
+            notes.value = [];
+            loadError.value = '加载失败，点击重试';
+          }
+        }
+      }
     }
 
     async function loadTags() {
-      try {
-        const data = await fetchJSON(API + '/tags');
-        tags.value = data || [];
-      } catch(e) { console.error('加载标签失败:', e); }
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const data = await fetchJSON(API + '/tags');
+          tags.value = data || [];
+          return;
+        } catch(e) {
+          console.error('加载标签失败 (attempt ' + (attempt+1) + '):', e);
+          if (attempt === 1) tags.value = [];
+        }
+      }
     }
 
     async function loadStats() {
-      try {
-        const g = await fetchJSON(API + '/graph');
-        totalEdges.value = g.edges ? g.edges.length : 0;
-      } catch(e) {}
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const g = await fetchJSON(API + '/graph');
+          totalEdges.value = g.edges ? g.edges.length : 0;
+          return;
+        } catch(e) {
+          console.error('加载图谱失败 (attempt ' + (attempt+1) + '):', e);
+          if (attempt === 1) totalEdges.value = 0;
+        }
+      }
     }
 
     const sortedNotes = computed(() => {
@@ -1754,7 +1786,7 @@ createApp({
       notes, tags, curNote, curTag, searchQ, filterQ,
       sortKey, sortDir, isDark, loading, relationsData, tocItems, tocActive,
       totalEdges, activeView, filteredNotes, graphNodes, graphEdges,
-      lintData, lintLoading, lintBadge,
+      lintData, lintLoading, lintBadge, loadError,
       switchView, runLint,
       openNote, openRelation, toggleTag, doSearch, setSort,
       toggleTheme, scrollToHeading, renderMd, strip, fmt,
