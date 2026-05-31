@@ -300,7 +300,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 onPressed: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (_) => const SettingsScreen()),
+                                    builder: (_) => SettingsScreen(
+                                      onToggleTheme: widget.onToggleTheme,
+                                      isDark: widget.isDark,
+                                    ),
+                                  ),
                                 ).then((_) => _loadData()),
                                 child: const Text('前往设置'),
                               ),
