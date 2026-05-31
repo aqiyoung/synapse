@@ -309,11 +309,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: _notes.length,
-                        itemBuilder: (context, index) =>
-                            _buildNoteItem(_notes[index], colorScheme),
+                    : RefreshIndicator(
+                        onRefresh: _loadData,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _notes.length,
+                          itemBuilder: (context, index) =>
+                              _buildNoteItem(_notes[index], colorScheme),
+                        ),
                       ),
           ),
         ],
