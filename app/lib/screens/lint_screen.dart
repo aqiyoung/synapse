@@ -53,7 +53,7 @@ class _LintScreenState extends State<LintScreen> {
     try {
       final result = await ApiService.fixLint(type);
       if (mounted) {
-        final count = result['fixed'] ?? 0;
+        final count = result['fixed_count'] ?? result['fixed'] ?? 0;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(count > 0 ? '已修复 $count 项' : '没有需要修复的内容')),
         );

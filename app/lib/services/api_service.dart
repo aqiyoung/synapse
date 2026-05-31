@@ -138,4 +138,32 @@ class ApiService {
     }
     throw Exception('清理图谱失败');
   }
+
+  /// 统一修复入口，根据 type 调用对应修复方法
+  static Future<Map<String, dynamic>> fixLint(String type) async {
+    switch (type) {
+      case 'broken_link':
+        return fixBrokenLinks();
+      case 'orphan':
+        return fixOrphans();
+      case 'no_tags':
+        return fixNoTags();
+      case 'prune':
+        return pruneGraph();
+      default:
+        throw Exception('未知修复类型: $type');
+    }
+  }
+
+  /// 给无标签笔记添加默认标签
+  static Future<Map<String, dynamic>> fixNoTags() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/lint/fix/no-tags'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('添加标签失败');
+  }
 }
