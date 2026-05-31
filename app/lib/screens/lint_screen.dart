@@ -20,7 +20,10 @@ class _LintScreenState extends State<LintScreen> {
 
   Future<void> _loadLint() async {
     if (!ApiService.isConfigured) {
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _lintData = null;
+      });
       return;
     }
     setState(() => _loading = true);
@@ -31,7 +34,10 @@ class _LintScreenState extends State<LintScreen> {
         _loading = false;
       });
     } catch (e) {
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _lintData = null;
+      });
       if (mounted) {
         final msg = e.toString().contains('SocketException')
             ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
