@@ -195,7 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(Icons.info_outline, color: colorScheme.primary),
             title: const Text('版本'),
-            subtitle: const Text('2.1.0'),
+            subtitle: const Text('2.1.1'),
             contentPadding: EdgeInsets.zero,
             onTap: _onVersionTap,
           ),
