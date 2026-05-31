@@ -91,4 +91,13 @@ class ApiService {
     }
     return {'issues': [], 'stats': {}};
   }
+
+  // 删除笔记（管理员功能）
+  static Future<bool> deleteNote(int id) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/notes/$id'),
+      headers: _headers,
+    );
+    return response.statusCode == 200;
+  }
 }

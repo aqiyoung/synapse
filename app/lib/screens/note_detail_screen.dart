@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
 
@@ -18,11 +19,20 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Note? _note;
   Relations? _relations;
   bool _loading = true;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
+    _checkAdmin();
     _loadNote();
+  }
+
+  Future<void> _checkAdmin() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isAdmin = prefs.getBool('admin_logged_in') ?? false;
+    });
   }
 
   Future<void> _loadNote() async {
@@ -59,6 +69,51 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
+  void _showDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除笔记'),
+        content: Text('确定要删除「${_note?.title}」吗？此操作不可恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: _deleteNote,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteNote() async {
+    Navigator.pop(context); // 关闭对话框
+    try {
+      final success = await ApiService.deleteNote(widget.noteId);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('删除成功')),
+        );
+        Navigator.pop(context); // 返回列表
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('删除失败')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('删除失败: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -80,6 +135,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               icon: const Icon(Icons.share_outlined),
               onPressed: _note != null ? _shareLink : null,
             ),
+            if (_isAdmin)
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: _note != null ? _showDeleteDialog : null,
+              ),
           ],
         ),
         body: _loading
