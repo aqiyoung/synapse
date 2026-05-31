@@ -854,10 +854,20 @@ a:hover { color: var(--text); }
                 <div style="font-size:10px;color:var(--muted);">断链</div>
               </div>
             </div>
-            <div v-for="issue in lintData.issues" :key="issue.type" style="margin-bottom:16px;">
+            <div v-for="issue in lintData.issues" :key="issue.type" style="margin-bottom:16px;border:1px solid var(--line);border-radius:var(--radius);padding:16px;">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
                 <span style="font-size:14px;">{{ issue.severity === 'error' ? '❌' : issue.severity === 'warning' ? '⚠️' : 'ℹ️' }}</span>
-                <span style="font-size:13px;font-weight:600;">{{ issue.message }}</span>
+                <span style="font-size:13px;font-weight:600;flex:1;">{{ issue.message }}</span>
+                <!-- 修复按钮 -->
+                <button v-if="['broken_link','orphan','no_tags'].includes(issue.type)"
+                  @click="fixIssue(issue.type)"
+                  :disabled="fixing === issue.type"
+                  style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--accent);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer;font-size:11px;white-space:nowrap;transition:all .15s;"
+                  :style="fixing === issue.type ? 'opacity:.5;cursor:wait;' : 'opacity:1;'">
+                  <span v-if="fixing === issue.type">⏳</span>
+                  <span v-else>🔧</span>
+                  {{ fixing === issue.type ? '修复中...' : getFixLabel(issue.type) }}
+                </button>
               </div>
               <div v-if="issue.notes" style="margin-left:28px;">
                 <div v-for="n in issue.notes" :key="n.id"
@@ -871,6 +881,22 @@ a:hover { color: var(--text); }
                   style="padding:4px 8px;font-size:11px;color:var(--muted);">
                   → {{ l.from }} 引用了不存在的 [[{{ l.to }}]]
                 </div>
+              </div>
+            </div>
+            <!-- 图谱清理按钮 -->
+            <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--line);">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text);">🧹 图谱维护</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button @click="pruneGraph" :disabled="fixing === 'prune'"
+                  style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--muted);cursor:pointer;font-size:11px;transition:all .15s;"
+                  @mouseenter="$event.target.style.borderColor=var(--accent);$event.target.style.color=var(--accent);"
+                  @mouseleave="$event.target.style.borderColor='var(--line)';$event.target.style.color='var(--muted)';">
+                  <span v-if="fixing === 'prune'">⏳</span>
+                  {{ fixing === 'prune' ? '清理中...' : '清理垃圾边' }}
+                </button>
+              </div>
+              <div v-if="pruneResult" style="margin-top:8px;padding:8px 12px;background:var(--accent-light);border-radius:4px;font-size:11px;color:var(--text);">
+                {{ pruneResult }}
               </div>
             </div>
           </div>
@@ -1152,6 +1178,8 @@ createApp({
     const lintLoading = ref(false);
     const lintBadge = ref(false);
     const contentList = ref(null);
+    const fixing = ref('');
+    const pruneResult = ref('');
 
     function getAuthHeaders() {
       const headers = { 'Content-Type': 'application/json' };
@@ -1189,6 +1217,27 @@ createApp({
       } finally {
         lintLoading.value = false;
       }
+    }
+
+    const lintFixing = ref({});
+
+    async function fixIssue(type) {
+      lintFixing.value[type] = true;
+      try {
+        const resp = await fetch(API + '/lint/fix/' + type, { method: 'POST', headers: getAuthHeaders() });
+        const result = await resp.json();
+        lintFixing.value[type] = false;
+        await runLint();
+        return result;
+      } catch(e) {
+        console.error('修复失败:', e);
+        lintFixing.value[type] = false;
+      }
+    }
+
+    function getFixLabel(type) {
+      const labels = { broken_link: '清除断链', orphan: '标记孤立', no_tags: '添加标签' };
+      return labels[type] || '修复';
     }
 
     function startResize(e) {
@@ -1382,7 +1431,11 @@ createApp({
           const t = (n.tags || [])[0];
           tagColorMap[n.id] = t ? getTagColor(t) : '#8d9e8a';
         }
-        const cx = 600, cy = 400, r = 300;
+        // 自适应画布大小的初始布局
+        const canvasEl = document.getElementById('graphCanvas');
+        const initW = canvasEl ? canvasEl.offsetWidth : 1200;
+        const initH = canvasEl ? canvasEl.offsetHeight : 800;
+        const cx = initW / 2, cy = initH / 2, r = Math.min(initW, initH) * 0.35;
         graphNodes.value = rawNodes.map((n, i) => ({
           id: n.id, title: n.title || '无标题', tags: n.tags || [],
           color: tagColorMap[n.id],
@@ -1399,8 +1452,17 @@ createApp({
       const canvas = document.getElementById('graphCanvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-      let W, H;
-      const resize = () => { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; };
+      let W, H, dpr;
+      const resize = () => {
+        dpr = window.devicePixelRatio || 1;
+        W = canvas.offsetWidth;
+        H = canvas.offsetHeight;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      };
       resize();
       window.addEventListener('resize', resize);
       const nodes = graphNodes.value;
@@ -1635,14 +1697,26 @@ createApp({
           ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(endX, y); ctx.stroke();
         }
 
+        // ── Edges with gradient coloring ──
         for (const e of edges) {
           const a = nodeMap.get(e.source), b = nodeMap.get(e.target);
           if (!a || !b) continue;
           const isHov = hovered && (hovered.id === e.source || hovered.id === e.target);
-          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = isHov ? 'rgba(' + fg + ',0.35)' : 'rgba(' + fg + ',0.12)';
-          ctx.lineWidth = isHov ? 1.8 : 1;
-          ctx.stroke();
+          if (isHov) {
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = 'rgba(' + fg + ',0.45)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          } else {
+            // Gradient edge: blend source → target color
+            const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+            grad.addColorStop(0, hexToRgba(a.color, 0.2));
+            grad.addColorStop(1, hexToRgba(b.color, 0.2));
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          }
         }
 
         const nodeDegree = new Map();
@@ -1653,6 +1727,29 @@ createApp({
         }
         const maxDeg = Math.max(...nodeDegree.values(), 1);
 
+        // ── Draw labels first (behind nodes) for high-degree nodes ──
+        for (const n of nodes) {
+          const isHov = hovered && hovered.id === n.id;
+          const deg = nodeDegree.get(n.id) || 0;
+          const normalizedDeg = deg / maxDeg;
+          const baseR = isHov ? 6 : 3 + normalizedDeg * 13;
+          const r = baseR;
+          if ((isHov || deg >= 4) && n.title) {
+            const fontSize = Math.max(10, Math.min(13, 9 + normalizedDeg * 4));
+            ctx.font = (isHov ? '600 ' : '500 ') + fontSize + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const label = n.title.length > 20 ? n.title.substring(0, 20) + '…' : n.title;
+            const lx = n.x, ly = n.y + r + 16;
+            // Text shadow for readability
+            ctx.fillStyle = isDarkMode ? 'rgba(20,20,19,0.7)' : 'rgba(245,244,237,0.7)';
+            ctx.fillText(label, lx + 1, ly + 1);
+            ctx.fillStyle = isHov ? (isDarkMode ? '#e4e6e0' : '#141413') : 'rgba(' + fg + ',' + (0.65 + normalizedDeg * 0.35).toFixed(2) + ')';
+            ctx.fillText(label, lx, ly);
+          }
+        }
+
+        // ── Draw nodes ──
         for (const n of nodes) {
           const isHov = hovered && hovered.id === n.id;
           const deg = nodeDegree.get(n.id) || 0;
@@ -1660,40 +1757,36 @@ createApp({
           const baseR = isHov ? 6 : 3 + normalizedDeg * 13;
           const r = baseR;
 
-          if (isHov || deg >= 4) {
-            const glowR = r + (isHov ? 16 : 10);
-            const glowAlpha = isHov ? 0.25 : 0.12;
-            const grad = ctx.createRadialGradient(n.x, n.y, r * 0.5, n.x, n.y, glowR);
+          // Outer glow for connected nodes — brighter & larger
+          if (isHov || deg >= 2) {
+            const glowR = r + (isHov ? 24 : 16);
+            const glowAlpha = isHov ? 0.45 : 0.22;
+            const grad = ctx.createRadialGradient(n.x, n.y, r * 0.2, n.x, n.y, glowR);
             grad.addColorStop(0, hexToRgba(n.color, glowAlpha));
             grad.addColorStop(1, hexToRgba(n.color, 0));
             ctx.beginPath(); ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
             ctx.fillStyle = grad; ctx.fill();
           }
 
-          if (deg >= 3 && !isHov) {
-            ctx.beginPath(); ctx.arc(n.x, n.y, r + 2, 0, Math.PI * 2);
-            ctx.strokeStyle = hexToRgba(n.color, 0.3);
-            ctx.lineWidth = 1;
+          // Highlight ring — brighter
+          if (deg >= 2 && !isHov) {
+            ctx.beginPath(); ctx.arc(n.x, n.y, r + 3, 0, Math.PI * 2);
+            ctx.strokeStyle = hexToRgba(n.color, 0.6);
+            ctx.lineWidth = 1.5;
             ctx.stroke();
           }
 
+          // Node body — solid pure color (no overlay, like APP)
           ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
           ctx.fillStyle = isHov ? (isDarkMode ? '#e4e6e0' : '#141413') : n.color;
           ctx.fill();
 
-          if (r >= 6) {
-            ctx.beginPath(); ctx.arc(n.x - r * 0.25, n.y - r * 0.25, r * 0.35, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          // Subtle bottom shadow for depth (instead of top highlight that washes out color)
+          if (r >= 5 && !isHov) {
+            ctx.beginPath();
+            ctx.arc(n.x + r * 0.15, n.y + r * 0.2, r * 0.85, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.12)';
             ctx.fill();
-          }
-
-          if (isHov || deg >= 5) {
-            ctx.font = (isHov ? '600 ' : '500 ') + Math.max(10, Math.min(13, 9 + normalizedDeg * 4)) + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = isHov ? (isDarkMode ? '#e4e6e0' : '#141413') : 'rgba(' + fg + ',' + (0.5 + normalizedDeg * 0.4).toFixed(2) + ')';
-            const label = n.title.length > 20 ? n.title.substring(0, 20) + '…' : n.title;
-            ctx.fillText(label, n.x, n.y + r + 16);
           }
         }
 
@@ -1787,7 +1880,7 @@ createApp({
       sortKey, sortDir, isDark, loading, relationsData, tocItems, tocActive,
       totalEdges, activeView, filteredNotes, graphNodes, graphEdges,
       lintData, lintLoading, lintBadge, loadError,
-      switchView, runLint,
+      switchView, runLint, fixIssue, getFixLabel, lintFixing,
       openNote, openRelation, toggleTag, doSearch, setSort,
       toggleTheme, scrollToHeading, renderMd, strip, fmt,
     };

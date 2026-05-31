@@ -100,4 +100,42 @@ class ApiService {
     );
     return response.statusCode == 200;
   }
+
+  // ── 健康检查修复 API ──
+
+  /// 清除所有断链（从笔记内容中移除 [[不存在的标题]]）
+  static Future<Map<String, dynamic>> fixBrokenLinks() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/lint/fix/broken-links'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('清除断链失败');
+  }
+
+  /// 清除所有孤立笔记（删除无任何关联的笔记）
+  static Future<Map<String, dynamic>> fixOrphans() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/lint/fix/orphans'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('清除孤立笔记失败');
+  }
+
+  /// 清除图谱中的垃圾边（自环、重复边）
+  static Future<Map<String, dynamic>> pruneGraph() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/graph/prune'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('清理图谱失败');
+  }
 }

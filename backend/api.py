@@ -1112,3 +1112,181 @@ async def ai_lint(db: Session = Depends(get_db)):
     }
 
     return {"issues": issues, "stats": stats}
+
+
+# ===== 健康检查修复 API =====
+
+class LintFixRequest(BaseModel):
+    """修复请求"""
+    dry_run: bool = False  # 试运行模式，不实际修改
+
+
+@app.post("/api/lint/fix/broken-links")
+async def lint_fix_broken_links(req: LintFixRequest, db: Session = Depends(get_db)):
+    """清除断链：从笔记内容中移除引用了不存在的 [[wikilink]]"""
+    import re
+
+    total, notes = list_notes(db, limit=1000)
+    all_titles = {n.title for n in notes}
+
+    fixes = []
+    for n in notes:
+        if not n.content:
+            continue
+        broken = []
+        for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
+            if m.group(1) not in all_titles:
+                broken.append(m.group(1))
+        if broken:
+            new_content = n.content
+            for target in broken:
+                new_content = re.sub(rf'\[\[{re.escape(target)}\]\]', target, new_content)
+            if not req.dry_run:
+                n.content = new_content
+                n.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
+            fixes.append({
+                "note_id": n.id,
+                "title": n.title,
+                "removed": broken,
+            })
+
+    if not req.dry_run:
+        db.commit()
+
+    return {
+        "fixed_count": len(fixes),
+        "fixes": fixes,
+        "dry_run": req.dry_run,
+    }
+
+
+@app.post("/api/lint/fix/orphans")
+async def lint_fix_orphans(req: LintFixRequest, db: Session = Depends(get_db)):
+    """修复孤立笔记：给孤立笔记添加 '孤立' 标签，方便用户批量处理"""
+    import re
+
+    total, notes = list_notes(db, limit=1000)
+    referenced = set()
+    for n in notes:
+        if n.content:
+            for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
+                referenced.add(m.group(1))
+
+    orphans = []
+    for n in notes:
+        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
+        has_incoming = n.title in referenced
+        if not has_outgoing and not has_incoming:
+            orphans.append(n)
+
+    if not req.dry_run:
+        orphan_tag = db.query(Tag).filter(Tag.name == "孤立").first()
+        if not orphan_tag:
+            orphan_tag = Tag(name="孤立", color="#8d9e8a")
+            db.add(orphan_tag)
+            db.flush()
+
+    fixes = []
+    for n in orphans:
+        if not req.dry_run:
+            # 如果已经有"孤立"标签就跳过
+            if orphan_tag not in n.tags:
+                n.tags.append(orphan_tag)
+                n.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
+        fixes.append({"note_id": n.id, "title": n.title})
+
+    if not req.dry_run:
+        db.commit()
+
+    return {
+        "fixed_count": len(fixes),
+        "fixes": fixes,
+        "dry_run": req.dry_run,
+    }
+
+
+@app.post("/api/lint/fix/no-tags")
+async def lint_fix_no_tags(req: LintFixRequest, db: Session = Depends(get_db)):
+    """修复无标签笔记：给没有标签的笔记添加 '未分类' 标签"""
+    total, notes = list_notes(db, limit=1000)
+    no_tags = [n for n in notes if not n.tags]
+
+    if not req.dry_run:
+        uncategorized = db.query(Tag).filter(Tag.name == "未分类").first()
+        if not uncategorized:
+            uncategorized = Tag(name="未分类", color="#8d9e8a")
+            db.add(uncategorized)
+            db.flush()
+
+    fixes = []
+    for n in no_tags:
+        if not req.dry_run:
+            n.tags.append(uncategorized)
+            n.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
+        fixes.append({"note_id": n.id, "title": n.title})
+
+    if not req.dry_run:
+        db.commit()
+
+    return {
+        "fixed_count": len(fixes),
+        "fixes": fixes,
+        "dry_run": req.dry_run,
+    }
+
+
+@app.post("/api/graph/prune")
+async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
+    """清除图谱垃圾边：
+    1. 自环（source == target）
+    2. 重复边
+    3. 指向已删除笔记的边
+    返回清理统计，不修改数据库（图谱是动态生成的）
+    """
+    import re
+
+    total, notes = list_notes(db, limit=1000, include_deleted=True)
+    all_titles = {n.title for n in notes if n.deleted_at is None}
+    active_ids = {n.id for n in notes if n.deleted_at is None}
+
+    self_loops = 0
+    duplicates = 0
+    stale = 0
+    edge_set = set()
+    pruned_edges = []
+
+    for n in notes:
+        if not n.content or n.deleted_at is not None:
+            continue
+        for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
+            target_title = m.group(1)
+            target_id = title_map.get(target_title) if 'title_map' in dir() else None
+
+            # 自环
+            if target_title == n.title:
+                self_loops += 1
+                pruned_edges.append({"from": n.title, "to": target_title, "reason": "self_loop"})
+                continue
+
+            # 指向已删除笔记
+            if target_title not in all_titles:
+                stale += 1
+                pruned_edges.append({"from": n.title, "to": target_title, "reason": "stale"})
+                continue
+
+            # 重复
+            key = (n.id, target_title)
+            if key in edge_set:
+                duplicates += 1
+                pruned_edges.append({"from": n.title, "to": target_title, "reason": "duplicate"})
+                continue
+            edge_set.add(key)
+
+    return {
+        "self_loops": self_loops,
+        "duplicates": duplicates,
+        "stale_edges": stale,
+        "total_pruned": self_loops + duplicates + stale,
+        "pruned_edges": pruned_edges[:20],
+        "dry_run": req.dry_run,
+    }

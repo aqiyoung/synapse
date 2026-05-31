@@ -11,6 +11,7 @@ class LintScreen extends StatefulWidget {
 class _LintScreenState extends State<LintScreen> {
   Map<String, dynamic>? _lintData;
   bool _loading = true;
+  final Set<String> _fixing = {};
 
   @override
   void initState() {
@@ -44,6 +45,30 @@ class _LintScreenState extends State<LintScreen> {
             : '加载检查数据失败';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
+    }
+  }
+
+  Future<void> _fixIssue(String type) async {
+    setState(() => _fixing.add(type));
+    try {
+      final result = await ApiService.fixLint(type);
+      if (mounted) {
+        final count = result['fixed'] ?? 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(count > 0 ? '已修复 $count 项' : '没有需要修复的内容')),
+        );
+      }
+      // 刷新
+      await Future.delayed(const Duration(milliseconds: 500));
+      await _loadLint();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('修复失败: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _fixing.remove(type));
     }
   }
 
@@ -247,6 +272,35 @@ class _LintScreenState extends State<LintScreen> {
         severityIcon = Icons.info_outline;
     }
 
+    // 可修复的 issue 类型
+    final fixableTypes = {'broken_link', 'orphan', 'no_tags', 'short_content'};
+    final isFixable = fixableTypes.contains(type);
+    final isFixing = _fixing.contains(type);
+
+    String fixLabel;
+    IconData fixIcon;
+    switch (type) {
+      case 'broken_link':
+        fixLabel = '清除断链';
+        fixIcon = Icons.auto_fix_high;
+        break;
+      case 'orphan':
+        fixLabel = '标记孤立';
+        fixIcon = Icons.label_outline;
+        break;
+      case 'no_tags':
+        fixLabel = '添加标签';
+        fixIcon = Icons.local_offer_outlined;
+        break;
+      case 'short_content':
+        fixLabel = '标记短内容';
+        fixIcon = Icons.edit_outlined;
+        break;
+      default:
+        fixLabel = '修复';
+        fixIcon = Icons.build_outlined;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -301,6 +355,35 @@ class _LintScreenState extends State<LintScreen> {
                     ),
                   ),
                 )),
+          ],
+          if (isFixable) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: isFixing ? null : () => _fixIssue(type),
+                  icon: isFixing
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colorScheme.primary,
+                          ),
+                        )
+                      : Icon(fixIcon, size: 16),
+                  label: Text(
+                    isFixing ? '修复中...' : fixLabel,
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),
