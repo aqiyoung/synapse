@@ -1307,9 +1307,22 @@ createApp({
     const graphNodes = ref([]);
     const graphEdges = ref([]);
     let graphAnimId = null;
+
+    // 与 APP 一致的颜色方案
+    const graphColors = [
+      '#c96442', '#4a9e8a', '#8b6bbf', '#d4a843',
+      '#5b8abf', '#bf6b8a', '#6bbf4a', '#bf8a5b'
+    ];
+    const tagColorMap = {};
+
     function getTagColor(tagName) {
+      if (tagColorMap[tagName]) return tagColorMap[tagName];
       const tag = tags.value.find(t => t.name === tagName);
-      return tag ? tag.color : '#8d9e8a';
+      if (tag && tag.color && tag.color !== '#409EFF') return tag.color;
+      // 使用固定的 8 色方案
+      const idx = Object.keys(tagColorMap).length % graphColors.length;
+      tagColorMap[tagName] = graphColors[idx];
+      return tagColorMap[tagName];
     }
 
     async function renderGraph() {
