@@ -32,7 +32,7 @@ try:
 finally:
     _mig_db.close()
 
-app = FastAPI(title="知识库 API", version="1.0.0")
+app = FastAPI(title="知识库 API", version="1.1.0")
 
 # CORS
 app.add_middleware(
