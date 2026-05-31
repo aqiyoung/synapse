@@ -889,7 +889,7 @@ a:hover { color: var(--text); }
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button @click="pruneGraph" :disabled="fixing === 'prune'"
                   style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--muted);cursor:pointer;font-size:11px;transition:all .15s;"
-                  @mouseenter="$event.target.style.borderColor=var(--accent);$event.target.style.color=var(--accent);"
+                  @mouseenter="$event.target.style.borderColor='var(--accent)';$event.target.style.color='var(--accent)';"
                   @mouseleave="$event.target.style.borderColor='var(--line)';$event.target.style.color='var(--muted)';">
                   <span v-if="fixing === 'prune'">⏳</span>
                   {{ fixing === 'prune' ? '清理中...' : '清理垃圾边' }}
@@ -1232,6 +1232,27 @@ createApp({
       } catch(e) {
         console.error('修复失败:', e);
         lintFixing.value[type] = false;
+      }
+    }
+
+    async function pruneGraph() {
+      fixing.value = 'prune';
+      pruneResult.value = '';
+      try {
+        const resp = await fetch(API + '/graph/prune', { method: 'POST', headers: getAuthHeaders() });
+        const result = await resp.json();
+        const parts = [];
+        if (result.self_loops) parts.push(`自环 ${result.self_loops}`);
+        if (result.duplicates) parts.push(`重复 ${result.duplicates}`);
+        if (result.stale_edges) parts.push(`失效 ${result.stale_edges}`);
+        pruneResult.value = parts.length
+          ? `清理完成：${parts.join('、')}，共 ${result.fixed_count} 条`
+          : '图谱干净，无需清理';
+      } catch(e) {
+        console.error('清理失败:', e);
+        pruneResult.value = '清理失败，请重试';
+      } finally {
+        fixing.value = '';
       }
     }
 
@@ -1842,6 +1863,7 @@ createApp({
       if (isDark.value) document.documentElement.setAttribute('data-theme', 'dark');
       Promise.all([loadNotes(), loadTags(), loadStats()]).finally(() => {
         loading.value = false;
+      });
       // Hash routing: parse #/note/slug on load
       const hash = location.hash;
       if (hash.startsWith("#/note/")) {
@@ -1862,7 +1884,6 @@ createApp({
           mobileShowList.value = true;
         }
       });
-      });
       document.addEventListener('click', (e) => {
         const wl = e.target.closest('.wikilink');
         if (wl) {
@@ -1880,6 +1901,7 @@ createApp({
       sortKey, sortDir, isDark, loading, relationsData, tocItems, tocActive,
       totalEdges, activeView, filteredNotes, graphNodes, graphEdges,
       lintData, lintLoading, lintBadge, loadError,
+      fixing, pruneResult, pruneGraph,
       switchView, runLint, fixIssue, getFixLabel, lintFixing,
       openNote, openRelation, toggleTag, doSearch, setSort,
       toggleTheme, scrollToHeading, renderMd, strip, fmt,

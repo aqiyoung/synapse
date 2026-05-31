@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 import os, shutil, uuid, zipfile, io
+from datetime import datetime, timezone, timedelta
 
+from models import Tag
 from crud import (
     init_db, get_db, create_note, get_note, get_note_by_slug, list_notes,
     update_note, delete_note, list_tags, get_or_create_tag,
