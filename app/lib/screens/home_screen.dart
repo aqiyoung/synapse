@@ -75,7 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
             action: SnackBarAction(
               label: '设置',
               onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                  MaterialPageRoute(builder: (_) => SettingsScreen(
+                    onToggleTheme: widget.onToggleTheme,
+                    isDark: widget.isDark,
+                  ))),
             ),
           ),
         );
@@ -140,14 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: widget.onToggleTheme,
-        backgroundColor: colorScheme.surface,
-        child: Icon(
-          widget.isDark ? Icons.light_mode : Icons.dark_mode,
-          color: colorScheme.primary,
-        ),
-      ),
+      floatingActionButton: null,
     );
   }
 
@@ -188,7 +184,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const SettingsScreen(),
+                            builder: (_) => SettingsScreen(
+                              onToggleTheme: widget.onToggleTheme,
+                              isDark: widget.isDark,
+                            ),
                           ),
                         );
                       },

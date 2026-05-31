@@ -1240,14 +1240,14 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
     """清除图谱垃圾边：
     1. 自环（source == target）
     2. 重复边
-    3. 指向已删除笔记的边
-    返回清理统计，不修改数据库（图谱是动态生成的）
+    3. 指向已删除笔记的边（stale）
+    返回清理统计和被清理的边列表
     """
     import re
 
     total, notes = list_notes(db, limit=1000, include_deleted=True)
-    all_titles = {n.title for n in notes if n.deleted_at is None}
-    active_ids = {n.id for n in notes if n.deleted_at is None}
+    active_notes = [n for n in notes if n.deleted_at is None]
+    all_titles = {n.title for n in active_notes}
 
     self_loops = 0
     duplicates = 0
@@ -1260,7 +1260,6 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
             continue
         for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
             target_title = m.group(1)
-            target_id = title_map.get(target_title) if 'title_map' in dir() else None
 
             # 自环
             if target_title == n.title:
@@ -1274,7 +1273,7 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
                 pruned_edges.append({"from": n.title, "to": target_title, "reason": "stale"})
                 continue
 
-            # 重复
+            # 重复边
             key = (n.id, target_title)
             if key in edge_set:
                 duplicates += 1
@@ -1283,10 +1282,9 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
             edge_set.add(key)
 
     return {
+        "fixed_count": self_loops + duplicates + stale,
         "self_loops": self_loops,
         "duplicates": duplicates,
         "stale_edges": stale,
-        "total_pruned": self_loops + duplicates + stale,
         "pruned_edges": pruned_edges[:20],
-        "dry_run": req.dry_run,
     }

@@ -3,7 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final VoidCallback onToggleTheme;
+  final bool isDark;
+
+  const SettingsScreen({
+    super.key,
+    required this.onToggleTheme,
+    required this.isDark,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -18,6 +25,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _versionTapCount = 0;
 
   static const String _adminPassword = 'synapse2026';
+
+  bool get _isDark => widget.isDark;
 
   @override
   void initState() {
@@ -139,9 +148,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // 服务器配置（始终显示）
+          // ── 外观 ──
           Text(
-            '服务器配置',
+            '外观',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            leading: Icon(
+              _isDark ? Icons.dark_mode : Icons.light_mode,
+              color: colorScheme.primary,
+            ),
+            title: const Text('深色模式'),
+            subtitle: Text(_isDark ? '当前：深色' : '当前：浅色'),
+            trailing: Switch(
+              value: _isDark,
+              onChanged: (_) => widget.onToggleTheme(),
+              activeColor: colorScheme.primary,
+            ),
+            contentPadding: EdgeInsets.zero,
+            onTap: widget.onToggleTheme,
+          ),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 服务器配置 ──
+          Text(
+            '服务器',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -174,12 +211,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(_saved ? '已保存' : '保存'),
+              child: Text(_saved ? '已保存 ✓' : '保存'),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           Divider(color: colorScheme.outline.withOpacity(0.1)),
           const SizedBox(height: 16),
+          // ── 关于 ──
           Text(
             '关于',
             style: TextStyle(
@@ -192,7 +230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(Icons.info_outline, color: colorScheme.primary),
             title: const Text('版本'),
-            subtitle: const Text('2.1.3'),
+            subtitle: const Text('2.2.0'),
             contentPadding: EdgeInsets.zero,
             onTap: _onVersionTap,
           ),
@@ -235,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           // 管理员区域（隐藏，点击三次版本号显示）
           if (_showAdminLogin) ...[
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             Divider(color: colorScheme.outline.withOpacity(0.1)),
             const SizedBox(height: 16),
             if (_isLoggedIn)
