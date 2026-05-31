@@ -50,7 +50,7 @@
   --amber: #9a6800;
   --red: #c0392b;
   --radius: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --shadow: 0 0 0 1px rgba(0,0,0,0.06);
   --font: 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
   --font-serif: 'MiSans', Georgia, 'Times New Roman', 'Noto Serif SC', serif;
   --font-mono: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
@@ -354,7 +354,7 @@ a:hover { color: var(--text); }
 .dash tbody tr:hover td { background: var(--accent-light); }
 
 .dash .note-title {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -710,6 +710,18 @@ a:hover { color: var(--text); }
   .cl-tags { max-height: 80px; }
   .content { padding-bottom: 24px; }
 }
+/* ── Brand header subtitle ── */
+.cl-head-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+/* ── Softer card shadow ── */
+.panel-card, .note-view {
+  box-shadow: 0px 0px 0px 1px rgba(0,0,0,0.06);
+}
 </style>
 </head>
 <body>
@@ -751,6 +763,7 @@ a:hover { color: var(--text); }
     <div class="cl-resize" @mousedown.prevent="startResize"></div>
     <div class="cl-head">
       <h1>Synapse</h1>
+        <div class="cl-head-sub">{{ notes.length }} 篇</div>
     </div>
     <div class="cl-search">
       <input type="text" v-model="searchQ" @input="doSearch" placeholder="搜索笔记..." />
