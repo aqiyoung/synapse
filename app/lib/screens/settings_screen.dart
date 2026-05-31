@@ -13,11 +13,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _serverController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _saved = false;
-  bool _showServerConfig = false;
+  bool _showAdminLogin = false;
   bool _isLoggedIn = false;
   int _versionTapCount = 0;
 
-  // 简单的管理员密码（实际项目应该用更安全的方式）
   static const String _adminPassword = 'synapse2026';
 
   @override
@@ -67,7 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _versionTapCount++;
       if (_versionTapCount >= 3) {
-        _showServerConfig = !_showServerConfig;
+        _showAdminLogin = !_showAdminLogin;
         _versionTapCount = 0;
       }
     });
@@ -140,49 +139,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // 服务器配置（隐藏，点击三次版本号显示）
-          if (_showServerConfig) ...[
-            Text(
-              '服务器配置',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
+          // 服务器配置（始终显示）
+          Text(
+            '服务器配置',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _serverController,
-              decoration: InputDecoration(
-                hintText: 'https://your-server.com',
-                labelText: '服务器地址',
-                border: OutlineInputBorder(
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _serverController,
+            decoration: InputDecoration(
+              hintText: 'https://your-server.com',
+              labelText: '服务器地址',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _saveServer,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
+              child: Text(_saved ? '已保存' : '保存'),
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _saveServer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(_saved ? '已保存' : '保存'),
-              ),
-            ),
-            const SizedBox(height: 32),
-            Divider(color: colorScheme.outline.withOpacity(0.1)),
-            const SizedBox(height: 16),
-          ],
+          ),
+          const SizedBox(height: 32),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
           Text(
             '关于',
             style: TextStyle(
@@ -195,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(Icons.info_outline, color: colorScheme.primary),
             title: const Text('版本'),
-            subtitle: const Text('2.1.2'),
+            subtitle: const Text('2.1.3'),
             contentPadding: EdgeInsets.zero,
             onTap: _onVersionTap,
           ),
@@ -236,29 +233,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 32),
-          Divider(color: colorScheme.outline.withOpacity(0.1)),
-          const SizedBox(height: 16),
-          // 管理员区域
-          if (_isLoggedIn) ...[
-            ListTile(
-              leading: Icon(Icons.admin_panel_settings, color: colorScheme.primary),
-              title: const Text('管理员'),
-              subtitle: const Text('已登录 · 可删除笔记'),
-              trailing: TextButton(
-                onPressed: _logout,
-                child: const Text('退出'),
+          // 管理员区域（隐藏，点击三次版本号显示）
+          if (_showAdminLogin) ...[
+            const SizedBox(height: 32),
+            Divider(color: colorScheme.outline.withOpacity(0.1)),
+            const SizedBox(height: 16),
+            if (_isLoggedIn)
+              ListTile(
+                leading: Icon(Icons.admin_panel_settings, color: colorScheme.primary),
+                title: const Text('管理员'),
+                subtitle: const Text('已登录 · 可删除笔记'),
+                trailing: TextButton(
+                  onPressed: _logout,
+                  child: const Text('退出'),
+                ),
+                contentPadding: EdgeInsets.zero,
+              )
+            else
+              ListTile(
+                leading: Icon(Icons.lock_outline, color: colorScheme.onSurface.withOpacity(0.5)),
+                title: const Text('管理员登录'),
+                subtitle: const Text('登录后可删除笔记'),
+                onTap: _showLoginDialog,
+                contentPadding: EdgeInsets.zero,
               ),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ] else ...[
-            ListTile(
-              leading: Icon(Icons.lock_outline, color: colorScheme.onSurface.withOpacity(0.5)),
-              title: const Text('管理员登录'),
-              subtitle: const Text('登录后可删除笔记'),
-              onTap: _showLoginDialog,
-              contentPadding: EdgeInsets.zero,
-            ),
           ],
         ],
       ),
