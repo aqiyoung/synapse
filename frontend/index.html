@@ -861,12 +861,12 @@ a:hover { color: var(--text); }
                 <!-- 修复按钮 -->
                 <button v-if="['broken_link','orphan','no_tags'].includes(issue.type)"
                   @click="fixIssue(issue.type)"
-                  :disabled="fixing === issue.type"
+                  :disabled="lintFixing[issue.type]"
                   style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--accent);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer;font-size:11px;white-space:nowrap;transition:all .15s;"
-                  :style="fixing === issue.type ? 'opacity:.5;cursor:wait;' : 'opacity:1;'">
-                  <span v-if="fixing === issue.type">⏳</span>
+                  :style="lintFixing[issue.type] ? 'opacity:.5;cursor:wait;' : 'opacity:1;'">
+                  <span v-if="lintFixing[issue.type]">⏳</span>
                   <span v-else>🔧</span>
-                  {{ fixing === issue.type ? '修复中...' : getFixLabel(issue.type) }}
+                  {{ lintFixing[issue.type] ? '修复中...' : getFixLabel(issue.type) }}
                 </button>
               </div>
               <div v-if="issue.notes" style="margin-left:28px;">
@@ -1426,10 +1426,10 @@ createApp({
         const g = await fetchJSON(API + '/graph');
         const rawNodes = g.nodes || [];
         const rawEdges = g.edges || [];
-        const tagColorMap = {};
+        const localTagColorMap = {};
         for (const n of rawNodes) {
           const t = (n.tags || [])[0];
-          tagColorMap[n.id] = t ? getTagColor(t) : '#8d9e8a';
+          localTagColorMap[n.id] = t ? getTagColor(t) : '#8d9e8a';
         }
         // 自适应画布大小的初始布局
         const canvasEl = document.getElementById('graphCanvas');
@@ -1438,7 +1438,7 @@ createApp({
         const cx = initW / 2, cy = initH / 2, r = Math.min(initW, initH) * 0.35;
         graphNodes.value = rawNodes.map((n, i) => ({
           id: n.id, title: n.title || '无标题', tags: n.tags || [],
-          color: tagColorMap[n.id],
+          color: localTagColorMap[n.id],
           x: cx + r * Math.cos(2 * Math.PI * i / rawNodes.length),
           y: cy + r * Math.sin(2 * Math.PI * i / rawNodes.length),
           vx: 0, vy: 0
