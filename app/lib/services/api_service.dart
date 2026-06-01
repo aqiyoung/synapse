@@ -108,6 +108,7 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/broken-links'),
       headers: _headers,
+      body: json.encode({}),
     );
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -120,6 +121,7 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/orphans'),
       headers: _headers,
+      body: json.encode({}),
     );
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -132,6 +134,7 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/graph/prune'),
       headers: _headers,
+      body: json.encode({}),
     );
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -160,6 +163,7 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/no-tags'),
       headers: _headers,
+      body: json.encode({}),
     );
     if (response.statusCode == 200) {
       return json.decode(response.body);

@@ -797,7 +797,7 @@ a:hover { color: var(--text); }
         @click="openNote(n)">
         <div class="ttl">{{ n.title || '无标题' }}</div>
         <div class="sum">{{ strip(n.content).substring(0, 60) }}</div>
-        <div class="dt">{{ fmt(n.updated_at) }}</div>
+        <div class="dt">{{ fmt(n.created_at) }}</div>
       </div>
       <div v-if="!notes.length" style="padding:30px 12px;text-align:center;color:var(--muted);font-size:11px">
         <div style="font-size:28px;margin-bottom:6px;opacity:.15">{{ loadError ? '⚠️' : '📝' }}</div>
@@ -923,8 +923,8 @@ a:hover { color: var(--text); }
     <div class="content" v-if="activeView === 'kb' && !curNote && !loading">
       <div class="filter-bar">
         <select v-model="sortKey">
-          <option value="updated_at">最近更新</option>
-          <option value="created_at">创建时间</option>
+          <option value="created_at">发布时间</option>
+          <option value="updated_at">修改时间</option>
           <option value="title">标题</option>
         </select>
         <select v-model="sortDir">
@@ -943,8 +943,8 @@ a:hover { color: var(--text); }
             <th @click="setSort('tags')" :class="{ sorted: sortKey === 'tags' }">
               标签 <span class="arrow">{{ sortKey === 'tags' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
             </th>
-            <th @click="setSort('updated_at')" :class="{ sorted: sortKey === 'updated_at' }">
-              更新 <span class="arrow">{{ sortKey === 'updated_at' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            <th @click="setSort('created_at')" :class="{ sorted: sortKey === 'created_at' }">
+              发布 <span class="arrow">{{ sortKey === 'created_at' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
             </th>
             <th>摘要</th>
           </tr>
@@ -957,7 +957,7 @@ a:hover { color: var(--text); }
                 <span class="note-tag" v-for="tag in (n.tags || [])" :key="tag">{{ tag }}</span>
               </div>
             </td>
-            <td><span class="note-date">{{ fmt(n.updated_at) }}</span></td>
+            <td><span class="note-date">{{ fmt(n.created_at) }}</span></td>
             <td><span class="note-snippet">{{ strip(n.content).substring(0, 80) }}</span></td>
           </tr>
         </tbody>
@@ -980,11 +980,12 @@ a:hover { color: var(--text); }
       <div style="display:flex">
         <div class="note-view" style="flex:1">
           <div class="doc-title">{{ curNote.title || '无标题' }}</div>
-          <div class="doc-meta" v-if="curNote.tags && curNote.tags.length">
-            <div class="tags">
+          <div class="doc-meta">
+            <div class="tags" v-if="curNote.tags && curNote.tags.length">
               <span class="tag" v-for="tag in curNote.tags" :key="tag">{{ tag }}</span>
             </div>
-            <span>{{ fmt(curNote.updated_at) }}</span>
+            <span>发布 {{ fmt(curNote.created_at) }}</span>
+            <span v-if="curNote.updated_at !== curNote.created_at" style="opacity:.6">修改 {{ fmt(curNote.updated_at) }}</span>
           </div>
           <div class="md" v-html="renderMd(curNote.content)"></div>
 
@@ -1165,7 +1166,7 @@ createApp({
     const curTag = ref('');
     const searchQ = ref('');
     const filterQ = ref('');
-    const sortKey = ref('updated_at');
+    const sortKey = ref('created_at');
     const sortDir = ref('desc');
     const isDark = ref(localStorage.getItem('rb:theme') !== 'light');
     const loading = ref(true);

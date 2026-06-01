@@ -948,7 +948,7 @@ async def api_overview(db: Session = Depends(get_db)):
     tag_stats.sort(key=lambda x: x["count"], reverse=True)
 
     # 统计最近活跃
-    recent_notes = sorted(notes, key=lambda n: n.updated_at or datetime.min, reverse=True)[:10]
+    recent_notes = sorted(notes, key=lambda n: n.created_at or datetime.min, reverse=True)[:10]
 
     # 统计孤立笔记（无 wikilink 引用）
     import re
@@ -968,7 +968,7 @@ async def api_overview(db: Session = Depends(get_db)):
         "total_notes": total,
         "total_tags": len(tags),
         "top_tags": tag_stats[:15],
-        "recent_notes": [{"id": n.id, "title": n.title, "updated_at": n.updated_at.isoformat() if n.updated_at else ""} for n in recent_notes],
+        "recent_notes": [{"id": n.id, "title": n.title, "created_at": n.created_at.isoformat() if n.created_at else ""} for n in recent_notes],
         "orphan_notes": orphan_notes[:20],
         "orphan_count": len(orphan_notes),
     }
@@ -1124,7 +1124,9 @@ class LintFixRequest(BaseModel):
 
 
 @app.post("/api/lint/fix/broken-links")
-async def lint_fix_broken_links(req: LintFixRequest, db: Session = Depends(get_db)):
+async def lint_fix_broken_links(req: LintFixRequest = None, db: Session = Depends(get_db)):
+    if req is None:
+        req = LintFixRequest()
     """清除断链：从笔记内容中移除引用了不存在的 [[wikilink]]"""
     import re
 
@@ -1163,7 +1165,9 @@ async def lint_fix_broken_links(req: LintFixRequest, db: Session = Depends(get_d
 
 
 @app.post("/api/lint/fix/orphans")
-async def lint_fix_orphans(req: LintFixRequest, db: Session = Depends(get_db)):
+async def lint_fix_orphans(req: LintFixRequest = None, db: Session = Depends(get_db)):
+    if req is None:
+        req = LintFixRequest()
     """修复孤立笔记：给孤立笔记添加 '孤立' 标签，方便用户批量处理"""
     import re
 

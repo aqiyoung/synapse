@@ -153,7 +153,7 @@ def list_notes(db: Session, skip: int = 0, limit: int = 50, tag: str = None, key
             )
 
     total = query.count()
-    notes = query.order_by(Note.updated_at.desc()).offset(skip).limit(limit).all()
+    notes = query.order_by(Note.created_at.desc()).offset(skip).limit(limit).all()
     return total, notes
 
 

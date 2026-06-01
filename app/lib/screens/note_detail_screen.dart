@@ -191,12 +191,21 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                       ),
                     ),
                   )),
-              if (_note!.updatedAt != null)
+              if (_note!.createdAt != null)
                 Text(
-                  '更新于 ${_formatDate(_note!.updatedAt!)}',
+                  '${_formatDate(_note!.createdAt!)}',
                   style: TextStyle(
                     fontSize: 12,
                     color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+              if (_note!.updatedAt != null && _note!.createdAt != null &&
+                  _note!.updatedAt!.difference(_note!.createdAt!).inSeconds > 0)
+                Text(
+                  '修改于 ${_formatDate(_note!.updatedAt!)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurface.withOpacity(0.35),
                   ),
                 ),
             ],
