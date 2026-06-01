@@ -332,55 +332,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : Icon(Icons.check_circle_outline, color: Colors.green),
             contentPadding: EdgeInsets.zero,
             onTap: () async {
+              if (UpdateService().isDownloading) return;
               if (UpdateService().hasUpdate) {
-                final info = UpdateService().cached!;
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('发现新版本'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('当前版本: $_currentVersion'),
-                        Text('最新版本: ${info.latestVersion}'),
-                        if (info.releaseNotes != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            '更新内容:',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            info.releaseNotes!,
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('取消'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('下载'),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  setState(() {});
-                  final err = await UpdateService().download();
-                  if (mounted) {
-                    if (err != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(err)),
-                      );
-                    }
-                    setState(() {});
+                setState(() {});
+                final err = await UpdateService().download();
+                if (mounted) {
+                  if (err != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(err)),
+                    );
                   }
+                  setState(() {});
                 }
               } else {
                 _checkUpdate();
