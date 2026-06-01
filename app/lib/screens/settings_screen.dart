@@ -294,8 +294,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          // 管理员区域（隐藏，点击三次版本号显示）
-          if (_showAdminLogin) ...[
           const SizedBox(height: 24),
           Divider(color: colorScheme.outline.withOpacity(0.1)),
           const SizedBox(height: 16),
@@ -372,9 +370,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
           ),
-          const SizedBox(height: 24),
-          Divider(color: colorScheme.outline.withOpacity(0.1)),
-          const SizedBox(height: 16),
+          // 管理员区域（隐藏，点击三次版本号显示）
+          if (_showAdminLogin) ...[
+            const SizedBox(height: 24),
+            Divider(color: colorScheme.outline.withOpacity(0.1)),
+            const SizedBox(height: 16),
             if (_isLoggedIn)
               ListTile(
                 leading: Icon(Icons.admin_panel_settings, color: colorScheme.primary),
