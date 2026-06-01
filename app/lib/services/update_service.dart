@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class UpdateInfo {
   final String latestVersion;
@@ -84,21 +84,28 @@ class UpdateService {
         releaseNotes: releaseNotes,
       );
     } catch (_) {
-      // silent
     } finally {
       _checked = true;
     }
   }
 
   Future<void> openDownload() async {
-    if (_cachedUpdate == null) return;
-    final uri = Uri.parse(Uri.encodeFull(_cachedUpdate!.downloadUrl));
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final url = 'https://github.com/aqiyoung/synapse/releases/latest';
+    try {
+      await Process.run('am', [
+        'start',
+        '-a', 'android.intent.action.VIEW',
+        '-d', url,
+      ]);
+    } catch (_) {
+      // fallback: try Process with different args
+      try {
+        await Process.run('xdg-open', [url]);
+      } catch (_) {}
+    }
   }
 
   Future<void> openReleasePage() async {
-    final uri = Uri.parse(
-        'https://github.com/aqiyoung/synapse/releases/latest');
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await openDownload();
   }
 }
