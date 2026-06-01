@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UpdateInfo {
   final String latestVersion;
@@ -92,9 +93,17 @@ class UpdateService {
   Future<void> openDownload() async {
     if (_cachedUpdate == null) return;
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final server = prefs.getString('server') ?? '';
+      if (server.isEmpty) return;
+      var base = server;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      final url = '$base/api/update/download';
       await Process.run('am', [
         'start', '-a', 'android.intent.action.VIEW',
-        '-d', _cachedUpdate!.downloadUrl,
+        '-d', url,
       ]);
     } catch (_) {}
   }

@@ -71,7 +71,7 @@ def _make_snippet(content, keyword, max_len=150):
 
 
 # 公开接口不需要认证的路径
-_PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/ai/config"}
+_PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/download"}
 
 
 @app.middleware("http")
@@ -1166,3 +1166,41 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
         "stale_edges": stale,
         "pruned_edges": pruned_edges[:20],
     }
+
+
+# ===== 更新代理 API =====
+
+@app.get("/api/update/download")
+async def api_update_download():
+    """代理 APK 下载：从 GitHub 拉取最新 APK 流式返回"""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
+                "https://api.github.com/repos/aqiyoung/synapse/releases/latest",
+                headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=502, detail="获取版本信息失败")
+            data = resp.json()
+            tag = data["tag_name"]
+            version = tag.lstrip("v")
+            apk_url = f"https://github.com/aqiyoung/synapse/releases/download/{tag}/synapse-v{version}.apk"
+
+        async def _stream():
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                async with client.stream("GET", apk_url, follow_redirects=True) as apk_resp:
+                    if apk_resp.status_code != 200:
+                        raise HTTPException(status_code=502, detail="下载 APK 失败")
+                    async for chunk in apk_resp.aiter_bytes():
+                        yield chunk
+
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(
+            _stream(),
+            media_type="application/vnd.android.package-archive",
+            headers={"Content-Disposition": f'attachment; filename="synapse-v{version}.apk"'},
+        )
+    except Exception as e:
+        logger.error(f"Update proxy failed: {e}")
+        raise HTTPException(status_code=502, detail=f"代理下载失败: {str(e)}")
