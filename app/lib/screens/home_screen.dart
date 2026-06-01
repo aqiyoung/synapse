@@ -8,6 +8,7 @@ import 'graph_screen.dart';
 import 'lint_screen.dart';
 import 'settings_screen.dart';
 import '../widgets/tag_chip.dart';
+import '../services/update_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -37,6 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+    _checkUpdate();
+  }
+
+  Future<void> _checkUpdate() async {
+    await UpdateService().check();
+    if (mounted && UpdateService().hasUpdate) setState(() {});
   }
 
   @override
@@ -179,23 +186,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SettingsScreen(
-                              onToggleTheme: widget.onToggleTheme,
-                              isDark: widget.isDark,
+                    Stack(
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SettingsScreen(
+                                  onToggleTheme: widget.onToggleTheme,
+                                  isDark: widget.isDark,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Icon(
+                            Icons.settings_outlined,
+                            size: 20,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ),
+                        if (UpdateService().hasUpdate)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        );
-                      },
-                      child: Icon(
-                        Icons.settings_outlined,
-                        size: 20,
-                        color: colorScheme.onSurface.withOpacity(0.5),
-                      ),
+                      ],
                     ),
                   ],
                 ),

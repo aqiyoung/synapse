@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'services/api_service.dart';
+import 'services/update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,9 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final server = prefs.getString('server') ?? 'http://localhost:18800';
   await ApiService.setServer(server);
+
+  // Silent update check
+  UpdateService().check();
 
   runApp(const KnowledgeBaseApp());
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
+import '../services/update_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -23,6 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showAdminLogin = false;
   bool _isLoggedIn = false;
   int _versionTapCount = 0;
+  String _currentVersion = '';
 
   static const String _adminPassword = 'synapse2026';
 
@@ -33,6 +36,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadServer();
     _checkLoginState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final v = await _getCurrentVersion();
+    if (mounted) setState(() => _currentVersion = v);
+  }
+
+  Future<String> _getCurrentVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      return info.version;
+    } catch (_) {
+      return '2.2.4';
+    }
+  }
+
+  Future<void> _checkUpdate() async {
+    await UpdateService().check();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -230,7 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(Icons.info_outline, color: colorScheme.primary),
             title: const Text('版本'),
-            subtitle: const Text('2.2.1'),
+            subtitle: Text(_currentVersion),
             contentPadding: EdgeInsets.zero,
             onTap: _onVersionTap,
           ),
@@ -273,9 +296,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           // 管理员区域（隐藏，点击三次版本号显示）
           if (_showAdminLogin) ...[
-            const SizedBox(height: 24),
-            Divider(color: colorScheme.outline.withOpacity(0.1)),
-            const SizedBox(height: 16),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 更新 ──
+          Text(
+            '更新',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            leading: Icon(Icons.system_update_outlined, color: colorScheme.primary),
+            title: Text(
+              UpdateService().hasUpdate
+                  ? '新版本 ${UpdateService().cached!.latestVersion} 可用'
+                  : '检查更新',
+            ),
+            subtitle: Text(
+              UpdateService().hasUpdate
+                  ? '点击下载 APK 安装'
+                  : '自动检查 GitHub 发布',
+            ),
+            trailing: UpdateService().hasUpdate
+                ? Icon(Icons.download, color: colorScheme.primary)
+                : Icon(Icons.check_circle_outline, color: Colors.green),
+            contentPadding: EdgeInsets.zero,
+            onTap: () async {
+              if (UpdateService().hasUpdate) {
+                final info = UpdateService().cached!;
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('发现新版本'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('当前版本: ${await _getCurrentVersion()}'),
+                        Text('最新版本: ${info.latestVersion}'),
+                        if (info.releaseNotes != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            '更新内容:',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            info.releaseNotes!,
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('取消'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('下载'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await UpdateService().openDownload();
+                }
+              } else {
+                _checkUpdate();
+              }
+            },
+          ),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
             if (_isLoggedIn)
               ListTile(
                 leading: Icon(Icons.admin_panel_settings, color: colorScheme.primary),
