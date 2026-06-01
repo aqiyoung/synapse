@@ -328,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNoteItem(Note note, ColorScheme colorScheme) {
-    final timeAgo = _formatTimeAgo(note.createdAt);
+    final timeAgo = _formatTimeAgo(note.sourceCreatedAt ?? note.createdAt);
 
     return InkWell(
       onTap: () {

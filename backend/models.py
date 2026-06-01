@@ -24,6 +24,7 @@ class Note(Base):
     content = Column(Text, nullable=False, default="")
     summary = Column(String(500), default="")
     created_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
+    source_created_at = Column(DateTime, nullable=True, default=None)
     updated_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))),
                         onupdate=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
     deleted_at = Column(DateTime, nullable=True, default=None)
@@ -39,6 +40,7 @@ class Note(Base):
             "content": self.content,
             "summary": self.summary,
             "created_at": self.created_at.isoformat() if self.created_at else "",
+            "source_created_at": self.source_created_at.isoformat() if self.source_created_at else "",
             "updated_at": self.updated_at.isoformat() if self.updated_at else "",
             "deleted_at": self.deleted_at.isoformat() if self.deleted_at else "",
             "tags": [t.name for t in self.tags],

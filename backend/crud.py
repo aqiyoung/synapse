@@ -72,10 +72,10 @@ def _generate_slug(db: Session, created_at: datetime) -> str:
     return f"{date_str}{count + 1:03d}"
 
 
-def create_note(db: Session, title: str, content: str, tag_names: list = None) -> Note:
+def create_note(db: Session, title: str, content: str, tag_names: list = None, source_created_at: datetime = None) -> Note:
     """创建笔记"""
     now = datetime.now(tz=timezone(timedelta(hours=8)))
-    note = Note(title=title, content=content, created_at=now)
+    note = Note(title=title, content=content, created_at=now, source_created_at=source_created_at)
     # 先提交拿到 created_at，再生成 slug
     db.add(note)
     db.flush()
@@ -153,7 +153,7 @@ def list_notes(db: Session, skip: int = 0, limit: int = 50, tag: str = None, key
             )
 
     total = query.count()
-    notes = query.order_by(Note.created_at.desc()).offset(skip).limit(limit).all()
+    notes = query.order_by(Note.source_created_at.desc().nulls_last(), Note.created_at.desc()).offset(skip).limit(limit).all()
     return total, notes
 
 

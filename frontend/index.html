@@ -797,7 +797,7 @@ a:hover { color: var(--text); }
         @click="openNote(n)">
         <div class="ttl">{{ n.title || '无标题' }}</div>
         <div class="sum">{{ strip(n.content).substring(0, 60) }}</div>
-        <div class="dt">{{ fmt(n.created_at) }}</div>
+        <div class="dt">{{ fmt(n.source_created_at || n.created_at) }}</div>
       </div>
       <div v-if="!notes.length" style="padding:30px 12px;text-align:center;color:var(--muted);font-size:11px">
         <div style="font-size:28px;margin-bottom:6px;opacity:.15">{{ loadError ? '⚠️' : '📝' }}</div>
@@ -923,7 +923,8 @@ a:hover { color: var(--text); }
     <div class="content" v-if="activeView === 'kb' && !curNote && !loading">
       <div class="filter-bar">
         <select v-model="sortKey">
-          <option value="created_at">发布时间</option>
+          <option value="source_created_at">撰写时间</option>
+          <option value="created_at">入库时间</option>
           <option value="updated_at">修改时间</option>
           <option value="title">标题</option>
         </select>
@@ -943,8 +944,11 @@ a:hover { color: var(--text); }
             <th @click="setSort('tags')" :class="{ sorted: sortKey === 'tags' }">
               标签 <span class="arrow">{{ sortKey === 'tags' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
             </th>
+            <th @click="setSort('source_created_at')" :class="{ sorted: sortKey === 'source_created_at' }">
+              撰写 <span class="arrow">{{ sortKey === 'source_created_at' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
             <th @click="setSort('created_at')" :class="{ sorted: sortKey === 'created_at' }">
-              发布 <span class="arrow">{{ sortKey === 'created_at' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              入库 <span class="arrow">{{ sortKey === 'created_at' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
             </th>
             <th>摘要</th>
           </tr>
@@ -957,7 +961,8 @@ a:hover { color: var(--text); }
                 <span class="note-tag" v-for="tag in (n.tags || [])" :key="tag">{{ tag }}</span>
               </div>
             </td>
-            <td><span class="note-date">{{ fmt(n.created_at) }}</span></td>
+            <td><span class="note-date">{{ fmt(n.source_created_at || n.created_at) }}</span></td>
+            <td><span class="note-date" style="opacity:.5;font-size:10px">{{ fmt(n.created_at) }}</span></td>
             <td><span class="note-snippet">{{ strip(n.content).substring(0, 80) }}</span></td>
           </tr>
         </tbody>
@@ -984,8 +989,9 @@ a:hover { color: var(--text); }
             <div class="tags" v-if="curNote.tags && curNote.tags.length">
               <span class="tag" v-for="tag in curNote.tags" :key="tag">{{ tag }}</span>
             </div>
-            <span>发布 {{ fmt(curNote.created_at) }}</span>
-            <span v-if="curNote.updated_at !== curNote.created_at" style="opacity:.6">修改 {{ fmt(curNote.updated_at) }}</span>
+            <span>撰写 {{ fmt(curNote.source_created_at || curNote.created_at) }}</span>
+            <span v-if="curNote.source_created_at && curNote.source_created_at !== curNote.created_at" style="opacity:.5">入库 {{ fmt(curNote.created_at) }}</span>
+            <span v-if="curNote.updated_at !== curNote.created_at" style="opacity:.5">修改 {{ fmt(curNote.updated_at) }}</span>
           </div>
           <div class="md" v-html="renderMd(curNote.content)"></div>
 
@@ -1166,7 +1172,7 @@ createApp({
     const curTag = ref('');
     const searchQ = ref('');
     const filterQ = ref('');
-    const sortKey = ref('created_at');
+    const sortKey = ref('source_created_at');
     const sortDir = ref('desc');
     const isDark = ref(localStorage.getItem('rb:theme') !== 'light');
     const loading = ref(true);
@@ -1329,8 +1335,12 @@ createApp({
       const k = sortKey.value;
       const d = sortDir.value === 'asc' ? 1 : -1;
       arr.sort((a, b) => {
-        const av = a[k] || '';
-        const bv = b[k] || '';
+        let av = a[k] || '';
+        let bv = b[k] || '';
+        if (k === 'source_created_at') {
+          av = av || a.created_at || '';
+          bv = bv || b.created_at || '';
+        }
         if (typeof av === 'string') return av.localeCompare(bv, 'zh') * d;
         return (av - bv) * d;
       });
@@ -1404,6 +1414,10 @@ createApp({
         sortKey.value = key;
         sortDir.value = key === 'title' ? 'asc' : 'desc';
       }
+    }
+
+    function sortKeyLabel(key) {
+      return { source_created_at: '撰写', created_at: '入库', updated_at: '修改', title: '标题' }[key] || key;
     }
 
     function toggleTheme() {

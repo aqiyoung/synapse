@@ -2,6 +2,7 @@
 """只导入技术文档到知识库（教程、文章、草稿、docs）"""
 import os
 import sys
+from datetime import datetime, timezone, timedelta
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -118,10 +119,9 @@ def main():
 
             # 剥离 frontmatter，保留正文
             fm_tags, body = parse_frontmatter(raw)
-            # frontmatter 中的 tags 优先级低于文件名推断的 tags
             merged_tags = list(dict.fromkeys(tags + fm_tags))
-
-            note = create_note(db, title=title, content=body, tag_names=merged_tags)
+            src_time = datetime.fromtimestamp(os.path.getmtime(filepath), tz=timezone(timedelta(hours=8)))
+            note = create_note(db, title=title, content=body, tag_names=merged_tags, source_created_at=src_time)
             tag_str = ",".join(tags) if tags else "-"
             print(f"  [#{note.id}] {title}  [{tag_str}]")
             ok += 1

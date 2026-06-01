@@ -2,6 +2,7 @@
 """从 OpenClaw 备份中导入 Markdown 文件到知识库数据库"""
 import os
 import sys
+from datetime import datetime, timezone, timedelta
 
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(__file__))
@@ -129,7 +130,8 @@ def main():
                 # 剥离 frontmatter，保留正文
                 fm_tags, body = parse_frontmatter(content)
                 merged_tags = list(dict.fromkeys(tags + fm_tags))
-                note = create_note(db, title=title, content=body, tag_names=merged_tags)
+                src_time = datetime.fromtimestamp(os.path.getmtime(filepath), tz=timezone(timedelta(hours=8)))
+                note = create_note(db, title=title, content=body, tag_names=merged_tags, source_created_at=src_time)
                 print(f"  [导入成功] #{note.id} {title} (标签: {tags})")
                 success += 1
 

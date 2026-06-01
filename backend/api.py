@@ -97,6 +97,7 @@ class NoteCreate(BaseModel):
     title: str = "无标题"
     content: str = ""
     tags: List[str] = []
+    source_created_at: Optional[str] = None
 
 class NoteUpdate(BaseModel):
     title: Optional[str] = None
@@ -160,7 +161,12 @@ def api_get_note(note_id: int, db: Session = Depends(get_db)):
 @app.post("/api/notes")
 async def api_create_note(data: NoteCreate, db: Session = Depends(get_db)):
     """创建笔记"""
-    note = create_note(db, title=data.title, content=data.content, tag_names=data.tags)
+    src = None
+    if data.source_created_at:
+        try:
+            src = datetime.fromisoformat(data.source_created_at)
+        except: pass
+    note = create_note(db, title=data.title, content=data.content, tag_names=data.tags, source_created_at=src)
     # 后台自动 AI 分析（不阻塞响应）
     if llm.is_enabled() and data.content and len(data.content) > 50:
         import asyncio
@@ -948,7 +954,7 @@ async def api_overview(db: Session = Depends(get_db)):
     tag_stats.sort(key=lambda x: x["count"], reverse=True)
 
     # 统计最近活跃
-    recent_notes = sorted(notes, key=lambda n: n.created_at or datetime.min, reverse=True)[:10]
+    recent_notes = sorted(notes, key=lambda n: n.source_created_at or n.created_at or datetime.min, reverse=True)[:10]
 
     # 统计孤立笔记（无 wikilink 引用）
     import re
@@ -968,7 +974,7 @@ async def api_overview(db: Session = Depends(get_db)):
         "total_notes": total,
         "total_tags": len(tags),
         "top_tags": tag_stats[:15],
-        "recent_notes": [{"id": n.id, "title": n.title, "created_at": n.created_at.isoformat() if n.created_at else ""} for n in recent_notes],
+        "recent_notes": [{"id": n.id, "title": n.title, "created_at": n.created_at.isoformat() if n.created_at else "", "source_created_at": n.source_created_at.isoformat() if n.source_created_at else ""} for n in recent_notes],
         "orphan_notes": orphan_notes[:20],
         "orphan_count": len(orphan_notes),
     }

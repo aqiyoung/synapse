@@ -6,6 +6,7 @@ class Note {
   final String summary;
   final List<String> tags;
   final DateTime? createdAt;
+  final DateTime? sourceCreatedAt;
   final DateTime? updatedAt;
 
   Note({
@@ -16,6 +17,7 @@ class Note {
     this.summary = '',
     this.tags = const [],
     this.createdAt,
+    this.sourceCreatedAt,
     this.updatedAt,
   });
 
@@ -29,6 +31,9 @@ class Note {
       tags: List<String>.from(json['tags'] ?? []),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
+          : null,
+      sourceCreatedAt: json['source_created_at'] != null
+          ? DateTime.tryParse(json['source_created_at'])
           : null,
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'])

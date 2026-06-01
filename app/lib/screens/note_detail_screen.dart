@@ -191,12 +191,29 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                       ),
                     ),
                   )),
-              if (_note!.createdAt != null)
+              if (_note!.sourceCreatedAt != null)
                 Text(
-                  '${_formatDate(_note!.createdAt!)}',
+                  '撰写 ${_formatDate(_note!.sourceCreatedAt!)}',
                   style: TextStyle(
                     fontSize: 12,
                     color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                )
+              else if (_note!.createdAt != null)
+                Text(
+                  '撰写 ${_formatDate(_note!.createdAt!)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+              if (_note!.sourceCreatedAt != null && _note!.createdAt != null &&
+                  _note!.sourceCreatedAt!.difference(_note!.createdAt!).inSeconds.abs() > 1)
+                Text(
+                  '入库 ${_formatDate(_note!.createdAt!)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurface.withOpacity(0.35),
                   ),
                 ),
               if (_note!.updatedAt != null && _note!.createdAt != null &&
