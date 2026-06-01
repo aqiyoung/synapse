@@ -1212,7 +1212,7 @@ createApp({
         nextTick(() => renderGraph());
       } else if (view === 'lint') {
         runLint();
-
+      }
     }
 
     async function runLint() {
@@ -1917,10 +1917,9 @@ createApp({
       notes, tags, curNote, curTag, searchQ, filterQ,
       sortKey, sortDir, isDark, loading, relationsData, tocItems, tocActive,
       totalEdges, activeView, filteredNotes, graphNodes, graphEdges,
-      showNav, mobileShowList, notes, tags, curNote, curTag,
-      searchQ, filterQ, sortKey, sortDir, isDark, loading,
-      lintData, lintLoading, lintBadge, lintFixing,
-      switchView, runLint, fixIssue, getFixLabel, lintFixing,
+      lintData, lintLoading, lintBadge, loadError,
+      fixing, pruneResult, pruneGraph,
+      switchView, runLint, fixIssue, getFixLabel,
       openNote, openRelation, toggleTag, doSearch, setSort,
       toggleTheme, scrollToHeading, renderMd, strip, fmt,
     };
