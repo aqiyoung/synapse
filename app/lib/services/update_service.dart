@@ -92,17 +92,13 @@ class UpdateService {
 
   Future<void> openDownload() async {
     if (_cachedUpdate == null) return;
-    final uri = Uri.parse(_cachedUpdate!.downloadUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    final uri = Uri.parse(Uri.encodeFull(_cachedUpdate!.downloadUrl));
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> openReleasePage() async {
     final uri = Uri.parse(
         'https://github.com/aqiyoung/synapse/releases/latest');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
