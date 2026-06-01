@@ -12,7 +12,7 @@ from typing import List, Optional
 import os, shutil, uuid, zipfile, io
 from datetime import datetime, timezone, timedelta
 
-from models import Tag
+from models import Tag, note_tags
 from crud import (
     init_db, get_db, create_note, get_note, get_note_by_slug, list_notes,
     update_note, delete_note, list_tags, get_or_create_tag,
@@ -1056,8 +1056,15 @@ async def ai_lint(db: Session = Depends(get_db)):
             for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
                 referenced.add(m.group(1))
 
+    # 已被标记为孤立的笔记，不再重复告警
+    orphan_tagged_ids = {
+        nt.note_id for nt in db.query(note_tags).join(Tag).filter(Tag.name == "孤立").all()
+    }
+
     orphans = []
     for n in notes:
+        if n.id in orphan_tagged_ids:
+            continue
         has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
         has_incoming = n.title in referenced
         if not has_outgoing and not has_incoming:
