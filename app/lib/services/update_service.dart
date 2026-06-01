@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
 
 class UpdateInfo {
   final String latestVersion;
@@ -24,11 +22,9 @@ class UpdateService {
 
   UpdateInfo? _cachedUpdate;
   bool _checked = false;
-  bool _downloading = false;
 
   UpdateInfo? get cached => _cachedUpdate;
   bool get hasUpdate => _cachedUpdate != null;
-  bool get isDownloading => _downloading;
 
   Future<String> _getCurrentVersion() async {
     try {
@@ -93,32 +89,13 @@ class UpdateService {
     }
   }
 
-  Future<String?> download() async {
-    if (_cachedUpdate == null) return null;
-    _downloading = true;
+  Future<void> openDownload() async {
+    if (_cachedUpdate == null) return;
     try {
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/synapse-${_cachedUpdate!.latestVersion}.apk');
-
-      final resp = await http.get(Uri.parse(_cachedUpdate!.downloadUrl));
-      if (resp.statusCode != 200) return '下载失败 (${resp.statusCode})';
-      await file.writeAsBytes(resp.bodyBytes);
-
-      final result = await OpenFilex.open(file.path, type: 'application/vnd.android.package-archive');
-      if (result.type != ResultType.done) {
-        // fallback: try Process-based approach
-        final authority = '${file.path.contains('com.threel') ? 'com.threel.knowledge_base' : 'com.threel.knowledge_base'}.fileprovider';
-        final uri = Uri.parse('content://$authority/cache/synapse-${_cachedUpdate!.latestVersion}.apk');
-        await Process.run('am', [
-          'start', '-a', 'android.intent.action.INSTALL_PACKAGE',
-          '-d', uri.toString(),
-        ]);
-      }
-      return null;
-    } catch (e) {
-      return '下载失败: $e';
-    } finally {
-      _downloading = false;
-    }
+      await Process.run('am', [
+        'start', '-a', 'android.intent.action.VIEW',
+        '-d', _cachedUpdate!.downloadUrl,
+      ]);
+    } catch (_) {}
   }
 }

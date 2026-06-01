@@ -319,31 +319,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? '点击下载 APK 安装'
                   : '自动检查 GitHub 发布',
             ),
-            trailing: UpdateService().isDownloading
-                ? SizedBox(
-                    width: 20, height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colorScheme.primary,
-                    ),
-                  )
-                : UpdateService().hasUpdate
+            trailing: UpdateService().hasUpdate
                 ? Icon(Icons.download, color: colorScheme.primary)
                 : Icon(Icons.check_circle_outline, color: Colors.green),
             contentPadding: EdgeInsets.zero,
             onTap: () async {
-              if (UpdateService().isDownloading) return;
               if (UpdateService().hasUpdate) {
-                setState(() {});
-                final err = await UpdateService().download();
-                if (mounted) {
-                  if (err != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(err)),
-                    );
-                  }
-                  setState(() {});
-                }
+                await UpdateService().openDownload();
               } else {
                 _checkUpdate();
               }

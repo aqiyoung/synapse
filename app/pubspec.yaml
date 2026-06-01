@@ -1,7 +1,7 @@
 name: synapse
 description: Synapse - AI 驱动的个人知识管理系统
 publish_to: 'none'
-version: 2.2.10+52
+version: 2.2.11+53
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -16,8 +16,6 @@ dependencies:
   share_plus: ^10.0.0
   graphview: ^1.2.0
   package_info_plus: ^8.0.0
-  open_filex: ^4.4.0
-  path_provider: ^2.1.0
 
 dev_dependencies:
   flutter_test:
