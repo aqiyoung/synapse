@@ -5,11 +5,11 @@ logger = logging.getLogger(__name__)
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-import os, shutil, uuid, zipfile, io
+import os, shutil, uuid, zipfile, io, asyncio
 from datetime import datetime, timezone, timedelta
 
 from models import Tag, note_tags
@@ -18,8 +18,7 @@ from crud import (
     update_note, delete_note, list_tags, get_or_create_tag,
     restore_note, permanent_delete_note, list_deleted_notes, backfill_slugs,
 )
-from config import LLM_MODEL, LLM_ENABLED, RAG_MAX_NOTES, RAG_MAX_CHARS, API_TOKEN
-import llm
+from config import API_TOKEN
 
 # 初始化数据库
 init_db()
@@ -108,18 +107,12 @@ class NoteUpdate(BaseModel):
 
 # ===== AI 请求模型 =====
 
-class AIChatRequest(BaseModel):
-    message: str
-    note_ids: Optional[List[int]] = None
-
-class AICompleteRequest(BaseModel):
-    text: str
-    action: str = "continue"  # continue | polish | translate | summarize
-    target_lang: Optional[str] = "中文"
-
 class AIAutoTagRequest(BaseModel):
     title: str
     content: str
+
+class SmartIngestRequest(BaseModel):
+    note_id: int
 
 
 # ===== 笔记 API =====
@@ -167,9 +160,7 @@ async def api_create_note(data: NoteCreate, db: Session = Depends(get_db)):
             src = datetime.fromisoformat(data.source_created_at)
         except: pass
     note = create_note(db, title=data.title, content=data.content, tag_names=data.tags, source_created_at=src)
-    # 后台自动 AI 分析（不阻塞响应）
-    if llm.is_enabled() and data.content and len(data.content) > 50:
-        import asyncio
+    if data.content and len(data.content) > 50:
         asyncio.create_task(_auto_analyze_note(note.id))
     return note.to_dict()
 
@@ -185,9 +176,7 @@ async def api_update_note(note_id: int, data: NoteUpdate, db: Session = Depends(
     )
     if not note:
         raise HTTPException(status_code=404, detail="笔记不存在")
-    # 后台自动 AI 分析（不阻塞响应）
-    if llm.is_enabled() and data.content and len(data.content) > 50:
-        import asyncio
+    if data.content and len(data.content) > 50:
         asyncio.create_task(_auto_analyze_note(note_id))
     return note.to_dict()
 
@@ -542,96 +531,11 @@ def api_health(db: Session = Depends(get_db)):
 
 # ===== AI API =====
 
-@app.get("/api/ai/config")
-def ai_config():
-    """返回 AI 配置状态"""
-    return {"enabled": llm.is_enabled(), "model": LLM_MODEL}
-
-
-@app.post("/api/ai/chat")
-async def ai_chat(req: AIChatRequest, db: Session = Depends(get_db)):
-    """AI 对话（流式 SSE），支持 RAG"""
-    if not llm.is_enabled():
-        return Response(content="data: [ERROR] AI 未配置\n\n", media_type="text/event-stream")
-
-    messages = []
-
-    # RAG：拉取相关笔记作为上下文
-    context_text = ""
-    if req.note_ids:
-        note_ids = req.note_ids[:RAG_MAX_NOTES]
-        for nid in note_ids:
-            n = get_note(db, nid)
-            if n and n.content:
-                truncated = n.content[:RAG_MAX_CHARS]
-                context_text += f"\n\n--- 笔记《{n.title}》---\n{truncated}"
-
-    if context_text:
-        messages.append({
-            "role": "system",
-            "content": f"你是知识库助手。基于以下笔记内容回答用户问题。如果笔记中没有相关信息，请如实说明。\n{context_text}"
-        })
-    else:
-        messages.append({
-            "role": "system",
-            "content": "你是知识库助手，帮助用户管理和理解他们的知识。回答简洁有用，使用中文。"
-        })
-
-    messages.append({"role": "user", "content": req.message})
-
-    return StreamingResponse(llm.chat_stream(messages), media_type="text/event-stream")
-
-
-@app.post("/api/ai/complete")
-async def ai_complete(req: AICompleteRequest):
-    """AI 辅助写作（流式 SSE）"""
-    if not llm.is_enabled():
-        return Response(content="data: [ERROR] AI 未配置\n\n", media_type="text/event-stream")
-
-    action_prompts = {
-        "continue": "请续写下面的内容，保持风格和语气一致，直接输出续写部分：\n\n",
-        "polish": "请润色下面的内容，改进表达和流畅度，保持原意，直接输出润色后的内容：\n\n",
-        "translate": f"请将下面的内容翻译为 {req.target_lang}，直接输出翻译结果：\n\n",
-        "summarize": "请总结下面的内容，提炼关键要点，使用简洁的中文：\n\n",
-    }
-
-    prefix = action_prompts.get(req.action, action_prompts["continue"])
-    system = "你是一个专业的写作助手，直接输出结果，不要解释。"
-    prompt = prefix + req.text
-
-    return StreamingResponse(llm.chat_complete_stream(prompt, system), media_type="text/event-stream")
-
-
 @app.post("/api/ai/auto-tag")
 async def ai_auto_tag(req: AIAutoTagRequest):
-    """AI 自动标签和摘要"""
-    if not llm.is_enabled():
-        return {"tags": [], "summary": "", "error": "AI 未配置"}
-
-    prompt = f"""请为以下笔记生成标签和摘要。
-
-标题：{req.title}
-内容：{req.content[:3000]}
-
-请用 JSON 格式输出：
-{{
-  "tags": ["标签1", "标签2", "标签3"],
-  "summary": "一句话摘要"
-}}"""
-
-    result = llm.complete(prompt, system="你是一个知识管理助手，输出纯 JSON，不要包含 markdown 代码块。")
-
-    import json, re
-    try:
-        # 尝试提取 JSON
-        json_str = result.strip()
-        m = re.search(r'\{.*\}', json_str, re.DOTALL)
-        if m:
-            json_str = m.group()
-        data = json.loads(json_str)
-        return {"tags": data.get("tags", [])[:5], "summary": data.get("summary", "")[:200]}
-    except Exception:
-        return {"tags": [], "summary": ""}
+    """算法自动标签和摘要"""
+    tags, summary = _algo_analyze(req.title, req.content)
+    return {"tags": tags[:5], "summary": summary[:200]}
 
 
 @app.get("/api/notes/{note_id}/relations")
@@ -762,10 +666,64 @@ def api_delete_tag(tag_id: int, db: Session = Depends(get_db)):
     return {"ok": True, "deleted": tag.name}
 
 
-# ===== 后台自动 AI 分析 =====
+def _clean_text(text: str) -> str:
+    """清理 Markdown / HTML，返回纯文本"""
+    import re
+    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r'!?\[\[([^\]]+)\]\]', r'\1', text)
+    text = re.sub(r'[#*`~>|_\-]{1,}', ' ', text)
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+def _extract_keywords(text: str, top_n: int = 5) -> list[str]:
+    """从文本中提取高频关键词"""
+    import re, math
+    text = _clean_text(text)
+    if not text:
+        return []
+
+    # 提取中文词组（2~4 字滑动窗口，去停用字）
+    stop_chars = set('的了是在有和我就不也人一个上要会这中大下时为你而所如得以可')
+    chinese_ngrams: dict[str, int] = {}
+    chars = [c for c in text if '\u4e00' <= c <= '\u9fff']
+    for n in range(2, 5):
+        for i in range(len(chars) - n + 1):
+            gram = ''.join(chars[i:i+n])
+            # 跳过全停用字的组合
+            if all(c in stop_chars for c in gram):
+                continue
+            chinese_ngrams[gram] = chinese_ngrams.get(gram, 0) + 1
+
+    # 提取英文单词
+    words: dict[str, int] = {}
+    for w in re.findall(r'[a-zA-Z][a-zA-Z0-9\-]{1,}', text):
+        w = w.lower()
+        if len(w) >= 2:
+            words[w] = words.get(w, 0) + 1
+
+    scored = []
+    for phrase, freq in chinese_ngrams.items():
+        if freq >= 2:
+            scored.append((phrase, freq * math.log(len(phrase) + 1)))
+    for word, freq in words.items():
+        if freq >= 2:
+            scored.append((word, freq * math.log(len(word) + 1)))
+
+    scored.sort(key=lambda x: -x[1])
+    return [item[0] for item in scored[:top_n]]
+
+def _algo_analyze(title: str, content: str) -> tuple[list[str], str]:
+    """算法分析：提取关键词作为标签，取首段作为摘要"""
+    tags = _extract_keywords(title + ' ' + content, top_n=5)
+    clean = _clean_text(content)[:200]
+    return tags, clean
+
+
+# ===== 后台自动分析 =====
 
 async def _auto_analyze_note(note_id: int):
-    """后台自动分析笔记（静默运行，不阻塞主流程）"""
+    """后台自动分析笔记：关键词标签 + 首段摘要"""
     try:
         from crud import SessionLocal
         from models import Note, Tag
@@ -774,38 +732,9 @@ async def _auto_analyze_note(note_id: int):
             note = db.query(Note).filter(Note.id == note_id).first()
             if not note:
                 return
-            
-            # 获取所有笔记标题用于交叉引用
-            total, all_notes = list_notes(db, limit=500)
-            note_titles = [n.title for n in all_notes if n.id != note.id]
-            
-            prompt = f"""分析以下笔记，生成标签和摘要。
 
-标题：{note.title}
-内容：{(note.content or '')[:3000]}
+            tags, summary = _algo_analyze(note.title or '', note.content or '')
 
-现有笔记标题（用于交叉引用）：
-{chr(10).join(note_titles[:50])}
-
-请用 JSON 格式输出：
-{{
-  "tags": ["标签1", "标签2", "标签3"],
-  "summary": "一句话摘要（50字以内）"
-}}"""
-            
-            result = llm.complete(prompt, system="你是一个知识管理助手，输出纯 JSON。")
-            
-            import json, re
-            json_str = result.strip()
-            m = re.search(r'\{.*\}', json_str, re.DOTALL)
-            if m:
-                json_str = m.group()
-            data = json.loads(json_str)
-            
-            tags = data.get("tags", [])[:5]
-            summary = data.get("summary", "")[:200]
-            
-            # 更新笔记
             if tags:
                 note.tags.clear()
                 for name in tags:
@@ -814,10 +743,10 @@ async def _auto_analyze_note(note_id: int):
                         tag = Tag(name=name)
                         db.add(tag)
                     note.tags.append(tag)
-            
+
             if summary:
                 note.summary = summary
-            
+
             db.commit()
             logger.info(f"Auto-analyzed note {note_id}: tags={tags}, summary={summary[:30]}...")
         finally:
@@ -826,77 +755,15 @@ async def _auto_analyze_note(note_id: int):
         logger.error(f"Auto-analyze failed for note {note_id}: {e}")
 
 
-# ===== Karpathy LLM Wiki 风格功能 =====
-
-class SmartIngestRequest(BaseModel):
-    """智能摄入请求"""
-    note_id: int
-
-class OverviewRequest(BaseModel):
-    """全局概览请求"""
-    pass
-
-
 @app.post("/api/ai/smart-ingest")
 async def ai_smart_ingest(req: SmartIngestRequest, db: Session = Depends(get_db)):
-    """AI 智能摄入：自动分析笔记，生成标签、摘要、交叉引用
-    
-    借鉴 Karpathy LLM Wiki 的两步思维链：
-    第一步：分析内容，提取关键信息
-    第二步：生成结构化输出（标签、摘要、相关笔记）
-    """
-    if not llm.is_enabled():
-        return {"error": "AI 未配置"}
-
+    """智能摄入：算法分析笔记，生成标签、摘要"""
     note = get_note(db, req.note_id)
     if not note:
         raise HTTPException(status_code=404, detail="笔记不存在")
 
-    # 获取所有笔记标题用于交叉引用
-    total, all_notes = list_notes(db, limit=500)
-    note_titles = [n.title for n in all_notes if n.id != note.id]
+    tags, summary = _algo_analyze(note.title or '', note.content or '')
 
-    # 第一步：分析内容
-    analysis_prompt = f"""请分析以下笔记内容，提取关键信息。
-
-标题：{note.title}
-内容：{note.content[:4000]}
-
-请用 JSON 格式输出：
-{{
-  "tags": ["标签1", "标签2", "标签3"],
-  "summary": "一句话摘要（50字以内）",
-  "entities": ["提到的人物/组织/产品"],
-  "concepts": ["涉及的核心概念/技术/方法"],
-  "related_titles": ["与现有笔记可能相关的标题"]
-}}
-
-现有笔记标题列表（用于交叉引用匹配）：
-{chr(10).join(note_titles[:100])}
-"""
-
-    result = llm.complete(
-        analysis_prompt,
-        system="你是一个知识管理助手。分析笔记内容，提取标签、摘要、实体、概念，并找出与现有笔记的关联。输出纯 JSON。"
-    )
-
-    import json, re
-    try:
-        json_str = result.strip()
-        m = re.search(r'\{.*\}', json_str, re.DOTALL)
-        if m:
-            json_str = m.group()
-        data = json.loads(json_str)
-    except Exception:
-        return {"error": "AI 分析失败", "raw": result[:500]}
-
-    tags = data.get("tags", [])[:5]
-    summary = data.get("summary", "")[:200]
-    entities = data.get("entities", [])
-    concepts = data.get("concepts", [])
-    related_titles = data.get("related_titles", [])
-
-    # 更新笔记的标签和摘要
     if tags:
         note.tags.clear()
         for name in tags:
@@ -913,12 +780,17 @@ async def ai_smart_ingest(req: SmartIngestRequest, db: Session = Depends(get_db)
     db.commit()
     db.refresh(note)
 
-    # 找到匹配的笔记 ID
+    # 找标题包含相同关键词的笔记
+    total, all_notes = list_notes(db, limit=500)
     related_notes = []
-    for title in related_titles:
-        for n in all_notes:
-            if n.title == title or title in n.title:
-                related_notes.append({"id": n.id, "title": n.title})
+    keyword_set = set(t.lower() for t in tags if len(t) >= 2)
+    for n in all_notes:
+        if n.id == note.id:
+            continue
+        n_clean = _clean_text(n.title or '').lower()
+        if any(kw in n_clean for kw in keyword_set):
+            related_notes.append({"id": n.id, "title": n.title})
+            if len(related_notes) >= 5:
                 break
 
     return {
@@ -926,9 +798,9 @@ async def ai_smart_ingest(req: SmartIngestRequest, db: Session = Depends(get_db)
         "note_id": note.id,
         "tags": tags,
         "summary": summary,
-        "entities": entities,
-        "concepts": concepts,
-        "related_notes": related_notes[:5],
+        "entities": [],
+        "concepts": [],
+        "related_notes": related_notes,
     }
 
 
@@ -982,51 +854,38 @@ async def api_overview(db: Session = Depends(get_db)):
 
 @app.post("/api/ai/overview")
 async def ai_overview_generate(db: Session = Depends(get_db)):
-    """AI 生成全局概览 - 调用 LLM 分析知识库结构"""
-    if not llm.is_enabled():
-        return {"error": "AI 未配置"}
-
-    total, notes = list_notes(db, limit=500)
+    """生成全局概览 - 基于统计和标签聚类"""
+    total, notes = list_notes(db, limit=1000)
     tags = list_tags(db)
 
-    # 构建笔记索引
-    note_index = []
-    for n in notes:
-        tag_names = [t.name for t in n.tags]
-        snippet = (n.content or "")[:100].replace('\n', ' ')
-        note_index.append(f"- [{n.id}] {n.title} | 标签: {','.join(tag_names)} | {snippet}")
-
-    prompt = f"""你是一个知识库分析助手。请分析以下知识库的笔记列表，生成一份全局概览报告。
-
-笔记总数：{total}
-标签数：{len(tags)}
-
-笔记列表（前200条）：
-{chr(10).join(note_index[:200])}
-
-请生成以下内容（使用 Markdown 格式）：
-
-## 知识领域分布
-按主题分类，列出主要的知识领域和每个领域的笔记数量。
-
-## 核心主题
-列出知识库中最核心的 5-8 个主题，每个主题一句话描述。
-
-## 知识脉络
-描述知识库中各主题之间的关联关系。
-
-## 建议
-- 可能需要补充的知识方向
-- 可以深入研究的主题
-- 需要整理或合并的内容
-"""
-
-    result = llm.complete(
-        prompt,
-        system="你是一个知识管理专家，擅长分析和总结知识库结构。使用中文输出，Markdown 格式。"
+    # 统计各标签的笔记数
+    tag_counts = sorted(
+        [(t.name, len(t.notes)) for t in tags if t.notes],
+        key=lambda x: -x[1]
     )
 
-    return {"overview": result}
+    # 最近活跃笔记
+    recent = sorted(notes, key=lambda n: n.updated_at or n.created_at, reverse=True)[:10]
+
+    # 标签聚合：按标签归类笔记
+    tag_notes: dict[str, list[str]] = {}
+    for t in tags:
+        if t.notes:
+            tag_notes[t.name] = [n.title for n in t.notes[:10]]
+
+    # 无标签笔记数
+    no_tag_count = len([n for n in notes if not n.tags])
+
+    return {
+        "overview": {
+            "total_notes": total,
+            "total_tags": len([t for t in tags if t.notes]),
+            "no_tag_notes": no_tag_count,
+            "top_tags": [{"name": n, "count": c} for n, c in tag_counts[:15]],
+            "recent_notes": [n.title for n in recent],
+            "tag_clusters": tag_notes,
+        }
+    }
 
 
 @app.post("/api/ai/lint")

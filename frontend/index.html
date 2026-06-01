@@ -749,6 +749,7 @@ a:hover { color: var(--text); }
       </svg>
       <span class="badge" v-if="lintBadge"></span>
     </div>
+
     <div style="width:24px;height:1px;background:var(--line);margin:4px 0;"></div>
     <div class="nav-item" @click="toggleTheme" :title="isDark ? '亮色模式' : '暗色模式'">
       <svg v-if="!isDark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1184,6 +1185,7 @@ createApp({
     const lintData = ref(null);
     const lintLoading = ref(false);
     const lintBadge = ref(false);
+
     const contentList = ref(null);
     const fixing = ref('');
     const pruneResult = ref('');
@@ -1210,7 +1212,7 @@ createApp({
         nextTick(() => renderGraph());
       } else if (view === 'lint') {
         runLint();
-      }
+
     }
 
     async function runLint() {
@@ -1915,8 +1917,9 @@ createApp({
       notes, tags, curNote, curTag, searchQ, filterQ,
       sortKey, sortDir, isDark, loading, relationsData, tocItems, tocActive,
       totalEdges, activeView, filteredNotes, graphNodes, graphEdges,
-      lintData, lintLoading, lintBadge, loadError,
-      fixing, pruneResult, pruneGraph,
+      showNav, mobileShowList, notes, tags, curNote, curTag,
+      searchQ, filterQ, sortKey, sortDir, isDark, loading,
+      lintData, lintLoading, lintBadge, lintFixing,
       switchView, runLint, fixIssue, getFixLabel, lintFixing,
       openNote, openRelation, toggleTag, doSearch, setSort,
       toggleTheme, scrollToHeading, renderMd, strip, fmt,
