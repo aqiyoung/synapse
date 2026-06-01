@@ -336,7 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('当前版本: ${await _getCurrentVersion()}'),
+                        Text('当前版本: $_currentVersion'),
                         Text('最新版本: ${info.latestVersion}'),
                         if (info.releaseNotes != null) ...[
                           const SizedBox(height: 12),
