@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UpdateInfo {
   final String latestVersion;
@@ -94,11 +94,10 @@ class UpdateService {
   Future<void> openDownload() async {
     if (_cachedUpdate == null) return;
     try {
-      // 通过服务器代理下载，APP 不需要直连 GitHub
-      await Process.run('am', [
-        'start', '-a', 'android.intent.action.VIEW',
-        '-d', _cachedUpdate!.downloadUrl,
-      ]);
+      final uri = Uri.parse(_cachedUpdate!.downloadUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
     } catch (_) {}
   }
 }
