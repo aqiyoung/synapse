@@ -54,35 +54,36 @@ class UpdateService {
 
   Future<void> check() async {
     try {
-      final uri = Uri.parse(
-          'https://api.github.com/repos/aqiyoung/synapse/releases/latest');
+      // 从服务器代理检查版本（避免 APP 直连 GitHub）
+      final prefs = await SharedPreferences.getInstance();
+      final server = prefs.getString('server') ?? '';
+      if (server.isEmpty) return;
+
+      var base = server;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
+
+      final uri = Uri.parse('$base/api/update/check');
       final resp = await http.get(uri, headers: {
-        'Accept': 'application/vnd.github.v3+json',
+        'Accept': 'application/json',
         'User-Agent': 'Synapse',
       });
       if (resp.statusCode != 200) return;
 
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
-      final tagName = data['tag_name'] as String? ?? '';
-      final latestVersion = tagName.startsWith('v') ? tagName.substring(1) : tagName;
+      final latestVersion = data['latest_version'] as String? ?? '';
+      if (latestVersion.isEmpty) return;
 
       final currentVersion = await _getCurrentVersion();
-
       if (!_isNewer(latestVersion, currentVersion)) return;
 
-      final downloadUrl =
-          'https://github.com/aqiyoung/synapse/releases/download/$tagName/synapse-v$latestVersion.apk';
-
-      String? releaseNotes;
-      final body = data['body'] as String?;
-      if (body != null && body.isNotEmpty) {
-        releaseNotes = body.length > 500 ? '${body.substring(0, 500)}...' : body;
-      }
+      // 使用服务器代理下载链接（不直连 GitHub）
+      final downloadUrl = '$base/api/update/download';
 
       _cachedUpdate = UpdateInfo(
         latestVersion: latestVersion,
         downloadUrl: downloadUrl,
-        releaseNotes: releaseNotes,
+        releaseNotes: data['release_notes'] as String?,
       );
     } catch (_) {
     } finally {
@@ -93,17 +94,10 @@ class UpdateService {
   Future<void> openDownload() async {
     if (_cachedUpdate == null) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final server = prefs.getString('server') ?? '';
-      if (server.isEmpty) return;
-      var base = server;
-      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
-      if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
-      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
-      final url = '$base/api/update/download';
+      // 通过服务器代理下载，APP 不需要直连 GitHub
       await Process.run('am', [
         'start', '-a', 'android.intent.action.VIEW',
-        '-d', url,
+        '-d', _cachedUpdate!.downloadUrl,
       ]);
     } catch (_) {}
   }

@@ -71,7 +71,7 @@ def _make_snippet(content, keyword, max_len=150):
 
 
 # 公开接口不需要认证的路径
-_PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/download"}
+_PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/check", "/api/update/download"}
 
 
 @app.middleware("http")
@@ -1170,8 +1170,34 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
 
 # ===== 更新代理 API =====
 
+@app.get("/api/update/check")
+async def api_update_check():
+    """版本检查：从 GitHub 获取最新版本信息"""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
+                "https://api.github.com/repos/aqiyoung/synapse/releases/latest",
+                headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=502, detail="获取版本信息失败")
+            data = resp.json()
+            tag = data["tag_name"]
+            version = tag.lstrip("v")
+            return {
+                "latest_version": version,
+                "tag_name": tag,
+                "release_notes": data.get("body", ""),
+                "published_at": data.get("published_at", ""),
+            }
+    except Exception as e:
+        logger.error(f"Update check failed: {e}")
+        raise HTTPException(status_code=502, detail=f"版本检查失败: {str(e)}")
+
+
 @app.get("/api/update/download")
-async def api_update_download():
+async def update_download():
     """代理 APK 下载：从 GitHub 拉取最新 APK 流式返回"""
     import httpx
     try:
