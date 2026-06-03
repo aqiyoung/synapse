@@ -58,6 +58,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) setState(() {});
   }
 
+  void _showUpdateDialog(BuildContext context, ColorScheme colorScheme) {
+    final info = UpdateService().cached!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.system_update, color: colorScheme.primary, size: 24),
+            const SizedBox(width: 8),
+            Text('v${info.latestVersion}', style: TextStyle(fontSize: 18)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty) ...[
+                Text(
+                  '更新内容',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  info.releaseNotes!,
+                  style: TextStyle(fontSize: 14, height: 1.6, color: colorScheme.onSurface),
+                ),
+              ] else
+                Text(
+                  '发现新版本，是否前往下载？',
+                  style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('取消', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              UpdateService().openDownloadPage();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('更新'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _serverController.dispose();
@@ -316,16 +378,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             subtitle: Text(
               UpdateService().hasUpdate
-                  ? '点击下载 APK 安装'
+                  ? '点击查看更新内容'
                   : '自动检查 GitHub 发布',
             ),
             trailing: UpdateService().hasUpdate
-                ? Icon(Icons.download, color: colorScheme.primary)
+                ? Icon(Icons.arrow_forward_ios, size: 16, color: colorScheme.primary)
                 : Icon(Icons.check_circle_outline, color: Colors.green),
             contentPadding: EdgeInsets.zero,
             onTap: () async {
               if (UpdateService().hasUpdate) {
-                await UpdateService().download();
+                _showUpdateDialog(context, colorScheme);
               } else {
                 _checkUpdate();
               }

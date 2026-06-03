@@ -358,164 +358,121 @@ class _HomeScreenState extends State<HomeScreen> {
     final update = UpdateService();
     final info = update.cached!;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withOpacity(0.1),
-            colorScheme.primary.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.primary.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.system_update,
-                  size: 20,
-                  color: colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '发现新版本 v${info.latestVersion}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            info.releaseNotes!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: colorScheme.onSurface.withOpacity(0.6),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+    return GestureDetector(
+      onTap: () => _showUpdateDialog(colorScheme),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primary.withOpacity(0.1),
+              colorScheme.primary.withOpacity(0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          // 下载进度条
-          if (update.status == UpdateStatus.downloading)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.primary.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.system_update, size: 20, color: colorScheme.primary),
+            const SizedBox(width: 10),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: update.downloadProgress,
-                      backgroundColor: colorScheme.primary.withOpacity(0.1),
-                      valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                      minHeight: 6,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   Text(
-                    '下载中... ${(update.downloadProgress * 100).toStringAsFixed(0)}%',
+                    '新版本 v${info.latestVersion} 可用',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: colorScheme.onSurface.withOpacity(0.5),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
                     ),
                   ),
+                  if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        info.releaseNotes!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-          // 错误信息
-          if (update.status == UpdateStatus.error && update.errorMessage != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(
-                update.errorMessage!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.red,
+            Icon(Icons.arrow_forward_ios, size: 14, color: colorScheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUpdateDialog(ColorScheme colorScheme) {
+    final info = UpdateService().cached!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.system_update, color: colorScheme.primary, size: 24),
+            const SizedBox(width: 8),
+            Text('v${info.latestVersion}', style: const TextStyle(fontSize: 18)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty) ...[
+                Text(
+                  '更新内容',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  info.releaseNotes!,
+                  style: TextStyle(fontSize: 14, height: 1.6, color: colorScheme.onSurface),
+                ),
+              ] else
+                Text(
+                  '发现新版本，是否前往下载？',
+                  style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('取消', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              UpdateService().openDownloadPage();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-          // 操作按钮
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Row(
-              children: [
-                // 稍后提醒
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      // 隐藏横幅，稍后会再次检查
-                    });
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    '稍后',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 下载/安装按钮
-                ElevatedButton(
-                  onPressed: update.status == UpdateStatus.downloading
-                      ? null
-                      : () async {
-                          if (update.status == UpdateStatus.downloaded) {
-                            await update.install();
-                          } else {
-                            await update.download();
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    update.status == UpdateStatus.downloading
-                        ? '下载中...'
-                        : update.status == UpdateStatus.downloaded
-                            ? '立即安装'
-                            : '立即更新',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
+            child: const Text('更新'),
           ),
         ],
       ),
