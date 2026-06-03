@@ -302,6 +302,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
+          // Update banner
+          if (UpdateService().hasUpdate)
+            _buildUpdateBanner(colorScheme),
           // Note list
           Expanded(
             child: _loading
@@ -345,6 +348,174 @@ class _HomeScreenState extends State<HomeScreen> {
                               _buildNoteItem(_notes[index], colorScheme),
                         ),
                       ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpdateBanner(ColorScheme colorScheme) {
+    final update = UpdateService();
+    final info = update.cached!;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primary.withOpacity(0.1),
+            colorScheme.primary.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.primary.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.system_update,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '发现新版本 v${info.latestVersion}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            info.releaseNotes!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 下载进度条
+          if (update.status == UpdateStatus.downloading)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: update.downloadProgress,
+                      backgroundColor: colorScheme.primary.withOpacity(0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                      minHeight: 6,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '下载中... ${(update.downloadProgress * 100).toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // 错误信息
+          if (update.status == UpdateStatus.error && update.errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                update.errorMessage!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          // 操作按钮
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Row(
+              children: [
+                // 稍后提醒
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      // 隐藏横幅，稍后会再次检查
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    '稍后',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // 下载/安装按钮
+                ElevatedButton(
+                  onPressed: update.status == UpdateStatus.downloading
+                      ? null
+                      : () async {
+                          if (update.status == UpdateStatus.downloaded) {
+                            await update.install();
+                          } else {
+                            await update.download();
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    update.status == UpdateStatus.downloading
+                        ? '下载中...'
+                        : update.status == UpdateStatus.downloaded
+                            ? '立即安装'
+                            : '立即更新',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
