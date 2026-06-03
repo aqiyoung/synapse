@@ -325,7 +325,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             contentPadding: EdgeInsets.zero,
             onTap: () async {
               if (UpdateService().hasUpdate) {
-                await UpdateService().openDownload();
+                await UpdateService().download();
               } else {
                 _checkUpdate();
               }
