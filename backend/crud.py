@@ -180,13 +180,25 @@ def update_note(db: Session, note_id: int, title: str = None, content: str = Non
 
     note.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
 
-    # 自动移除"孤立"标签：如果笔记内容包含 [[引用]]，说明已不再孤立
+    # 自动移除"孤立"标签
     if content is not None:
+        orphan_tag = db.query(Tag).filter(Tag.name == "孤立").first()
+
+        # 1. 当前笔记有 [[引用]]，移除孤立标签
         has_outgoing = bool(re.search(r'\[\[([^\]]+)\]\]', content))
-        if has_outgoing:
-            orphan_tag = db.query(Tag).filter(Tag.name == "孤立").first()
-            if orphan_tag and orphan_tag in note.tags:
-                note.tags.remove(orphan_tag)
+        if has_outgoing and orphan_tag and orphan_tag in note.tags:
+            note.tags.remove(orphan_tag)
+
+        # 2. 被引用的笔记也移除孤立标签（它们现在有 incoming 引用了）
+        if orphan_tag:
+            referenced_titles = re.findall(r'\[\[([^\]]+)\]\]', content)
+            for ref_title in referenced_titles:
+                ref_note = db.query(Note).filter(
+                    Note.title == ref_title,
+                    Note.deleted_at.is_(None)
+                ).first()
+                if ref_note and orphan_tag in ref_note.tags:
+                    ref_note.tags.remove(orphan_tag)
 
     db.commit()
     db.refresh(note)
