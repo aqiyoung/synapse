@@ -753,6 +753,23 @@ a:hover { color: var(--text); }
 }
 
 /* ── Tag cloud ── */
+.tag-cloud {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.tag-cloud::-webkit-scrollbar {
+  height: 6px;
+}
+.tag-cloud::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tag-cloud::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 10px;
+}
+.tag-cloud::-webkit-scrollbar-thumb:hover {
+  background: var(--line-strong);
+}
 .tag-cloud-item {
   display: inline-flex;
   align-items: center;
@@ -764,6 +781,8 @@ a:hover { color: var(--text); }
   transition: all .2s ease;
   background: var(--accent-light);
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .tag-cloud-item:hover {
   background: var(--accent);
@@ -1105,7 +1124,7 @@ a:hover { color: var(--text); }
       </div>
       <div style="flex:1;padding:24px;overflow-y:auto;">
         <div style="max-width:800px;margin:0 auto;">
-          <div class="tag-cloud" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:20px 0;">
+          <div class="tag-cloud" style="display:flex;flex-wrap:nowrap;gap:12px;padding:20px 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;">
             <div v-for="t in sortedTags" :key="t.name"
               class="tag-cloud-item"
               :style="{ fontSize: getTagFontSize(t.count) + 'px', borderColor: t.color || 'var(--accent)', color: t.color || 'var(--accent)' }"
