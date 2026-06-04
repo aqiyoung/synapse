@@ -7,6 +7,7 @@ import 'note_detail_screen.dart';
 import 'graph_screen.dart';
 import 'lint_screen.dart';
 import 'settings_screen.dart';
+import 'mine_screen.dart';
 import '../widgets/tag_chip.dart';
 import '../services/update_service.dart';
 
@@ -120,7 +121,10 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _buildNoteList(colorScheme),
           const GraphScreen(),
-          const LintScreen(),
+          MineScreen(
+            onToggleTheme: widget.onToggleTheme,
+            isDark: widget.isDark,
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -142,11 +146,10 @@ class _HomeScreenState extends State<HomeScreen> {
             label: _isChinese ? '图谱' : 'Graph',
           ),
           NavigationDestination(
-            icon: Icon(Icons.health_and_safety_outlined,
+            icon: Icon(Icons.person_outline,
                 color: colorScheme.onSurface.withOpacity(0.6)),
-            selectedIcon:
-                Icon(Icons.health_and_safety, color: colorScheme.primary),
-            label: _isChinese ? '检查' : 'Health',
+            selectedIcon: Icon(Icons.person, color: colorScheme.primary),
+            label: _isChinese ? '我的' : 'Mine',
           ),
         ],
       ),
@@ -184,42 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontSize: 13,
                         color: colorScheme.onSurface.withOpacity(0.5),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Stack(
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => SettingsScreen(
-                                  onToggleTheme: widget.onToggleTheme,
-                                  isDark: widget.isDark,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Icon(
-                            Icons.settings_outlined,
-                            size: 20,
-                            color: colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                        if (UpdateService().hasUpdate)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                      ],
                     ),
                   ],
                 ),
