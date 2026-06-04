@@ -10,6 +10,15 @@ on:
     paths:
       - 'app/**'
   workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'beta'
+        type: choice
+        options:
+          - beta
+          - stable
 
 permissions:
   contents: write
@@ -41,6 +50,38 @@ jobs:
           VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Determine release tag
+        id: tag
+        run: |
+          BASE_VERSION="${{ steps.version.outputs.version }}"
+          # 取 build number（+后面的部分）
+          BUILD=$(echo "$BASE_VERSION" | grep -oP '\+\K[0-9]+')
+          SEMVER=$(echo "$BASE_VERSION" | sed 's/+.*//')
+
+          # 判断是否为正式发布（手动触发选 stable）
+          IS_STABLE="false"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.release_type }}" = "stable" ]; then
+            IS_STABLE="true"
+          fi
+
+          if [ "$IS_STABLE" = "true" ]; then
+            echo "tag=v$SEMVER" >> $GITHUB_OUTPUT
+            echo "name=Synapse v$SEMVER" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          else
+            # Beta: 查找同版本已有的 beta tag，自动递增
+            LATEST_BETA=$(git tag -l "v${SEMVER}-beta.*" | sort -V | tail -1)
+            if [ -z "$LATEST_BETA" ]; then
+              BETA_NUM=1
+            else
+              BETA_NUM=$(echo "$LATEST_BETA" | grep -oP 'beta\.\K[0-9]+')
+              BETA_NUM=$((BETA_NUM + 1))
+            fi
+            echo "tag=v${SEMVER}-beta.${BETA_NUM}" >> $GITHUB_OUTPUT
+            echo "name=Synapse v${SEMVER}-beta.${BETA_NUM}" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install dependencies
         working-directory: ./app
         run: flutter pub get
@@ -67,22 +108,23 @@ jobs:
       - name: Rename APK
         run: |
           mv app/build/app/outputs/flutter-apk/app-release.apk \
-             app/build/app/outputs/flutter-apk/synapse-v${{ steps.version.outputs.version }}.apk
+             app/build/app/outputs/flutter-apk/synapse-${{ steps.tag.outputs.tag }}.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: synapse-v${{ steps.version.outputs.version }}
-          path: app/build/app/outputs/flutter-apk/synapse-v${{ steps.version.outputs.version }}.apk
+          name: synapse-${{ steps.tag.outputs.tag }}
+          path: app/build/app/outputs/flutter-apk/synapse-${{ steps.tag.outputs.tag }}.apk
           retention-days: 30
 
       - name: Create Release
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: Synapse v${{ steps.version.outputs.version }}
-          files: app/build/app/outputs/flutter-apk/synapse-v${{ steps.version.outputs.version }}.apk
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.name }}
+          files: app/build/app/outputs/flutter-apk/synapse-${{ steps.tag.outputs.tag }}.apk
           generate_release_notes: true
+          prerelease: ${{ steps.tag.outputs.prerelease }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
