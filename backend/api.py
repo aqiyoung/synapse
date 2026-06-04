@@ -859,7 +859,7 @@ async def api_overview(db: Session = Depends(get_db)):
     # 统计最近活跃
     recent_notes = sorted(notes, key=lambda n: n.source_created_at or n.created_at or datetime.min, reverse=True)[:10]
 
-    # 统计孤立笔记（无 wikilink 引用）
+    # 统计孤立笔记（无 wikilink 引用 且 无标签关联）
     import re
     all_titles = {n.title for n in notes}
     referenced = set()
@@ -868,9 +868,22 @@ async def api_overview(db: Session = Depends(get_db)):
             for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
                 referenced.add(m.group(1))
 
+    # 标签关联：共享标签的笔记互相关联
+    tag_note_map: dict[str, set] = {}
+    for n in notes:
+        for t in (n.tags or []):
+            tag_note_map.setdefault(t.name, set()).add(n.id)
+    shared_tag_notes = set()
+    for tag_name, note_ids in tag_note_map.items():
+        if len(note_ids) > 1:
+            shared_tag_notes.update(note_ids)
+
     orphan_notes = []
     for n in notes:
-        if n.title not in referenced and not (n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)):
+        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
+        has_incoming = n.title in referenced
+        has_shared_tag = n.id in shared_tag_notes
+        if not has_outgoing and not has_incoming and not has_shared_tag:
             orphan_notes.append({"id": n.id, "title": n.title})
 
     return {
@@ -939,12 +952,23 @@ async def ai_lint(db: Session = Depends(get_db)):
 
     issues = []
 
-    # 1. 孤立笔记
+    # 1. 孤立笔记（无交叉引用 且 无标签关联）
     referenced = set()
     for n in notes:
         if n.content:
             for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
                 referenced.add(m.group(1))
+
+    # 构建标签→笔记映射，共享标签的笔记互相关联
+    tag_note_map: dict[str, set] = {}  # tag_name -> set of note ids
+    for n in notes:
+        for t in (n.tags or []):
+            tag_note_map.setdefault(t.name, set()).add(n.id)
+    # 只保留有 2+ 笔记的标签（共享标签）
+    shared_tag_notes = set()
+    for tag_name, note_ids in tag_note_map.items():
+        if len(note_ids) > 1:
+            shared_tag_notes.update(note_ids)
 
     # 已被标记为孤立的笔记，不再重复告警
     orphan_tagged_ids = {
@@ -957,14 +981,15 @@ async def ai_lint(db: Session = Depends(get_db)):
             continue
         has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
         has_incoming = n.title in referenced
-        if not has_outgoing and not has_incoming:
+        has_shared_tag = n.id in shared_tag_notes
+        if not has_outgoing and not has_incoming and not has_shared_tag:
             orphans.append(n)
 
     if orphans:
         issues.append({
             "type": "orphan",
             "severity": "warning",
-            "message": f"发现 {len(orphans)} 篇孤立笔记（无交叉引用）",
+            "message": f"发现 {len(orphans)} 篇孤立笔记（无交叉引用且无标签关联）",
             "notes": [{"id": n.id, "title": n.title} for n in orphans[:10]]
         })
 
