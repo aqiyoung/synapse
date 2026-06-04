@@ -248,7 +248,7 @@ class _MineScreenState extends State<MineScreen> {
                     ),
                   ),
                   Text(
-                    hasUpdate ? '点击查看更新内容' : '自动检查 GitHub 发布',
+                    hasUpdate ? '点击查看更新内容' : '自动检查新版本',
                     style: TextStyle(
                       fontSize: 12,
                       color: colorScheme.onSurface.withOpacity(0.5),
