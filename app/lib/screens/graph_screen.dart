@@ -428,7 +428,7 @@ class _GraphWidgetState extends State<_GraphWidget>
     final isDark = widget.isDark;
 
     return Positioned(
-      bottom: 12,
+      top: 12,
       right: 12,
       child: Container(
         constraints: const BoxConstraints(maxHeight: 200),
@@ -457,6 +457,7 @@ class _GraphWidgetState extends State<_GraphWidget>
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: entries.map((e) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Row(
