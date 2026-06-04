@@ -159,6 +159,8 @@ def list_notes(db: Session, skip: int = 0, limit: int = 50, tag: str = None, key
 
 def update_note(db: Session, note_id: int, title: str = None, content: str = None, tag_names: list = None) -> Note:
     """更新笔记"""
+    import re
+
     note = db.query(Note).filter(Note.id == note_id).first()
     if not note:
         return None
@@ -177,6 +179,15 @@ def update_note(db: Session, note_id: int, title: str = None, content: str = Non
             note.tags.append(tag)
 
     note.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
+
+    # 自动移除"孤立"标签：如果笔记内容包含 [[引用]]，说明已不再孤立
+    if content is not None:
+        has_outgoing = bool(re.search(r'\[\[([^\]]+)\]\]', content))
+        if has_outgoing:
+            orphan_tag = db.query(Tag).filter(Tag.name == "孤立").first()
+            if orphan_tag and orphan_tag in note.tags:
+                note.tags.remove(orphan_tag)
+
     db.commit()
     db.refresh(note)
     return note
