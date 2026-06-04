@@ -1030,13 +1030,6 @@ a:hover { color: var(--text); }
         <span class="stat-l">关联</span>
       </div>
     </div>
-    <div class="cl-tags" v-if="tags.length">
-      <button v-for="t in tags" :key="t.name"
-        class="cl-tag" :class="{ on: curTag === t.name }" :style="{ borderColor: t.color }"
-        @click="toggleTag(t.name)">
-        {{ t.name }}
-      </button>
-    </div>
     <div class="cl-list">
       <div v-for="n in notes" :key="n.id"
         class="cl-item" :class="{ on: curNote && curNote.id === n.id }"
@@ -1212,24 +1205,14 @@ a:hover { color: var(--text); }
           <div class="tag-cloud" style="display:flex;flex-wrap:nowrap;gap:12px;padding:20px 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;">
             <div v-for="t in sortedTags" :key="t.name"
               class="tag-cloud-item"
-              :style="{ fontSize: getTagFontSize(t.count) + 'px', borderColor: t.color || 'var(--accent)', color: t.color || 'var(--accent)' }"
+              :style="{ fontSize: getTagFontSize(t.count) + 'px', borderColor: curTag === t.name ? '#fff' : (t.color || 'var(--accent)'), background: curTag === t.name ? (t.color || 'var(--accent)') : 'var(--accent-light)', color: curTag === t.name ? '#fff' : (t.color || 'var(--accent)') }"
               @click="filterByTag(t.name)">
               <span class="tag-name">{{ t.name }}</span>
               <span class="tag-count">{{ t.count }}</span>
             </div>
           </div>
-          <div v-if="selectedTagNotes.length" style="margin-top:32px;border-top:1px solid var(--line);padding-top:20px;">
-            <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text);">
-              标签「{{ selectedTag }}」下的笔记 ({{ selectedTagNotes.length }})
-            </div>
-            <div v-for="n in selectedTagNotes" :key="n.id"
-              style="padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;cursor:pointer;transition:all .15s;"
-              @click="openNote(n)"
-              @mouseenter="$event.target.style.borderColor='var(--accent)';$event.target.style.background='var(--accent-light)';"
-              @mouseleave="$event.target.style.borderColor='var(--line)';$event.target.style.background='transparent';">
-              <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">{{ n.title || '无标题' }}</div>
-              <div style="font-size:11px;color:var(--muted);">{{ strip(n.content).substring(0, 100) }}</div>
-            </div>
+          <div v-if="curTag" style="margin-top:16px;text-align:center;">
+            <span style="font-size:12px;color:var(--muted);">已筛选：{{ curTag }} · {{ filteredNotes.length }} 篇笔记</span>
           </div>
         </div>
       </div>
@@ -1699,12 +1682,6 @@ createApp({
     });
 
     // 标签云相关
-    const selectedTag = ref('');
-    const selectedTagNotes = computed(() => {
-      if (!selectedTag.value) return [];
-      return notes.value.filter(n => (n.tags || []).includes(selectedTag.value));
-    });
-
     const sortedTags = computed(() => {
       const tagCounts = {};
       for (const n of notes.value) {
@@ -1726,7 +1703,10 @@ createApp({
     }
 
     function filterByTag(name) {
-      selectedTag.value = selectedTag.value === name ? '' : name;
+      // 设置筛选标签并跳转到笔记列表
+      curTag.value = curTag.value === name ? '' : name;
+      activeView.value = 'kb';
+      showNav.value = false;
     }
 
     async function openNote(n) {
@@ -2260,7 +2240,7 @@ createApp({
       totalEdges, activeView, filteredNotes, snippetLength, graphNodes, graphEdges, graphUsedTags, getTagColor,
       lintData, lintLoading, lintBadge, loadError,
       fixing, pruneResult, pruneGraph,
-      selectedTag, selectedTagNotes, sortedTags, getTagFontSize, filterByTag,
+      sortedTags, getTagFontSize, filterByTag,
       switchView, runLint, fixIssue, getFixLabel,
       openNote, openRelation, toggleTag, doSearch, setSort,
       toggleTheme, scrollToHeading, renderMd, strip, fmt,
