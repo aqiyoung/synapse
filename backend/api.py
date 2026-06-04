@@ -1113,6 +1113,97 @@ async def lint_fix_no_tags(req: LintFixRequest, db: Session = Depends(get_db)):
     }
 
 
+@app.post("/api/lint/fix/link-orphans")
+async def lint_fix_link_orphans(req: LintFixRequest = None, db: Session = Depends(get_db)):
+    """自动关联孤立笔记：使用 AI 分析内容，为孤立笔记添加 [[引用]]"""
+    import re
+    import llm
+
+    if req is None:
+        req = LintFixRequest()
+
+    if not llm.is_enabled():
+        raise HTTPException(status_code=400, detail="AI 未配置，请设置 LLM_API_KEY 环境变量")
+
+    total, notes = list_notes(db, limit=1000)
+    active_notes = [n for n in notes if n.deleted_at is None]
+
+    # 找出孤立笔记
+    referenced = set()
+    for n in active_notes:
+        if n.content:
+            for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
+                referenced.add(m.group(1))
+
+    orphans = []
+    for n in active_notes:
+        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
+        has_incoming = n.title in referenced
+        if not has_outgoing and not has_incoming:
+            orphans.append(n)
+
+    if not orphans:
+        return {"fixed_count": 0, "fixes": [], "dry_run": req.dry_run}
+
+    # 构建笔记索引（用于 AI 分析）
+    note_index = "\n".join([f"- {n.title}: {(n.summary or n.content or '')[:80]}" for n in active_notes[:200]])
+
+    fixes = []
+    for orphan in orphans:
+        # 用 AI 分析应该关联哪些笔记
+        prompt = f"""你是一个知识管理助手。请分析以下孤立笔记的内容，找出最相关的 1-3 篇笔记。
+
+## 孤立笔记
+标题：{orphan.title}
+内容：{(orphan.content or orphan.summary or '')[:500]}
+
+## 可选的笔记列表
+{note_index}
+
+请返回最相关的笔记标题，每行一个标题。只返回标题，不要其他内容。如果没有相关的笔记，返回空。"""
+
+        response = llm.complete(prompt, system="你是一个知识管理助手，负责分析笔记内容并找出关联。")
+        referenced_titles = [t.strip() for t in response.strip().split('\n') if t.strip()]
+
+        # 验证标题是否存在
+        valid_titles = []
+        for t in referenced_titles:
+            if t in {n.title for n in active_notes} and t != orphan.title:
+                valid_titles.append(t)
+
+        if valid_titles and not req.dry_run:
+            # 在内容末尾添加引用
+            links = "\n".join([f"[[{t}]]" for t in valid_titles[:3]])
+            orphan.content = (orphan.content or "") + "\n\n" + links
+            orphan.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
+
+            # 移除孤立标签
+            orphan_tag = db.query(Tag).filter(Tag.name == "孤立").first()
+            if orphan_tag and orphan_tag in orphan.tags:
+                orphan.tags.remove(orphan_tag)
+
+            # 被引用的笔记也移除孤立标签
+            for t in valid_titles[:3]:
+                ref_note = db.query(Note).filter(Note.title == t, Note.deleted_at.is_(None)).first()
+                if ref_note and orphan_tag and orphan_tag in ref_note.tags:
+                    ref_note.tags.remove(orphan_tag)
+
+        fixes.append({
+            "note_id": orphan.id,
+            "title": orphan.title,
+            "linked_to": valid_titles[:3] if valid_titles else []
+        })
+
+    if not req.dry_run:
+        db.commit()
+
+    return {
+        "fixed_count": len([f for f in fixes if f["linked_to"]]),
+        "fixes": fixes,
+        "dry_run": req.dry_run,
+    }
+
+
 @app.post("/api/graph/prune")
 async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
     """清除图谱垃圾边：

@@ -1159,6 +1159,13 @@ a:hover { color: var(--text); }
                 图谱维护
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button @click="linkOrphans" :disabled="fixing === 'link-orphans'"
+                  style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:1px solid var(--accent);border-radius:var(--radius);background:transparent;color:var(--accent);cursor:pointer;font-size:11px;transition:all .15s;"
+                  :style="fixing === 'link-orphans' ? 'opacity:.5;cursor:wait;' : 'opacity:1;'">
+                  <svg v-if="fixing === 'link-orphans'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                  <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  {{ fixing === 'link-orphans' ? '关联中...' : '自动关联孤立笔记' }}
+                </button>
                 <button @click="pruneGraph" :disabled="fixing === 'prune'"
                   style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--muted);cursor:pointer;font-size:11px;transition:all .15s;"
                   @mouseenter="$event.target.style.borderColor='var(--accent)';$event.target.style.color='var(--accent)';"
@@ -1637,6 +1644,34 @@ createApp({
       } catch(e) {
         console.error('清理失败:', e);
         pruneResult.value = '清理失败，请重试';
+      } finally {
+        fixing.value = '';
+      }
+    }
+
+    async function linkOrphans() {
+      if (!confirm('确定要自动关联孤立笔记吗？AI 将分析内容并添加引用，已关联的笔记会自动移除「孤立」标签。')) return;
+      fixing.value = 'link-orphans';
+      pruneResult.value = '';
+      try {
+        const resp = await fetch(API + '/lint/fix/link-orphans', { method: 'POST', headers: getAuthHeaders() });
+        const result = await resp.json();
+        if (result.fixed_count > 0) {
+          const details = result.fixes
+            .filter(f => f.linked_to && f.linked_to.length > 0)
+            .map(f => `${f.title} → ${f.linked_to.join('、')}`)
+            .join('\n');
+          pruneResult.value = `已关联 ${result.fixed_count} 篇孤立笔记`;
+          console.log('关联详情:', details);
+        } else {
+          pruneResult.value = '没有需要关联的孤立笔记';
+        }
+        // 刷新笔记列表
+        await loadNotes();
+        await runLint();
+      } catch(e) {
+        console.error('自动关联失败:', e);
+        pruneResult.value = '自动关联失败，请重试';
       } finally {
         fixing.value = '';
       }
