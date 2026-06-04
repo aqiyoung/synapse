@@ -1,26 +1,40 @@
 """LLM 客户端封装"""
 import logging
-from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, LLM_ENABLED
+import os
 
 logger = logging.getLogger(__name__)
 
 client = None
+_initialized = False
 
-if LLM_ENABLED:
+
+def _init_client():
+    global client, _initialized
+    if _initialized:
+        return
+
+    _initialized = True
+    api_key = os.environ.get("LLM_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN") or os.environ.get("ANTHROPIC_API_KEY", "")
+    base_url = os.environ.get("LLM_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL", "https://api.openai.com/v1")
+    model = os.environ.get("LLM_MODEL") or os.environ.get("ANTHROPIC_MODEL") or os.environ.get("ANTHROPIC_DEFAULT_SONNET_MODEL", "gpt-4")
+
+    if not api_key:
+        logger.warning("LLM_API_KEY not set, LLM disabled")
+        return
+
     try:
         from openai import OpenAI
-        client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
-        logger.info(f"LLM client initialized: {LLM_BASE_URL} / {LLM_MODEL}")
+        client = OpenAI(base_url=base_url, api_key=api_key)
+        logger.info(f"LLM client initialized: {base_url} / {model}")
     except ImportError:
         logger.warning("openai package not installed, LLM disabled")
-        LLM_ENABLED = False
     except Exception as e:
         logger.warning(f"LLM client init failed: {e}")
-        LLM_ENABLED = False
 
 
 def is_enabled() -> bool:
-    return LLM_ENABLED and client is not None
+    _init_client()
+    return client is not None
 
 
 def chat_stream(messages: list[dict]):

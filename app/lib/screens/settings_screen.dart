@@ -27,7 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _versionTapCount = 0;
   String _currentVersion = '';
 
-  static const String _adminPassword = 'synapse2026';
+  // 管理员密码已改为服务端校验，不再硬编码在客户端
 
   bool get _isDark => widget.isDark;
 
@@ -197,7 +197,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _login() async {
-    if (_passwordController.text == _adminPassword) {
+    final ok = await ApiService.verifyAdmin(_passwordController.text);
+    if (ok) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('admin_logged_in', true);
       setState(() => _isLoggedIn = true);

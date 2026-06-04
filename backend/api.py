@@ -18,7 +18,7 @@ from crud import (
     update_note, delete_note, list_tags, get_or_create_tag,
     restore_note, permanent_delete_note, list_deleted_notes, backfill_slugs,
 )
-from config import API_TOKEN
+from config import API_TOKEN, ADMIN_PASSWORD
 
 # 初始化数据库
 init_db()
@@ -71,7 +71,7 @@ def _make_snippet(content, keyword, max_len=150):
 
 
 # 公开接口不需要认证的路径
-_PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/check", "/api/update/download"}
+_PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/check", "/api/update/download", "/api/admin/verify"}
 
 
 @app.middleware("http")
@@ -535,6 +535,20 @@ def api_health(db: Session = Depends(get_db)):
     except Exception as e:
         db_status = str(e)
     return {"status": "ok" if db_status == "ok" else "error", "db": db_status, "version": "1.0.0"}
+
+
+class AdminVerifyRequest(BaseModel):
+    password: str
+
+
+@app.post("/api/admin/verify")
+def admin_verify(req: AdminVerifyRequest):
+    """验证管理员密码（服务端校验，密码不暴露在客户端）"""
+    if not ADMIN_PASSWORD:
+        raise HTTPException(500, "管理员密码未配置")
+    if req.password == ADMIN_PASSWORD:
+        return {"ok": True}
+    raise HTTPException(401, "密码错误")
 
 
 # ===== AI API =====

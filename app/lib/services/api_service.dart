@@ -204,4 +204,21 @@ class ApiService {
     }
     throw Exception('自动关联失败');
   }
+
+  /// 验证管理员密码（服务端校验）
+  static Future<bool> verifyAdmin(String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin/verify'),
+        headers: _headers,
+        body: json.encode({'password': password}),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body)['ok'] == true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
 }
