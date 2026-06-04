@@ -49,7 +49,6 @@ class _LintScreenState extends State<LintScreen> {
   }
 
   Future<void> _fixIssue(String type) async {
-    // 确认对话框
     String fixLabel;
     switch (type) {
       case 'broken_link':
@@ -101,7 +100,6 @@ class _LintScreenState extends State<LintScreen> {
           SnackBar(content: Text(count > 0 ? '已修复 $count 项' : '没有需要修复的内容')),
         );
       }
-      // 刷新
       await Future.delayed(const Duration(milliseconds: 500));
       await _loadLint();
     } catch (e) {
@@ -119,52 +117,29 @@ class _LintScreenState extends State<LintScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      color: colorScheme.surface,
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 4),
-            color: colorScheme.surface,
-            child: Row(
-              children: [
-                Text(
-                  '健康检查',
-                  style: TextStyle(
-                    fontFamily: 'MiSans',
-                    fontSize: 24,
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(Icons.refresh,
-                      color: colorScheme.onSurface.withOpacity(0.5)),
-                  onPressed: _loadLint,
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
-          Expanded(
-            child: _loading
-                ? Center(
-                    child:
-                        CircularProgressIndicator(color: colorScheme.primary))
-                : _lintData == null
-                    ? Center(
-                        child: Text(
-                          ApiService.isConfigured ? '加载失败' : '请先在设置中配置服务器',
-                          style: TextStyle(
-                            color: colorScheme.onSurface.withOpacity(0.4),
-                          ),
-                        ),
-                      )
-                    : _buildContent(colorScheme),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('健康检查'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadLint,
           ),
         ],
       ),
+      body: _loading
+          ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
+          : _lintData == null
+              ? Center(
+                  child: Text(
+                    ApiService.isConfigured ? '加载失败' : '请先在设置中配置服务器',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.4),
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                )
+              : _buildContent(colorScheme),
     );
   }
 
@@ -173,9 +148,8 @@ class _LintScreenState extends State<LintScreen> {
     final issues = _lintData!['issues'] ?? [];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       children: [
-        // Stats grid
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -206,7 +180,6 @@ class _LintScreenState extends State<LintScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        // Issues
         if (issues.isNotEmpty) ...[
           Text(
             '发现的问题',
@@ -214,6 +187,7 @@ class _LintScreenState extends State<LintScreen> {
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
+              decoration: TextDecoration.none,
             ),
           ),
           const SizedBox(height: 12),
@@ -223,14 +197,14 @@ class _LintScreenState extends State<LintScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 40),
-                Icon(Icons.check_circle_outline,
-                    size: 48, color: Colors.green),
+                Icon(Icons.check_circle_outline, size: 48, color: Colors.green),
                 const SizedBox(height: 12),
                 Text(
                   '一切正常',
                   style: TextStyle(
                     fontSize: 16,
                     color: colorScheme.onSurface.withOpacity(0.6),
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ],
@@ -258,9 +232,7 @@ class _LintScreenState extends State<LintScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
-        ),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,6 +249,7 @@ class _LintScreenState extends State<LintScreen> {
                   fontSize: 22,
                   fontWeight: FontWeight.w500,
                   color: valueColor,
+                  decoration: TextDecoration.none,
                 ),
               ),
             ],
@@ -287,6 +260,7 @@ class _LintScreenState extends State<LintScreen> {
             style: TextStyle(
               fontSize: 11,
               color: colorScheme.onSurface.withOpacity(0.5),
+              decoration: TextDecoration.none,
             ),
           ),
         ],
@@ -315,7 +289,6 @@ class _LintScreenState extends State<LintScreen> {
         severityIcon = Icons.info_outline;
     }
 
-    // 可修复的 issue 类型
     final fixableTypes = {'broken_link', 'orphan', 'no_tags', 'short_content'};
     final isFixable = fixableTypes.contains(type);
     final isFixing = _fixing.contains(type);
@@ -350,9 +323,7 @@ class _LintScreenState extends State<LintScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
-        ),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,6 +339,7 @@ class _LintScreenState extends State<LintScreen> {
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ),
@@ -382,6 +354,7 @@ class _LintScreenState extends State<LintScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       color: colorScheme.onSurface.withOpacity(0.6),
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 )),
@@ -395,6 +368,7 @@ class _LintScreenState extends State<LintScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       color: colorScheme.onSurface.withOpacity(0.6),
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 )),
@@ -418,7 +392,7 @@ class _LintScreenState extends State<LintScreen> {
                       : Icon(fixIcon, size: 16),
                   label: Text(
                     isFixing ? '修复中...' : fixLabel,
-                    style: TextStyle(fontSize: 12),
+                    style: const TextStyle(fontSize: 12, decoration: TextDecoration.none),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: colorScheme.primary,
