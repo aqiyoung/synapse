@@ -42,6 +42,21 @@ class ApiService {
     throw Exception('获取笔记详情失败');
   }
 
+  // 更新笔记
+  static Future<bool> updateNote(int id, {String? title, String? content, List<String>? tags}) async {
+    final body = <String, dynamic>{};
+    if (title != null) body['title'] = title;
+    if (content != null) body['content'] = content;
+    if (tags != null) body['tags'] = tags;
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/notes/$id'),
+      headers: _headers,
+      body: json.encode(body),
+    );
+    return response.statusCode == 200;
+  }
+
   // 获取笔记关联
   static Future<Relations> getRelations(int id) async {
     final response = await http.get(

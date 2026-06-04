@@ -69,6 +69,77 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
+  void _showLinkDialog() async {
+    // 先获取所有笔记列表
+    try {
+      final allNotes = await ApiService.getNotes();
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _LinkNoteSheet(
+          notes: allNotes,
+          currentNoteId: widget.noteId,
+          onLink: (targetNote) => _linkToNote(targetNote),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('加载笔记列表失败: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _linkToNote(Note targetNote) async {
+    if (_note == null) return;
+
+    final linkText = '[[${targetNote.title}]]';
+    final newContent = '${_note!.content}\n\n$linkText';
+
+    try {
+      final success = await ApiService.updateNote(
+        widget.noteId,
+        content: newContent,
+      );
+
+      if (success && mounted) {
+        setState(() {
+          _note = Note(
+            id: _note!.id,
+            slug: _note!.slug,
+            title: _note!.title,
+            content: newContent,
+            summary: _note!.summary,
+            tags: _note!.tags,
+            createdAt: _note!.createdAt,
+            sourceCreatedAt: _note!.sourceCreatedAt,
+            updatedAt: _note!.updatedAt,
+          );
+        });
+
+        // 刷新关联数据
+        final relations = await ApiService.getRelations(widget.noteId);
+        if (mounted) {
+          setState(() => _relations = relations);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('已关联到「${targetNote.title}」')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('关联失败: $e')),
+        );
+      }
+    }
+  }
+
   void _showDeleteDialog() {
     showDialog(
       context: context,
@@ -131,6 +202,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           ),
           title: Text(_note?.title ?? '笔记详情'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.link),
+              onPressed: _note != null ? _showLinkDialog : null,
+              tooltip: '关联到...',
+            ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
               onPressed: _note != null ? _shareLink : null,
@@ -583,5 +659,208 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   String _formatDate(DateTime date) {
     return '${date.month}月${date.day}日 ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _LinkNoteSheet extends StatefulWidget {
+  final List<Note> notes;
+  final int currentNoteId;
+  final Function(Note) onLink;
+
+  const _LinkNoteSheet({
+    required this.notes,
+    required this.currentNoteId,
+    required this.onLink,
+  });
+
+  @override
+  State<_LinkNoteSheet> createState() => _LinkNoteSheetState();
+}
+
+class _LinkNoteSheetState extends State<_LinkNoteSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Note> _filteredNotes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredNotes = widget.notes
+        .where((n) => n.id != widget.currentNoteId)
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterNotes(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredNotes = widget.notes
+            .where((n) => n.id != widget.currentNoteId)
+            .toList();
+      } else {
+        _filteredNotes = widget.notes
+            .where((n) =>
+                n.id != widget.currentNoteId &&
+                (n.title.toLowerCase().contains(query.toLowerCase()) ||
+                 n.summary.toLowerCase().contains(query.toLowerCase())))
+            .toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // 拖拽指示器
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colorScheme.outline.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // 标题
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.link, color: colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '关联笔记',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ],
+            ),
+          ),
+          // 搜索框
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filterNotes,
+              decoration: InputDecoration(
+                hintText: '搜索笔记...',
+                hintStyle: TextStyle(
+                  color: colorScheme.onSurface.withOpacity(0.4),
+                ),
+                prefixIcon: Icon(Icons.search,
+                    color: colorScheme.onSurface.withOpacity(0.4)),
+                filled: true,
+                fillColor: colorScheme.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 10),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // 笔记列表
+          Expanded(
+            child: _filteredNotes.isEmpty
+                ? Center(
+                    child: Text(
+                      '没有可关联的笔记',
+                      style: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filteredNotes.length,
+                    itemBuilder: (context, index) {
+                      final note = _filteredNotes[index];
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          widget.onLink(note);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          margin: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      note.title,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (note.summary.isNotEmpty)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          note.summary,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: colorScheme.onSurface
+                                                .withOpacity(0.5),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 14,
+                                color:
+                                    colorScheme.onSurface.withOpacity(0.3),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          SizedBox(height: bottomPadding),
+        ],
+      ),
+    );
   }
 }
