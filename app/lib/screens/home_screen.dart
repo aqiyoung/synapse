@@ -230,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onChanged: (value) {
                     _searchDebounce?.cancel();
                     _searchDebounce = Timer(
-                      const Duration(milliseconds: 500),
+                      const Duration(milliseconds: 300),
                       () => _onSearch(value),
                     );
                   },
@@ -289,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => _onTagSelected(''),
                     ),
                   ),
-                  ..._tags.take(10).map((tag) => Padding(
+                  ..._tags.map((tag) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: TagChip(
                           label: tag.name,

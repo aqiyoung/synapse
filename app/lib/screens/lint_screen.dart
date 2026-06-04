@@ -49,6 +49,49 @@ class _LintScreenState extends State<LintScreen> {
   }
 
   Future<void> _fixIssue(String type) async {
+    // 确认对话框
+    String fixLabel;
+    switch (type) {
+      case 'broken_link':
+        fixLabel = '清除断链';
+        break;
+      case 'orphan':
+        fixLabel = '标记孤立';
+        break;
+      case 'no_tags':
+        fixLabel = '添加标签';
+        break;
+      case 'short_content':
+        fixLabel = '标记短内容';
+        break;
+      default:
+        fixLabel = '修复';
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('确认$fixLabel'),
+        content: Text('确定要执行「$fixLabel」操作吗？此操作不可撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(fixLabel),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     setState(() => _fixing.add(type));
     try {
       final result = await ApiService.fixLint(type);

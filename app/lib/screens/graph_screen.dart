@@ -553,12 +553,18 @@ class _GraphPainter extends CustomPainter {
     }
     if (usedTags.length <= 1) return;
 
+    // 限制最多显示 15 个标签
     final entries = usedTags.entries.toList();
+    final displayEntries = entries.length > 15 ? entries.sublist(0, 15) : entries;
+    final hasMore = entries.length > 15;
+
     const pad = 10.0, lh = 18.0, titleH = 16.0;
-    final maxW =
-        entries.map((e) => e.key.length * 7.0).reduce((a, b) => a > b ? a : b);
-    final boxW = pad * 2 + 10 + maxW;
-    final boxH = pad * 2 + titleH + entries.length * lh;
+    final maxW = displayEntries
+        .map((e) => e.key.length * 7.0)
+        .reduce((a, b) => a > b ? a : b);
+    final moreTextW = hasMore ? ('... +${entries.length - 15} more'.length * 7.0) : 0.0;
+    final boxW = pad * 2 + 10 + max(maxW, moreTextW);
+    final boxH = pad * 2 + titleH + (displayEntries.length + (hasMore ? 1 : 0)) * lh;
     final bx = size.width - boxW - 12;
     final by = 12.0;
 
@@ -585,18 +591,31 @@ class _GraphPainter extends CustomPainter {
     )..layout();
     titleTp.paint(canvas, Offset(bx + pad, by + pad + 4));
 
-    for (var i = 0; i < entries.length; i++) {
+    for (var i = 0; i < displayEntries.length; i++) {
       final iy = by + titleH + pad + i * lh + 4;
       canvas.drawCircle(
-          Offset(bx + pad + 4, iy), 3, Paint()..color = entries[i].value);
+          Offset(bx + pad + 4, iy), 3, Paint()..color = displayEntries[i].value);
       final tagTp = TextPainter(
         text: TextSpan(
-          text: entries[i].key,
+          text: displayEntries[i].key,
           style: TextStyle(fontSize: 11, color: fg.withOpacity(0.6)),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       tagTp.paint(canvas, Offset(bx + pad + 12, iy - 5));
+    }
+
+    // 显示更多标签提示
+    if (hasMore) {
+      final iy = by + titleH + pad + displayEntries.length * lh + 4;
+      final moreTp = TextPainter(
+        text: TextSpan(
+          text: '... +${entries.length - 15} more',
+          style: TextStyle(fontSize: 11, color: fg.withOpacity(0.4)),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      moreTp.paint(canvas, Offset(bx + pad + 12, iy - 5));
     }
   }
 

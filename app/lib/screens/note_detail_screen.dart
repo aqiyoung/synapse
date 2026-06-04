@@ -239,32 +239,88 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             const SizedBox(height: 32),
             Divider(color: colorScheme.outline.withOpacity(0.1)),
             const SizedBox(height: 16),
-            Text(
-              '关联笔记',
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurface.withOpacity(0.5),
-                letterSpacing: 1,
+            if (_relations!.outgoing.isNotEmpty) ...[
+              Row(
+                children: [
+                  Text(
+                    '↗ 引用',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_relations!.outgoing.length}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ..._relations!.outgoing.map((r) => _buildRelationChip(
-                      r['title'] ?? '',
-                      colorScheme,
-                      onTap: () => _navigateToNote(r['id']),
-                    )),
-                ..._relations!.incoming.map((r) => _buildRelationChip(
-                      r['title'] ?? '',
-                      colorScheme,
-                      isIncoming: true,
-                      onTap: () => _navigateToNote(r['id']),
-                    )),
-              ],
-            ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _relations!.outgoing.map((r) => _buildRelationChip(
+                  r['title'] ?? '',
+                  colorScheme,
+                  onTap: () => _navigateToNote(r['id']),
+                )).toList(),
+              ),
+            ],
+            if (_relations!.incoming.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Text(
+                    '↙ 被引用',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_relations!.incoming.length}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _relations!.incoming.map((r) => _buildRelationChip(
+                  r['title'] ?? '',
+                  colorScheme,
+                  isIncoming: true,
+                  onTap: () => _navigateToNote(r['id']),
+                )).toList(),
+              ),
+            ],
           ],
           const SizedBox(height: 80),
         ],
