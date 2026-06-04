@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../services/api_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../services/update_service.dart';
 import 'settings_screen.dart';
 import 'lint_screen.dart';
@@ -20,6 +19,21 @@ class MineScreen extends StatefulWidget {
 }
 
 class _MineScreenState extends State<MineScreen> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) setState(() => _version = info.version);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -29,7 +43,7 @@ class _MineScreenState extends State<MineScreen> {
       child: ListView(
         padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 16),
         children: [
-          // 头部
+          // 头部 - 版本信息
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -58,6 +72,14 @@ class _MineScreenState extends State<MineScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
+                  'v$_version',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
                   'AI 驱动的个人知识管理',
                   style: TextStyle(
                     fontSize: 12,
@@ -68,6 +90,10 @@ class _MineScreenState extends State<MineScreen> {
             ),
           ),
           const SizedBox(height: 16),
+
+          // 更新检查
+          _buildUpdateSection(colorScheme),
+          const SizedBox(height: 12),
 
           // 健康检查入口
           _buildSection(
@@ -100,11 +126,7 @@ class _MineScreenState extends State<MineScreen> {
               );
             },
           ),
-          const SizedBox(height: 12),
-
-          // 更新检查
-          _buildUpdateSection(colorScheme),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           // 关于信息
           Container(
