@@ -289,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => _onTagSelected(''),
                     ),
                   ),
-                  ..._tags.map((tag) => Padding(
+                  ..._tags.take(5).map((tag) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: TagChip(
                           label: tag.name,

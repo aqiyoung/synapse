@@ -1,7 +1,7 @@
 name: synapse
 description: Synapse - AI 驱动的个人知识管理系统
 publish_to: 'none'
-version: 2.2.18+60
+version: 2.2.19+61
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
