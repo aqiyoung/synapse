@@ -814,20 +814,34 @@ a:hover { color: var(--text); }
 /* ── Tag cloud ── */
 .tag-cloud {
   scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
+  scrollbar-color: var(--accent) transparent;
+  position: relative;
+}
+.tag-cloud::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line);
 }
 .tag-cloud::-webkit-scrollbar {
-  height: 6px;
+  height: 8px;
 }
 .tag-cloud::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--panel-2);
+  border-radius: 10px;
+  margin: 0 4px;
 }
 .tag-cloud::-webkit-scrollbar-thumb {
-  background: var(--line);
+  background: var(--accent);
   border-radius: 10px;
+  border: 2px solid var(--panel-2);
 }
 .tag-cloud::-webkit-scrollbar-thumb:hover {
-  background: var(--line-strong);
+  background: var(--accent);
+  opacity: 0.8;
 }
 .tag-cloud-item {
   display: inline-flex;
