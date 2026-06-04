@@ -167,15 +167,36 @@ class UpdateService {
     _notifyListeners();
   }
 
-  /// 跳转到 GitHub Release 页面下载
-  Future<void> openDownloadPage() async {
+  /// 下载更新（在浏览器中打开）
+  Future<void> downloadUpdate() async {
     if (_cachedUpdate == null) return;
+
+    // 优先从服务器下载
+    final prefs = await SharedPreferences.getInstance();
+    final server = prefs.getString('server') ?? '';
+    if (server.isNotEmpty) {
+      try {
+        var base = server;
+        if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+        if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
+
+        final uri = Uri.parse('$base/api/update/download');
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+          return;
+        }
+      } catch (e) {
+        debugPrint('Server download failed, trying GitHub: $e');
+      }
+    }
+
+    // 备选：从 GitHub 下载
     try {
       final uri = Uri.parse(
-        'https://github.com/aqiyoung/synapse/releases/tag/v${_cachedUpdate!.latestVersion}',
+        'https://github.com/aqiyoung/synapse/releases/download/v${_cachedUpdate!.latestVersion}/synapse-v${_cachedUpdate!.latestVersion}.apk',
       );
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
       _errorMessage = '无法打开下载页面: $e';

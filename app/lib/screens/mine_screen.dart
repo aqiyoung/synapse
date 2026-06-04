@@ -345,7 +345,7 @@ class _MineScreenState extends State<MineScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              UpdateService().openDownloadPage();
+              UpdateService().downloadUpdate();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
