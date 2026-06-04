@@ -73,3 +73,8 @@ class Tag(Base):
             "color": self.color,
             "note_count": count,
         }
+
+    def note_count_query(self, db):
+        """高效获取笔记数，不加载整个集合"""
+        from sqlalchemy import func
+        return db.query(func.count(note_tags.c.note_id)).filter(note_tags.c.tag_id == self.id).scalar() or 0

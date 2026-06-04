@@ -76,10 +76,18 @@ def create_note(db: Session, title: str, content: str, tag_names: list = None, s
     """创建笔记"""
     now = datetime.now(tz=timezone(timedelta(hours=8)))
     note = Note(title=title, content=content, created_at=now, source_created_at=source_created_at)
-    # 先提交拿到 created_at，再生成 slug
     db.add(note)
-    db.flush()
-    note.slug = _generate_slug(db, note.created_at)
+    db.flush()  # 拿到 id 和 created_at
+    # 生成 slug，重试防竞态
+    for _attempt in range(3):
+        note.slug = _generate_slug(db, note.created_at)
+        try:
+            db.commit()
+            break
+        except Exception:
+            db.rollback()
+            db.add(note)
+            db.flush()
     if tag_names:
         for name in tag_names:
             tag = db.query(Tag).filter(Tag.name == name).first()
@@ -87,8 +95,7 @@ def create_note(db: Session, title: str, content: str, tag_names: list = None, s
                 tag = Tag(name=name)
                 db.add(tag)
             note.tags.append(tag)
-    db.add(note)
-    db.commit()
+        db.commit()
     db.refresh(note)
     return note
 
@@ -184,13 +191,20 @@ def update_note(db: Session, note_id: int, title: str = None, content: str = Non
     if content is not None:
         orphan_tag = db.query(Tag).filter(Tag.name == "孤立").first()
 
-        # 1. 当前笔记有 [[引用]]，移除孤立标签
-        has_outgoing = bool(re.search(r'\[\[([^\]]+)\]\]', content))
-        if has_outgoing and orphan_tag and orphan_tag in note.tags:
-            note.tags.remove(orphan_tag)
-
-        # 2. 被引用的笔记也移除孤立标签（它们现在有 incoming 引用了）
         if orphan_tag:
+            # 1. 当前笔记有 [[引用]]，移除孤立标签
+            has_outgoing = bool(re.search(r'\[\[([^\]]+)\]\]', content))
+            if has_outgoing and orphan_tag in note.tags:
+                note.tags.remove(orphan_tag)
+
+            # 2. 被引用的笔记：检查是否有 outgoing 或 incoming
+            all_notes = db.query(Note).filter(Note.deleted_at.is_(None), Note.id != note_id).all()
+            incoming_refs = set()
+            for n in all_notes:
+                if n.content:
+                    for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
+                        incoming_refs.add(m.group(1))
+
             referenced_titles = re.findall(r'\[\[([^\]]+)\]\]', content)
             for ref_title in referenced_titles:
                 ref_note = db.query(Note).filter(
@@ -198,7 +212,10 @@ def update_note(db: Session, note_id: int, title: str = None, content: str = Non
                     Note.deleted_at.is_(None)
                 ).first()
                 if ref_note and orphan_tag in ref_note.tags:
-                    ref_note.tags.remove(orphan_tag)
+                    has_ref_outgoing = bool(re.search(r'\[\[([^\]]+)\]\]', ref_note.content or ""))
+                    has_ref_incoming = ref_note.title in incoming_refs
+                    if has_ref_outgoing or has_ref_incoming:
+                        ref_note.tags.remove(orphan_tag)
 
     db.commit()
     db.refresh(note)

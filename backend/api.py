@@ -406,16 +406,24 @@ def api_upload_file(file: UploadFile = File(...)):
 
     # 写入文件并检查大小
     size = 0
-    with open(filepath, "wb") as f:
-        while True:
-            chunk = file.file.read(8192)
-            if not chunk:
-                break
-            size += len(chunk)
-            if size > _MAX_UPLOAD_SIZE:
-                os.remove(filepath)
-                raise HTTPException(status_code=413, detail=f"文件超过最大限制 {_MAX_UPLOAD_SIZE // 1024 // 1024}MB")
-            f.write(chunk)
+    try:
+        with open(filepath, "wb") as f:
+            while True:
+                chunk = file.file.read(8192)
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > _MAX_UPLOAD_SIZE:
+                    os.remove(filepath)
+                    raise HTTPException(status_code=413, detail=f"文件超过最大限制 {_MAX_UPLOAD_SIZE // 1024 // 1024}MB")
+                f.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as e:
+        # 写入过程中出异常（如磁盘满），清理残留文件
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        raise HTTPException(status_code=500, detail=f"文件上传失败: {str(e)}")
 
     return {
         "filename": filename,
@@ -722,37 +730,46 @@ def _algo_analyze(title: str, content: str) -> tuple[list[str], str]:
 
 # ===== 后台自动分析 =====
 
+# 并发锁：防止同一笔记被多个后台任务同时分析
+_auto_analyze_locks: dict[int, asyncio.Lock] = {}
+
 async def _auto_analyze_note(note_id: int):
-    """后台自动分析笔记：关键词标签 + 首段摘要"""
-    try:
-        from crud import SessionLocal
-        from models import Note, Tag
-        db = SessionLocal()
+    """后台自动分析笔记：关键词标签 + 首段摘要（加锁防并发）"""
+    import asyncio
+    lock = _auto_analyze_locks.setdefault(note_id, asyncio.Lock())
+    async with lock:
         try:
-            note = db.query(Note).filter(Note.id == note_id).first()
-            if not note:
-                return
+            from crud import SessionLocal
+            from models import Note, Tag
+            db = SessionLocal()
+            try:
+                note = db.query(Note).filter(Note.id == note_id).first()
+                if not note:
+                    return
 
-            tags, summary = _algo_analyze(note.title or '', note.content or '')
+                tags, summary = _algo_analyze(note.title or '', note.content or '')
 
-            if tags:
-                note.tags.clear()
-                for name in tags:
-                    tag = db.query(Tag).filter(Tag.name == name).first()
-                    if not tag:
-                        tag = Tag(name=name)
-                        db.add(tag)
-                    note.tags.append(tag)
+                if tags:
+                    note.tags.clear()
+                    for name in tags:
+                        tag = db.query(Tag).filter(Tag.name == name).first()
+                        if not tag:
+                            tag = Tag(name=name)
+                            db.add(tag)
+                        note.tags.append(tag)
 
-            if summary:
-                note.summary = summary
+                if summary:
+                    note.summary = summary
 
-            db.commit()
-            logger.info(f"Auto-analyzed note {note_id}: tags={tags}, summary={summary[:30]}...")
+                db.commit()
+                logger.info(f"Auto-analyzed note {note_id}: tags={tags}, summary={summary[:30]}...")
+            finally:
+                db.close()
+        except Exception as e:
+            logger.error(f"Auto-analyze failed for note {note_id}: {e}")
         finally:
-            db.close()
-    except Exception as e:
-        logger.error(f"Auto-analyze failed for note {note_id}: {e}")
+            # 清理锁
+            _auto_analyze_locks.pop(note_id, None)
 
 
 @app.post("/api/ai/smart-ingest")
