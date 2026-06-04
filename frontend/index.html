@@ -995,12 +995,6 @@ a:hover { color: var(--text); }
         <line x1="8.5" y1="7.5" x2="15.5" y2="16.5"/><line x1="15.5" y1="7.5" x2="8.5" y2="16.5"/>
       </svg>
     </div>
-    <div class="nav-item" :class="{ active: activeView === 'lint' }" @click="switchView('lint')" title="健康检查">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-      </svg>
-      <span class="badge" v-if="lintBadge"></span>
-    </div>
     <div class="nav-item" :class="{ active: activeView === 'tags' }" @click="switchView('tags')" title="标签">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
@@ -1085,103 +1079,6 @@ a:hover { color: var(--text); }
           <div class="skeleton-tag"></div>
           <div class="skeleton-tag"></div>
           <div class="skeleton-tag"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lint panel -->
-    <div class="content" v-if="activeView === 'lint' && !loading" style="position:relative;overflow:hidden;height:100%;display:flex;flex-direction:column;">
-      <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0;">
-        <button @click="switchView('kb')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--radius);border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font:inherit;font-size:11px;min-height:28px;line-height:1;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          返回
-        </button>
-      </div>
-      <div style="flex:1;padding:24px;overflow-y:auto;">
-        <div style="max-width:800px;margin:0 auto;">
-          <div v-if="lintLoading" style="text-align:center;padding:60px 0;color:var(--muted);">
-            正在检查...
-          </div>
-          <div v-else-if="lintData">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px;margin-bottom:24px;">
-              <div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px;text-align:center;">
-                <div style="font-size:20px;font-weight:700;">{{ lintData.stats.total_notes }}</div>
-                <div style="font-size:10px;color:var(--muted);">笔记</div>
-              </div>
-              <div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px;text-align:center;">
-                <div style="font-size:20px;font-weight:700;">{{ lintData.stats.link_density }}</div>
-                <div style="font-size:10px;color:var(--muted);">链接密度</div>
-              </div>
-              <div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px;text-align:center;">
-                <div style="font-size:20px;font-weight:700;color:var(--red);">{{ lintData.stats.orphan_count }}</div>
-                <div style="font-size:10px;color:var(--muted);">孤立</div>
-              </div>
-              <div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px;text-align:center;">
-                <div style="font-size:20px;font-weight:700;color:var(--red);">{{ lintData.stats.broken_link_count }}</div>
-                <div style="font-size:10px;color:var(--muted);">断链</div>
-              </div>
-            </div>
-            <div v-for="issue in lintData.issues" :key="issue.type" style="margin-bottom:16px;border:1px solid var(--line);border-radius:var(--radius);padding:16px;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                <svg v-if="issue.severity === 'error'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                <svg v-else-if="issue.severity === 'warning'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <span style="font-size:13px;font-weight:600;flex:1;">{{ issue.message }}</span>
-                <!-- 修复按钮 -->
-                <button v-if="['broken_link','orphan','no_tags'].includes(issue.type)"
-                  @click="fixIssue(issue.type)"
-                  :disabled="lintFixing[issue.type]"
-                  style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--accent);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer;font-size:11px;white-space:nowrap;transition:all .15s;"
-                  :style="lintFixing[issue.type] ? 'opacity:.5;cursor:wait;' : 'opacity:1;'">
-                  <svg v-if="lintFixing[issue.type]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                  {{ lintFixing[issue.type] ? '修复中...' : getFixLabel(issue.type) }}
-                </button>
-              </div>
-              <div v-if="issue.notes" style="margin-left:28px;">
-                <div v-for="n in issue.notes" :key="n.id"
-                  @click="openNote(n)"
-                  style="padding:4px 8px;font-size:11px;cursor:pointer;color:var(--muted);">
-                  → {{ n.title }}
-                </div>
-              </div>
-              <div v-if="issue.links" style="margin-left:28px;">
-                <div v-for="l in issue.links" :key="l.from+l.to"
-                  style="padding:4px 8px;font-size:11px;color:var(--muted);">
-                  → {{ l.from }} 引用了不存在的 [[{{ l.to }}]]
-                </div>
-              </div>
-            </div>
-            <!-- 图谱清理按钮 -->
-            <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--line);">
-              <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text);display:flex;align-items:center;gap:6px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                图谱维护
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button @click="linkOrphans" :disabled="fixing === 'link-orphans'"
-                  style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:1px solid var(--accent);border-radius:var(--radius);background:transparent;color:var(--accent);cursor:pointer;font-size:11px;transition:all .15s;"
-                  :style="fixing === 'link-orphans' ? 'opacity:.5;cursor:wait;' : 'opacity:1;'">
-                  <svg v-if="fixing === 'link-orphans'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  {{ fixing === 'link-orphans' ? '关联中...' : '自动关联孤立笔记' }}
-                </button>
-                <button @click="pruneGraph" :disabled="fixing === 'prune'"
-                  style="display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--muted);cursor:pointer;font-size:11px;transition:all .15s;"
-                  @mouseenter="$event.target.style.borderColor='var(--accent)';$event.target.style.color='var(--accent)';"
-                  @mouseleave="$event.target.style.borderColor='var(--line)';$event.target.style.color='var(--muted)';">
-                  <svg v-if="fixing === 'prune'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  {{ fixing === 'prune' ? '清理中...' : '清理垃圾边' }}
-                </button>
-              </div>
-              <div v-if="pruneResult" style="margin-top:8px;padding:8px 12px;background:var(--accent-light);border-radius:4px;font-size:11px;color:var(--text);">
-                {{ pruneResult }}
-              </div>
-            </div>
-          </div>
-          <div v-else style="text-align:center;padding:60px 0;color:var(--muted);">
-            点击开始健康检查
-          </div>
         </div>
       </div>
     </div>
