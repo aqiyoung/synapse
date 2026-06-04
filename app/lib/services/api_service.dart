@@ -185,4 +185,17 @@ class ApiService {
     }
     throw Exception('添加标签失败');
   }
+
+  /// 自动关联孤立笔记
+  static Future<Map<String, dynamic>> linkOrphans() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/lint/fix/link-orphans'),
+      headers: _headers,
+      body: json.encode({}),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('自动关联失败');
+  }
 }

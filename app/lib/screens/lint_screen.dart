@@ -12,6 +12,7 @@ class _LintScreenState extends State<LintScreen> {
   Map<String, dynamic>? _lintData;
   bool _loading = true;
   final Set<String> _fixing = {};
+  bool _linkingOrphans = false;
 
   @override
   void initState() {
@@ -112,6 +113,52 @@ class _LintScreenState extends State<LintScreen> {
       }
     } finally {
       if (mounted) setState(() => _fixing.remove(type));
+    }
+  }
+
+  Future<void> _linkOrphans() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('自动关联孤立笔记'),
+        content: const Text('AI 将分析孤立笔记内容并自动添加引用，已关联的笔记会自动移除「孤立」标签。确定继续？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('开始关联'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _linkingOrphans = true);
+    try {
+      final result = await ApiService.linkOrphans();
+      if (mounted) {
+        final count = result['fixed_count'] ?? 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(count > 0 ? '已关联 $count 篇孤立笔记' : '没有需要关联的孤立笔记')),
+        );
+      }
+      await _loadLint();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('自动关联失败: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _linkingOrphans = false);
     }
   }
 
@@ -237,6 +284,63 @@ class _LintScreenState extends State<LintScreen> {
             ),
           ),
         ],
+        const SizedBox(height: 24),
+        // 图谱维护
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.1),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.build_outlined, size: 18, color: colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    '图谱维护',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _linkingOrphans ? null : _linkOrphans,
+                  icon: _linkingOrphans
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.link, size: 18),
+                  label: Text(_linkingOrphans ? '关联中...' : '自动关联孤立笔记'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
