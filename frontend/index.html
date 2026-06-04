@@ -752,6 +752,18 @@ a:hover { color: var(--text); }
   to { transform: rotate(360deg); }
 }
 
+/* ── Fade in up animation ── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* ── Graph legend ── */
 .graph-legend {
   position: absolute;
@@ -1280,6 +1292,11 @@ a:hover { color: var(--text); }
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           返回
         </button>
+        <div style="flex:1;"></div>
+        <button @click="showLinkDialog=true" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--radius);border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font:inherit;font-size:11px;min-height:28px;line-height:1;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          关联到...
+        </button>
       </div>
       <div style="display:flex">
         <div class="note-view" style="flex:1">
@@ -1321,6 +1338,39 @@ a:hover { color: var(--text); }
               {{ item.text }}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Link dialog -->
+  <div v-if="showLinkDialog" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);" @click.self="showLinkDialog=false">
+    <div style="background:var(--panel);border-radius:12px;width:90%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span style="font-size:15px;font-weight:600;color:var(--text);">关联笔记</span>
+        <div style="flex:1;"></div>
+        <button @click="showLinkDialog=false" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="padding:12px 20px;border-bottom:1px solid var(--line);">
+        <input type="text" v-model="linkSearchQ" placeholder="搜索笔记..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text);font:inherit;font-size:13px;outline:none;" @input="filterLinkNotes">
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:8px;">
+        <div v-for="n in linkableNotes" :key="n.id"
+          @click="linkToNote(n)"
+          style="padding:10px 14px;border-radius:var(--radius);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;"
+          @mouseenter="$event.target.style.background='var(--accent-light)'"
+          @mouseleave="$event.target.style.background='transparent'">
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;">{{ n.title || '无标题' }}</div>
+            <div style="font-size:11px;color:var(--muted);">{{ strip(n.content).substring(0, 60) }}</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div v-if="!linkableNotes.length" style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px;">
+          {{ linkSearchQ ? '没有匹配的笔记' : '没有可关联的笔记' }}
         </div>
       </div>
     </div>
@@ -1498,6 +1548,20 @@ createApp({
     const contentList = ref(null);
     const fixing = ref('');
     const pruneResult = ref('');
+
+    // 关联对话框
+    const showLinkDialog = ref(false);
+    const linkSearchQ = ref('');
+    const linkableNotes = computed(() => {
+      if (!curNote.value) return [];
+      const q = linkSearchQ.value.trim().toLowerCase();
+      return notes.value.filter(n => {
+        if (n.id === curNote.value.id) return false;
+        if (!q) return true;
+        return (n.title || '').toLowerCase().includes(q) ||
+               (n.content || '').toLowerCase().includes(q);
+      });
+    });
 
     function getAuthHeaders() {
       const headers = { 'Content-Type': 'application/json' };
@@ -1707,6 +1771,41 @@ createApp({
       curTag.value = curTag.value === name ? '' : name;
       activeView.value = 'kb';
       showNav.value = false;
+    }
+
+    async function linkToNote(targetNote) {
+      if (!curNote.value) return;
+      const linkText = '[[' + targetNote.title + ']]';
+
+      // 在内容末尾添加链接
+      const newContent = curNote.value.content + '\n\n' + linkText;
+
+      try {
+        const resp = await fetch(API + '/notes/' + curNote.value.id, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ content: newContent })
+        });
+
+        if (resp.ok) {
+          // 更新本地数据
+          curNote.value.content = newContent;
+          showLinkDialog.value = false;
+          linkSearchQ.value = '';
+
+          // 刷新关联数据
+          relationsData.value = await fetchJSON(API + '/notes/' + curNote.value.id + '/relations');
+
+          // 显示成功提示
+          const btn = document.createElement('div');
+          btn.textContent = '已关联到 ' + targetNote.title;
+          btn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px;z-index:200;animation:fadeInUp 0.3s ease;';
+          document.body.appendChild(btn);
+          setTimeout(() => btn.remove(), 2000);
+        }
+      } catch(e) {
+        console.error('关联失败:', e);
+      }
     }
 
     async function openNote(n) {
@@ -2240,6 +2339,7 @@ createApp({
       totalEdges, activeView, filteredNotes, snippetLength, graphNodes, graphEdges, graphUsedTags, getTagColor,
       lintData, lintLoading, lintBadge, loadError,
       fixing, pruneResult, pruneGraph,
+      showLinkDialog, linkSearchQ, linkableNotes, linkToNote,
       sortedTags, getTagFontSize, filterByTag,
       switchView, runLint, fixIssue, getFixLabel,
       openNote, openRelation, toggleTag, doSearch, setSort,
