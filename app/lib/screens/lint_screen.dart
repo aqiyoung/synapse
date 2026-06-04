@@ -148,7 +148,7 @@ class _LintScreenState extends State<LintScreen> {
     final issues = _lintData!['issues'] ?? [];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       children: [
         GridView.count(
           shrinkWrap: true,
