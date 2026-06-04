@@ -752,6 +752,65 @@ a:hover { color: var(--text); }
   to { transform: rotate(360deg); }
 }
 
+/* ── Graph legend ── */
+.graph-legend {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 5;
+  box-shadow: var(--shadow);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.graph-legend::-webkit-scrollbar {
+  width: 4px;
+}
+.graph-legend::-webkit-scrollbar-track {
+  background: transparent;
+}
+.graph-legend::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 10px;
+}
+.graph-legend-title {
+  font-size: 9px;
+  font-weight: bold;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  margin-bottom: 6px;
+}
+.graph-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.graph-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.graph-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.graph-legend-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Tag cloud ── */
 .tag-cloud {
   scrollbar-width: thin;
@@ -1110,7 +1169,19 @@ a:hover { color: var(--text); }
         </button>
         <span style="font-size:11px;color:var(--muted);">{{ graphNodes.length }} 节点 · {{ graphEdges.length }} 关联</span>
       </div>
-      <canvas id="graphCanvas" style="width:100%;flex:1;display:block;cursor:grab;"></canvas>
+      <div style="position:relative;flex:1;overflow:hidden;">
+        <canvas id="graphCanvas" style="width:100%;height:100%;display:block;cursor:grab;"></canvas>
+        <!-- 标签图例（HTML 层，支持滚动） -->
+        <div class="graph-legend" v-if="graphUsedTags.length > 1">
+          <div class="graph-legend-title">TAGS</div>
+          <div class="graph-legend-list">
+            <div v-for="t in graphUsedTags" :key="t" class="graph-legend-item">
+              <span class="graph-legend-dot" :style="{ background: getTagColor(t) }"></span>
+              <span class="graph-legend-name">{{ t }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Tags view -->
@@ -1726,6 +1797,11 @@ createApp({
     const graphEdges = ref([]);
     let graphAnimId = null;
 
+    // 计算图谱中使用的标签
+    const graphUsedTags = computed(() => {
+      return [...new Set(graphNodes.value.map(n => (n.tags || [])[0]).filter(Boolean))];
+    });
+
     // 与 APP 一致的颜色方案
     const graphColors = [
       '#c96442', '#4a9e8a', '#8b6bbf', '#d4a843',
@@ -2114,48 +2190,6 @@ createApp({
 
         ctx.restore();
 
-        const usedTags = [...new Set(nodes.map(n => (n.tags || [])[0] || '_'))];
-        if (usedTags.length > 1) {
-          // 限制最多显示 15 个标签，避免超出画布
-          const displayTags = usedTags.slice(0, 15);
-          const hasMore = usedTags.length > 15;
-          const pad = 10;
-          const lh = 18;
-          const titleH = 16;
-          ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
-          const maxW = Math.max(...displayTags.map(t => ctx.measureText(t).width), hasMore ? ctx.measureText('... +' + (usedTags.length - 15) + ' more').width : 0);
-          const boxW = pad * 2 + 10 + maxW;
-          const boxH = pad * 2 + titleH + (displayTags.length + (hasMore ? 1 : 0)) * lh;
-          const bx = W - boxW - 12;
-          const by = H - boxH - 12;
-
-          ctx.fillStyle = isDarkMode ? 'rgba(28,28,26,0.9)' : 'rgba(255,255,255,0.95)';
-          drawRoundRect(ctx, bx, by, boxW, boxH, 6);
-          ctx.fill();
-          ctx.strokeStyle = isDarkMode ? 'rgba(228,230,224,0.08)' : 'rgba(20,20,19,0.08)';
-          ctx.lineWidth = 1; ctx.stroke();
-
-          ctx.fillStyle = isDarkMode ? 'rgba(228,230,224,0.7)' : 'rgba(20,20,19,0.7)';
-          ctx.font = 'bold 9px -apple-system, BlinkMacSystemFont, sans-serif';
-          ctx.textAlign = 'left';
-          ctx.fillText('TAGS', bx + pad, by + pad + 8);
-
-          ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
-          displayTags.forEach((t, i) => {
-            const iy = by + titleH + pad + i * lh + 4;
-            ctx.beginPath(); ctx.arc(bx + pad + 4, iy - 2, 3, 0, Math.PI * 2);
-            ctx.fillStyle = getTagColor(t); ctx.fill();
-            ctx.fillStyle = isDarkMode ? 'rgba(228,230,224,0.8)' : 'rgba(20,20,19,0.8)';
-            ctx.fillText(t, bx + pad + 12, iy + 1);
-          });
-          // 显示更多标签提示
-          if (hasMore) {
-            const iy = by + titleH + pad + displayTags.length * lh + 4;
-            ctx.fillStyle = isDarkMode ? 'rgba(228,230,224,0.5)' : 'rgba(20,20,19,0.5)';
-            ctx.fillText('... +' + (usedTags.length - 15) + ' more', bx + pad + 12, iy + 1);
-          }
-        }
-
         ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.fillStyle = isDarkMode ? 'rgba(228,230,224,0.25)' : 'rgba(20,20,19,0.25)';
         ctx.textAlign = 'left';
@@ -2209,7 +2243,7 @@ createApp({
       showNav, mobileShowList, contentList, startResize,
       notes, tags, curNote, curTag, searchQ, filterQ,
       sortKey, sortDir, isDark, loading, relationsData, tocItems, tocActive,
-      totalEdges, activeView, filteredNotes, snippetLength, graphNodes, graphEdges,
+      totalEdges, activeView, filteredNotes, snippetLength, graphNodes, graphEdges, graphUsedTags, getTagColor,
       lintData, lintLoading, lintBadge, loadError,
       fixing, pruneResult, pruneGraph,
       selectedTag, selectedTagNotes, sortedTags, getTagFontSize, filterByTag,
