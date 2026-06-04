@@ -48,14 +48,18 @@ class UpdateService {
   }
 
   bool _isNewer(String latest, String current) {
-    final lp = latest.split('+');
-    final cp = current.split('+');
+    // 移除可能的 v 前缀
+    var l = latest.startsWith('v') ? latest.substring(1) : latest;
+    var c = current.startsWith('v') ? current.substring(1) : current;
+
+    final lp = l.split('+');
+    final cp = c.split('+');
     final lVer = lp[0].split('.').map((e) => int.tryParse(e) ?? 0).toList();
     final cVer = cp[0].split('.').map((e) => int.tryParse(e) ?? 0).toList();
     for (int i = 0; i < 3; i++) {
-      final l = i < lVer.length ? lVer[i] : 0;
-      final c = i < cVer.length ? cVer[i] : 0;
-      if (l != c) return l > c;
+      final lv = i < lVer.length ? lVer[i] : 0;
+      final cv = i < cVer.length ? cVer[i] : 0;
+      if (lv != cv) return lv > cv;
     }
     if (lp.length > 1 && cp.length > 1) {
       return (int.tryParse(lp[1]) ?? 0) > (int.tryParse(cp[1]) ?? 0);
@@ -127,11 +131,16 @@ class UpdateService {
         return;
       }
 
-      final latestVersion = data['latest_version'] as String? ?? '';
+      var latestVersion = data['latest_version'] as String? ?? '';
       if (latestVersion.isEmpty) {
         _checking = false;
         _notifyListeners();
         return;
+      }
+
+      // 移除 v 前缀
+      if (latestVersion.startsWith('v')) {
+        latestVersion = latestVersion.substring(1);
       }
 
       final currentVersion = await _getCurrentVersion();
