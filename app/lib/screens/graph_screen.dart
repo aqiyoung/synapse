@@ -558,16 +558,16 @@ class _GraphPainter extends CustomPainter {
     }
     if (usedTags.length <= 1) return;
 
-    // 限制最多显示 15 个标签
+    // 限制最多显示 5 个标签
     final entries = usedTags.entries.toList();
-    final displayEntries = entries.length > 15 ? entries.sublist(0, 15) : entries;
-    final hasMore = entries.length > 15;
+    final displayEntries = entries.length > 5 ? entries.sublist(0, 5) : entries;
+    final hasMore = entries.length > 5;
 
     const pad = 10.0, lh = 18.0, titleH = 16.0;
     final maxW = displayEntries
         .map((e) => e.key.length * 7.0)
         .reduce((a, b) => a > b ? a : b);
-    final moreTextW = hasMore ? ('... +${entries.length - 15} more'.length * 7.0) : 0.0;
+    final moreTextW = hasMore ? ('... +${entries.length - 5} more'.length * 7.0) : 0.0;
     final boxW = pad * 2 + 10 + max(maxW, moreTextW);
     final boxH = pad * 2 + titleH + (displayEntries.length + (hasMore ? 1 : 0)) * lh;
     final bx = size.width - boxW - 12;
@@ -615,7 +615,7 @@ class _GraphPainter extends CustomPainter {
       final iy = by + titleH + pad + displayEntries.length * lh + 4;
       final moreTp = TextPainter(
         text: TextSpan(
-          text: '... +${entries.length - 15} more',
+          text: '... +${entries.length - 5} more',
           style: TextStyle(fontSize: 11, color: fg.withOpacity(0.4)),
         ),
         textDirection: TextDirection.ltr,
