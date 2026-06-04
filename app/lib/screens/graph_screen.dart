@@ -206,7 +206,13 @@ class _GraphWidgetState extends State<_GraphWidget>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.nodes != widget.nodes) {
       _initGraph();
-      if (!_ticker.isActive) _ticker.start();
+      _ensureTickerRunning();
+    }
+  }
+
+  void _ensureTickerRunning() {
+    if (!_ticker.isActive) {
+      _ticker.start();
     }
   }
 
@@ -387,9 +393,8 @@ class _GraphWidgetState extends State<_GraphWidget>
         onScaleEnd: (details) {
           _dragNode = null;
           _resumeTimer?.cancel();
-          _resumeTimer = Timer(const Duration(milliseconds: 500), () {
-            if (!_ticker.isActive) _ticker.start();
-          });
+          // 立即恢复 ticker，不再延迟
+          _ensureTickerRunning();
         },
         child: CustomPaint(
           size: Size.infinite,
