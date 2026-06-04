@@ -2116,13 +2116,16 @@ createApp({
 
         const usedTags = [...new Set(nodes.map(n => (n.tags || [])[0] || '_'))];
         if (usedTags.length > 1) {
+          // 限制最多显示 15 个标签，避免超出画布
+          const displayTags = usedTags.slice(0, 15);
+          const hasMore = usedTags.length > 15;
           const pad = 10;
           const lh = 18;
           const titleH = 16;
           ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
-          const maxW = Math.max(...usedTags.map(t => ctx.measureText(t).width));
+          const maxW = Math.max(...displayTags.map(t => ctx.measureText(t).width), hasMore ? ctx.measureText('... +' + (usedTags.length - 15) + ' more').width : 0);
           const boxW = pad * 2 + 10 + maxW;
-          const boxH = pad * 2 + titleH + usedTags.length * lh;
+          const boxH = pad * 2 + titleH + (displayTags.length + (hasMore ? 1 : 0)) * lh;
           const bx = W - boxW - 12;
           const by = H - boxH - 12;
 
@@ -2138,13 +2141,19 @@ createApp({
           ctx.fillText('TAGS', bx + pad, by + pad + 8);
 
           ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
-          usedTags.forEach((t, i) => {
+          displayTags.forEach((t, i) => {
             const iy = by + titleH + pad + i * lh + 4;
             ctx.beginPath(); ctx.arc(bx + pad + 4, iy - 2, 3, 0, Math.PI * 2);
             ctx.fillStyle = getTagColor(t); ctx.fill();
             ctx.fillStyle = isDarkMode ? 'rgba(228,230,224,0.8)' : 'rgba(20,20,19,0.8)';
             ctx.fillText(t, bx + pad + 12, iy + 1);
           });
+          // 显示更多标签提示
+          if (hasMore) {
+            const iy = by + titleH + pad + displayTags.length * lh + 4;
+            ctx.fillStyle = isDarkMode ? 'rgba(228,230,224,0.5)' : 'rgba(20,20,19,0.5)';
+            ctx.fillText('... +' + (usedTags.length - 15) + ' more', bx + pad + 12, iy + 1);
+          }
         }
 
         ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
