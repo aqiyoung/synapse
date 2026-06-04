@@ -351,7 +351,9 @@ class _GraphWidgetState extends State<_GraphWidget>
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
-      return GestureDetector(
+      return Stack(
+        children: [
+          GestureDetector(
         onTap: () {
           if (_dragNode != null) {
             widget.onNodeTap(_dragNode!.id);
@@ -407,8 +409,85 @@ class _GraphWidgetState extends State<_GraphWidget>
             isDark: widget.isDark,
           ),
         ),
+      ),
+          // 标签图例（HTML 层，支持滚动）
+          _buildTagLegend(),
+        ],
       );
     });
+  }
+
+  Widget _buildTagLegend() {
+    final usedTags = <String, Color>{};
+    for (final n in _graphNodes) {
+      if (n.tags.isNotEmpty) usedTags.putIfAbsent(n.tags.first, () => n.color);
+    }
+    if (usedTags.length <= 1) return const SizedBox.shrink();
+
+    final entries = usedTags.entries.toList();
+    final isDark = widget.isDark;
+
+    return Positioned(
+      bottom: 12,
+      right: 12,
+      child: Container(
+        constraints: const BoxConstraints(maxHeight: 200),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1c1c1a).withOpacity(0.95) : Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: (isDark ? Colors.white : Colors.black).withOpacity(0.08),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'TAGS',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: (isDark ? Colors.white : Colors.black).withOpacity(0.4),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: entries.map((e) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: e.value,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          e.key,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: (isDark ? Colors.white : Colors.black).withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -526,7 +605,7 @@ class _GraphPainter extends CustomPainter {
     }
 
     canvas.restore();
-    _drawTagLegend(canvas, size, fg);
+    // 标签图例已移至 HTML 层，支持滚动
   }
 
   void _drawGrid(Canvas canvas, Size size, Color fg) {
@@ -548,79 +627,6 @@ class _GraphPainter extends CustomPainter {
     }
     for (var y = startY; y <= bottom; y += gridSize) {
       canvas.drawLine(Offset(left, y), Offset(right, y), gridPaint);
-    }
-  }
-
-  void _drawTagLegend(Canvas canvas, Size size, Color fg) {
-    final usedTags = <String, Color>{};
-    for (final n in nodes) {
-      if (n.tags.isNotEmpty) usedTags.putIfAbsent(n.tags.first, () => n.color);
-    }
-    if (usedTags.length <= 1) return;
-
-    // 限制最多显示 5 个标签
-    final entries = usedTags.entries.toList();
-    final displayEntries = entries.length > 5 ? entries.sublist(0, 5) : entries;
-    final hasMore = entries.length > 5;
-
-    const pad = 10.0, lh = 18.0, titleH = 16.0;
-    final maxW = displayEntries
-        .map((e) => e.key.length * 7.0)
-        .reduce((a, b) => a > b ? a : b);
-    final moreTextW = hasMore ? ('... +${entries.length - 5} more'.length * 7.0) : 0.0;
-    final boxW = pad * 2 + 10 + max(maxW, moreTextW);
-    final boxH = pad * 2 + titleH + (displayEntries.length + (hasMore ? 1 : 0)) * lh;
-    final bx = size.width - boxW - 12;
-    final by = 12.0;
-
-    final bgRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(bx, by, boxW, boxH), const Radius.circular(6));
-    canvas.drawRRect(
-        bgRect,
-        Paint()
-          ..color =
-              (isDark ? const Color(0xFF1c1c1a) : Colors.white).withOpacity(0.95));
-    canvas.drawRRect(
-        bgRect,
-        Paint()
-          ..color = fg.withOpacity(0.08)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1);
-
-    final titleTp = TextPainter(
-      text: TextSpan(
-        text: 'TAGS',
-        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: fg.withOpacity(0.4)),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    titleTp.paint(canvas, Offset(bx + pad, by + pad + 4));
-
-    for (var i = 0; i < displayEntries.length; i++) {
-      final iy = by + titleH + pad + i * lh + 4;
-      canvas.drawCircle(
-          Offset(bx + pad + 4, iy), 3, Paint()..color = displayEntries[i].value);
-      final tagTp = TextPainter(
-        text: TextSpan(
-          text: displayEntries[i].key,
-          style: TextStyle(fontSize: 11, color: fg.withOpacity(0.6)),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tagTp.paint(canvas, Offset(bx + pad + 12, iy - 5));
-    }
-
-    // 显示更多标签提示
-    if (hasMore) {
-      final iy = by + titleH + pad + displayEntries.length * lh + 4;
-      final moreTp = TextPainter(
-        text: TextSpan(
-          text: '... +${entries.length - 5} more',
-          style: TextStyle(fontSize: 11, color: fg.withOpacity(0.4)),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      moreTp.paint(canvas, Offset(bx + pad + 12, iy - 5));
     }
   }
 
