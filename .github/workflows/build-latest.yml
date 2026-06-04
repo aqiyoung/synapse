@@ -1,0 +1,79 @@
+name: Build Latest APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter doctor
+        run: flutter doctor
+
+      - name: Get version from pubspec
+        id: version
+        working-directory: ./app
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: flutter pub get
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > app/android/release-key.jks
+          echo "storeFile=${{ github.workspace }}/app/android/release-key.jks" > app/android/key.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> app/android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> app/android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> app/android/key.properties
+
+      - name: Build APK
+        working-directory: ./app
+        run: flutter build apk --release
+
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f app/android/release-key.jks app/android/key.properties
+
+      - name: Rename APK
+        run: |
+          mv app/build/app/outputs/flutter-apk/app-release.apk \
+             app/build/app/outputs/flutter-apk/synapse-v${{ steps.version.outputs.version }}.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: synapse-v${{ steps.version.outputs.version }}
+          path: app/build/app/outputs/flutter-apk/synapse-v${{ steps.version.outputs.version }}.apk
+          retention-days: 30
+
+      - name: Create/Update Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Synapse v${{ steps.version.outputs.version }}
+          files: app/build/app/outputs/flutter-apk/synapse-v${{ steps.version.outputs.version }}.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
