@@ -4,6 +4,7 @@ import '../models/note.dart';
 
 class ApiService {
   static String baseUrl = '';
+  static String _token = '';
 
   static bool get isConfigured => baseUrl.isNotEmpty;
 
@@ -11,8 +12,13 @@ class ApiService {
     baseUrl = url.endsWith('/api') ? url : '$url/api';
   }
 
+  static void setToken(String token) {
+    _token = token;
+  }
+
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
+        if (_token.isNotEmpty) 'Authorization': 'Bearer $_token',
       };
 
   // 获取笔记列表

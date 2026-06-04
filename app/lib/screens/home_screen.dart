@@ -219,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: colorScheme.background,
+                    fillColor: colorScheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
@@ -432,7 +432,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              UpdateService().openDownloadPage();
+              UpdateService().downloadUpdate();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,

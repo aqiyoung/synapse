@@ -106,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              UpdateService().openDownloadPage();
+              UpdateService().downloadUpdate();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,

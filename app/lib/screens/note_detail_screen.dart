@@ -773,7 +773,7 @@ class _LinkNoteSheetState extends State<_LinkNoteSheet> {
                 prefixIcon: Icon(Icons.search,
                     color: colorScheme.onSurface.withOpacity(0.4)),
                 filled: true,
-                fillColor: colorScheme.background,
+                fillColor: colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
