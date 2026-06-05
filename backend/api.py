@@ -1318,41 +1318,90 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
 # ===== 更新代理 API =====
 
 @app.get("/api/update/check")
-async def api_update_check():
-    """版本检查：从 GitHub 获取最新版本信息"""
+async def api_update_check(channel: str = Query("stable")):
+    """版本检查：从 GitHub 获取最新版本信息
+    channel: stable（默认）或 beta
+    """
     import httpx
+    if channel not in ("stable", "beta"):
+        raise HTTPException(status_code=400, detail="channel must be stable or beta")
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(
-                "https://api.github.com/repos/aqiyoung/synapse/releases/latest",
-                headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
-            )
-            if resp.status_code != 200:
-                raise HTTPException(status_code=502, detail="获取版本信息失败")
-            data = resp.json()
+            if channel == "stable":
+                # 正式版：直接取 latest
+                resp = await client.get(
+                    "https://api.github.com/repos/aqiyoung/synapse/releases/latest",
+                    headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
+                )
+                if resp.status_code != 200:
+                    raise HTTPException(status_code=502, detail="获取版本信息失败")
+                data = resp.json()
+            else:
+                # Beta：取所有 release，找最新的 prerelease
+                resp = await client.get(
+                    "https://api.github.com/repos/aqiyoung/synapse/releases",
+                    headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
+                )
+                if resp.status_code != 200:
+                    raise HTTPException(status_code=502, detail="获取版本信息失败")
+                releases = resp.json()
+                beta_releases = [r for r in releases if r.get("prerelease")]
+                if not beta_releases:
+                    raise HTTPException(status_code=404, detail="暂无 beta 版本")
+                data = beta_releases[0]  # 最新的 prerelease
+
             tag = data["tag_name"]
             version = tag.lstrip("v")
             return {
                 "latest_version": version,
                 "tag_name": tag,
+                "channel": channel,
                 "release_notes": data.get("body", ""),
                 "published_at": data.get("published_at", ""),
             }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Update check failed: {e}")
         raise HTTPException(status_code=502, detail=f"版本检查失败: {str(e)}")
 
 
 @app.get("/api/update/download")
-async def update_download():
-    """代理 APK 下载：从 GitHub 拉取最新 APK 流式返回"""
+async def update_download(channel: str = Query("stable")):
+    """代理 APK 下载：从 GitHub 拉取最新 APK 流式返回
+    channel: stable（默认）或 beta
+    使用 ghproxy.com 国内代理加速下载
+    """
     import httpx
+    if channel not in ("stable", "beta"):
+        raise HTTPException(status_code=400, detail="channel must be stable or beta")
+
+    # 国内 GitHub 代理列表（按优先级）
+    GH_PROXIES = [
+        "https://ghfast.top/",
+        "https://ghproxy.cn/",
+        "https://gh-proxy.com/",
+        "",  # 直连兜底
+    ]
+
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(
-                "https://api.github.com/repos/aqiyoung/synapse/releases/latest",
-                headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
-            )
+            if channel == "stable":
+                resp = await client.get(
+                    "https://api.github.com/repos/aqiyoung/synapse/releases/latest",
+                    headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
+                )
+            else:
+                resp = await client.get(
+                    "https://api.github.com/repos/aqiyoung/synapse/releases",
+                    headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
+                )
+                if resp.status_code == 200:
+                    releases = resp.json()
+                    beta_releases = [r for r in releases if r.get("prerelease")]
+                    if beta_releases:
+                        resp = type("Resp", (), {"status_code": 200, "json": lambda self=None: beta_releases[0]})()
+
             if resp.status_code != 200:
                 raise HTTPException(status_code=502, detail="获取版本信息失败")
             data = resp.json()
@@ -1360,13 +1409,20 @@ async def update_download():
             version = tag.lstrip("v")
             apk_url = f"https://github.com/aqiyoung/synapse/releases/download/{tag}/synapse-v{version}.apk"
 
+        # 尝试通过国内代理下载
         async def _stream():
             async with httpx.AsyncClient(timeout=300.0) as client:
-                async with client.stream("GET", apk_url, follow_redirects=True) as apk_resp:
-                    if apk_resp.status_code != 200:
-                        raise HTTPException(status_code=502, detail="下载 APK 失败")
-                    async for chunk in apk_resp.aiter_bytes():
-                        yield chunk
+                for proxy_prefix in GH_PROXIES:
+                    try:
+                        url = f"{proxy_prefix}{apk_url}" if proxy_prefix else apk_url
+                        async with client.stream("GET", url, follow_redirects=True) as apk_resp:
+                            if apk_resp.status_code == 200:
+                                async for chunk in apk_resp.aiter_bytes():
+                                    yield chunk
+                                return
+                    except Exception:
+                        continue
+                raise HTTPException(status_code=502, detail="下载 APK 失败")
 
         from fastapi.responses import StreamingResponse
         return StreamingResponse(
@@ -1374,6 +1430,8 @@ async def update_download():
             media_type="application/vnd.android.package-archive",
             headers={"Content-Disposition": f'attachment; filename="synapse-v{version}.apk"'},
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Update proxy failed: {e}")
         raise HTTPException(status_code=502, detail=f"代理下载失败: {str(e)}")
