@@ -26,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLoggedIn = false;
   int _versionTapCount = 0;
   String _currentVersion = '';
+  String _updateChannel = 'stable';
 
   // 管理员密码已改为服务端校验，不再硬编码在客户端
 
@@ -37,6 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadServer();
     _checkLoginState();
     _loadVersion();
+    _loadUpdateChannel();
   }
 
   Future<void> _loadVersion() async {
@@ -50,6 +52,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return info.version;
     } catch (_) {
       return '2.2.4';
+    }
+  }
+
+  Future<void> _loadUpdateChannel() async {
+    await UpdateService().loadChannel();
+    if (mounted) {
+      setState(() {
+        _updateChannel = UpdateService().channel;
+      });
+    }
+  }
+
+  Future<void> _setUpdateChannel(String channel) async {
+    await UpdateService().setChannel(channel);
+    if (mounted) {
+      setState(() {
+        _updateChannel = channel;
+      });
     }
   }
 
@@ -258,6 +278,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             contentPadding: EdgeInsets.zero,
             onTap: widget.onToggleTheme,
+          ),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 更新通道 ──
+          Text(
+            '更新通道',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                RadioListTile<String>(
+                  title: const Text('稳定版'),
+                  subtitle: Text(
+                    '推荐，经过充分测试',
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+                  ),
+                  value: 'stable',
+                  groupValue: _updateChannel,
+                  onChanged: (v) => _setUpdateChannel(v!),
+                  activeColor: colorScheme.primary,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
+                RadioListTile<String>(
+                  title: const Text('测试版'),
+                  subtitle: Text(
+                    '抢先体验新功能，可能不稳定',
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+                  ),
+                  value: 'beta',
+                  groupValue: _updateChannel,
+                  onChanged: (v) => _setUpdateChannel(v!),
+                  activeColor: colorScheme.primary,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           Divider(color: colorScheme.outline.withOpacity(0.1)),

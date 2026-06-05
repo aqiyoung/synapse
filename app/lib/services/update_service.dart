@@ -27,6 +27,7 @@ class UpdateService {
   bool _checked = false;
   bool _checking = false;
   String? _errorMessage;
+  String _channel = 'stable';
 
   // Getters
   UpdateInfo? get cached => _cachedUpdate;
@@ -34,6 +35,25 @@ class UpdateService {
   bool get checking => _checking;
   bool get checked => _checked;
   String? get errorMessage => _errorMessage;
+  String get channel => _channel;
+
+  /// 设置更新通道（stable / beta）
+  Future<void> setChannel(String channel) async {
+    if (channel != 'stable' && channel != 'beta') return;
+    _channel = channel;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('update_channel', channel);
+    // 通道切换后清除缓存，下次检查时重新请求
+    _cachedUpdate = null;
+    _checked = false;
+    _notifyListeners();
+  }
+
+  /// 加载保存的通道设置
+  Future<void> loadChannel() async {
+    final prefs = await SharedPreferences.getInstance();
+    _channel = prefs.getString('update_channel') ?? 'stable';
+  }
 
   // Status change callback
   VoidCallback? onStatusChange;
@@ -75,6 +95,9 @@ class UpdateService {
     _errorMessage = null;
     _notifyListeners();
 
+    // 确保通道设置已加载
+    if (_channel.isEmpty) await loadChannel();
+
     try {
       Map<String, dynamic>? data;
 
@@ -87,7 +110,7 @@ class UpdateService {
           if (base.endsWith('/')) base = base.substring(0, base.length - 1);
           if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
 
-          final uri = Uri.parse('$base/api/update/check');
+          final uri = Uri.parse('$base/api/update/check?channel=$_channel');
           final resp = await http.get(uri, headers: {
             'Accept': 'application/json',
             'User-Agent': 'Synapse',
@@ -171,6 +194,9 @@ class UpdateService {
   Future<void> downloadUpdate() async {
     if (_cachedUpdate == null) return;
 
+    // 确保通道设置已加载
+    if (_channel.isEmpty) await loadChannel();
+
     // 优先从服务器下载
     final prefs = await SharedPreferences.getInstance();
     final server = prefs.getString('server') ?? '';
@@ -180,7 +206,7 @@ class UpdateService {
         if (base.endsWith('/')) base = base.substring(0, base.length - 1);
         if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
 
-        final uri = Uri.parse('$base/api/update/download');
+        final uri = Uri.parse('$base/api/update/download?channel=$_channel');
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.platformDefault);
           return;
