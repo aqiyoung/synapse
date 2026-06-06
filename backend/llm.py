@@ -6,17 +6,18 @@ logger = logging.getLogger(__name__)
 
 client = None
 _initialized = False
+LLM_MODEL = "gpt-4"
 
 
 def _init_client():
-    global client, _initialized
+    global client, _initialized, LLM_MODEL
     if _initialized:
         return
 
     _initialized = True
     api_key = os.environ.get("LLM_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN") or os.environ.get("ANTHROPIC_API_KEY", "")
     base_url = os.environ.get("LLM_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL", "https://api.openai.com/v1")
-    model = os.environ.get("LLM_MODEL") or os.environ.get("ANTHROPIC_MODEL") or os.environ.get("ANTHROPIC_DEFAULT_SONNET_MODEL", "gpt-4")
+    LLM_MODEL = os.environ.get("LLM_MODEL") or os.environ.get("ANTHROPIC_MODEL") or os.environ.get("ANTHROPIC_DEFAULT_SONNET_MODEL", "gpt-4")
 
     if not api_key:
         logger.warning("LLM_API_KEY not set, LLM disabled")
@@ -25,7 +26,7 @@ def _init_client():
     try:
         from openai import OpenAI
         client = OpenAI(base_url=base_url, api_key=api_key)
-        logger.info(f"LLM client initialized: {base_url} / {model}")
+        logger.info(f"LLM client initialized: {base_url} / {LLM_MODEL}")
     except ImportError:
         logger.warning("openai package not installed, LLM disabled")
     except Exception as e:

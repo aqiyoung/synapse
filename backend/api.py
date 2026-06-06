@@ -12,7 +12,7 @@ from typing import List, Optional
 import os, shutil, uuid, zipfile, io, asyncio
 from datetime import datetime, timezone, timedelta
 
-from models import Tag, note_tags
+from models import Tag, note_tags, Note
 from crud import (
     init_db, get_db, create_note, get_note, get_note_by_slug, list_notes,
     update_note, delete_note, list_tags, get_or_create_tag,
@@ -1435,3 +1435,142 @@ async def update_download(channel: str = Query("stable")):
     except Exception as e:
         logger.error(f"Update proxy failed: {e}")
         raise HTTPException(status_code=502, detail=f"代理下载失败: {str(e)}")
+
+
+# ============ AI 对话（RAG） ============
+
+class ChatRequest(BaseModel):
+    question: str
+    limit: int = 5  # 检索笔记数量
+
+
+@app.post("/api/ai/chat")
+async def api_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
+    """RAG 对话：检索知识库 + LLM 生成回答"""
+    from llm import is_enabled, complete
+    if not is_enabled():
+        raise HTTPException(status_code=503, detail="AI 未配置，请设置 LLM_API_KEY 环境变量")
+
+    # 1. 检索相关笔记
+    from sqlalchemy import text as sa_text
+    import re as _re
+
+    safe_q = _re.sub(r'[^\w\s一-鿿]', '', req.question)
+    terms = safe_q.strip().split()
+    if not terms:
+        raise HTTPException(status_code=400, detail="问题内容无效")
+
+    match_expr = '"' + '" AND "'.join(terms) + '"'
+    fts_sql = sa_text("""
+        SELECT rowid FROM note_search
+        WHERE note_search MATCH :q AND rowid IN (SELECT id FROM notes WHERE deleted_at IS NULL)
+        ORDER BY rank LIMIT :limit
+    """)
+
+    try:
+        rows = db.execute(fts_sql, {"q": match_expr, "limit": req.limit}).fetchall()
+        ids = [r[0] for r in rows]
+    except Exception:
+        # FTS5 失败时回退到 LIKE
+        _, notes_list = list_notes(db, keyword=req.question, limit=req.limit)
+        ids = [n.id for n in notes_list]
+
+    if not ids:
+        return {"answer": "知识库中没有找到相关内容。", "references": []}
+
+    # 2. 获取笔记内容
+    notes = db.query(Note).filter(Note.id.in_(ids)).all()
+    context_parts = []
+    references = []
+    for note in notes:
+        context_parts.append(f"## {note.title}\n{note.content[:2000]}")
+        references.append({"id": note.id, "title": note.title, "slug": note.slug})
+
+    context = "\n\n---\n\n".join(context_parts)
+
+    # 3. 构建 prompt
+    system = """你是知识库助手。根据用户的问题和知识库中的相关内容，给出准确、简洁的回答。
+规则：
+- 只基于提供的知识库内容回答，不要编造信息
+- 如果知识库内容不足以回答问题，坦诚说明
+- 回答时引用具体的笔记来源"""
+
+    prompt = f"""知识库相关内容：
+{context}
+
+用户问题：{req.question}"""
+
+    # 4. 生成回答
+    answer = complete(prompt, system=system)
+
+    return {"answer": answer, "references": references}
+
+
+@app.post("/api/ai/chat/stream")
+async def api_ai_chat_stream(req: ChatRequest, db: Session = Depends(get_db)):
+    """RAG 对话（流式输出）"""
+    from llm import is_enabled, chat_complete_stream
+    if not is_enabled():
+        raise HTTPException(status_code=503, detail="AI 未配置")
+
+    # 检索相关笔记（同上）
+    from sqlalchemy import text as sa_text
+    import re as _re
+
+    safe_q = _re.sub(r'[^\w\s一-鿿]', '', req.question)
+    terms = safe_q.strip().split()
+    if not terms:
+        raise HTTPException(status_code=400, detail="问题内容无效")
+
+    match_expr = '"' + '" AND "'.join(terms) + '"'
+    fts_sql = sa_text("""
+        SELECT rowid FROM note_search
+        WHERE note_search MATCH :q AND rowid IN (SELECT id FROM notes WHERE deleted_at IS NULL)
+        ORDER BY rank LIMIT :limit
+    """)
+
+    try:
+        rows = db.execute(fts_sql, {"q": match_expr, "limit": req.limit}).fetchall()
+        ids = [r[0] for r in rows]
+    except Exception:
+        _, notes_list = list_notes(db, keyword=req.question, limit=req.limit)
+        ids = [n.id for n in notes_list]
+
+    if not ids:
+        async def empty():
+            yield "data: 知识库中没有找到相关内容。\n\n"
+            yield "data: [DONE]\n\n"
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(empty(), media_type="text/event-stream")
+
+    notes = db.query(Note).filter(Note.id.in_(ids)).all()
+    context_parts = []
+    references = []
+    for note in notes:
+        context_parts.append(f"## {note.title}\n{note.content[:2000]}")
+        references.append({"id": note.id, "title": note.title, "slug": note.slug})
+
+    context = "\n\n---\n\n".join(context_parts)
+
+    system = """你是知识库助手。根据用户的问题和知识库中的相关内容，给出准确、简洁的回答。
+规则：
+- 只基于提供的知识库内容回答，不要编造信息
+- 如果知识库内容不足以回答问题，坦诚说明
+- 回答时引用具体的笔记来源"""
+
+    prompt = f"""知识库相关内容：
+{context}
+
+用户问题：{req.question}"""
+
+    # 先发送引用信息
+    import json
+    ref_data = json.dumps({"type": "references", "data": references}, ensure_ascii=False)
+
+    async def stream_with_refs():
+        yield f"data: {ref_data}\n\n"
+        for chunk in chat_complete_stream(prompt, system=system):
+            yield chunk
+
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(stream_with_refs(), media_type="text/event-stream")

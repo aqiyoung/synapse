@@ -221,4 +221,17 @@ class ApiService {
       return false;
     }
   }
+
+  /// AI 对话（RAG）
+  static Future<Map<String, dynamic>> chat(String question, {int limit = 5}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/ai/chat'),
+      headers: _headers,
+      body: json.encode({'question': question, 'limit': limit}),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('AI 对话失败: ${response.statusCode}');
+  }
 }

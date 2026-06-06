@@ -8,6 +8,7 @@ import 'graph_screen.dart';
 import 'lint_screen.dart';
 import 'settings_screen.dart';
 import 'mine_screen.dart';
+import 'chat_screen.dart';
 import '../widgets/tag_chip.dart';
 import '../services/update_service.dart';
 
@@ -121,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _buildNoteList(colorScheme),
           const GraphScreen(),
+          const ChatScreen(),
           MineScreen(
             onToggleTheme: widget.onToggleTheme,
             isDark: widget.isDark,
@@ -144,6 +146,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: colorScheme.onSurface.withOpacity(0.6)),
             selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
             label: _isChinese ? '图谱' : 'Graph',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline,
+                color: colorScheme.onSurface.withOpacity(0.6)),
+            selectedIcon: Icon(Icons.chat_bubble, color: colorScheme.primary),
+            label: _isChinese ? 'AI' : 'AI',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline,
