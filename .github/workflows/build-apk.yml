@@ -23,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取所有历史和 tags，用于 beta 版本号递增
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
