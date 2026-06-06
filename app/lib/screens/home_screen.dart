@@ -698,7 +698,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(ctx);
                 try {
                   await ApiService.togglePin(note.id);
-                  _loadNotes();
+                  _loadData();
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
