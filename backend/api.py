@@ -151,6 +151,19 @@ def api_get_note(note_id: int, db: Session = Depends(get_db)):
     return note.to_dict()
 
 
+@app.patch("/api/notes/{note_id}/pin")
+def api_toggle_pin(note_id: int, db: Session = Depends(get_db)):
+    """切换笔记置顶状态"""
+    note = get_note(db, note_id)
+    if not note:
+        raise HTTPException(status_code=404, detail="笔记不存在")
+    note.is_pinned = not note.is_pinned
+    note.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
+    db.commit()
+    db.refresh(note)
+    return {"ok": True, "is_pinned": note.is_pinned}
+
+
 @app.post("/api/notes")
 async def api_create_note(data: NoteCreate, db: Session = Depends(get_db)):
     """创建笔记"""

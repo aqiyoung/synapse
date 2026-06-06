@@ -8,6 +8,7 @@ class Note {
   final DateTime? createdAt;
   final DateTime? sourceCreatedAt;
   final DateTime? updatedAt;
+  final bool isPinned;
 
   Note({
     required this.id,
@@ -19,6 +20,7 @@ class Note {
     this.createdAt,
     this.sourceCreatedAt,
     this.updatedAt,
+    this.isPinned = false,
   });
 
   factory Note.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class Note {
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'])
           : null,
+      isPinned: json['is_pinned'] ?? false,
     );
   }
 }

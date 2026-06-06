@@ -565,12 +565,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+      onLongPress: () => _showNoteMenu(note, colorScheme),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
           border: Border(
             left: BorderSide(
-              color: Colors.transparent,
+              color: note.isPinned ? colorScheme.primary : Colors.transparent,
               width: 3,
             ),
           ),
@@ -578,32 +579,42 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            hasHighlight
-                ? RichText(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      children: _highlightText(
-                        note.title,
-                        TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurface,
+            Row(
+              children: [
+                if (note.isPinned) ...[
+                  Icon(Icons.push_pin, size: 14, color: colorScheme.primary),
+                  const SizedBox(width: 4),
+                ],
+                Expanded(
+                  child: hasHighlight
+                      ? RichText(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          text: TextSpan(
+                            children: _highlightText(
+                              note.title,
+                              TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurface,
+                              ),
+                              colorScheme,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          note.title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        colorScheme,
-                      ),
-                    ),
-                  )
-                : Text(
-                    note.title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                ),
+              ],
+            ),
             if (note.summary.isNotEmpty) ...[
               const SizedBox(height: 4),
               hasHighlight
@@ -660,6 +671,42 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNoteMenu(Note note, ColorScheme colorScheme) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                note.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+                color: colorScheme.primary,
+              ),
+              title: Text(note.isPinned ? '取消置顶' : '置顶'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                try {
+                  await ApiService.togglePin(note.id);
+                  _loadNotes();
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('操作失败: $e')),
+                    );
+                  }
+                }
+              },
             ),
           ],
         ),

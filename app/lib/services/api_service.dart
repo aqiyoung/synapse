@@ -64,6 +64,18 @@ class ApiService {
     return response.statusCode == 200;
   }
 
+  // 切换置顶状态
+  static Future<bool> togglePin(int noteId) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/notes/$noteId/pin'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['is_pinned'] ?? false;
+    }
+    throw Exception('置顶操作失败');
+  }
+
   // 获取笔记关联
   static Future<Relations> getRelations(int id) async {
     final response = await http.get(

@@ -28,6 +28,7 @@ class Note(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))),
                         onupdate=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
     deleted_at = Column(DateTime, nullable=True, default=None)
+    is_pinned = Column(Boolean, default=False, nullable=False, index=True)
 
     # 关联
     tags = relationship("Tag", secondary=note_tags, back_populates="notes")
@@ -43,6 +44,7 @@ class Note(Base):
             "source_created_at": self.source_created_at.isoformat() if self.source_created_at else "",
             "updated_at": self.updated_at.isoformat() if self.updated_at else "",
             "deleted_at": self.deleted_at.isoformat() if self.deleted_at else "",
+            "is_pinned": self.is_pinned,
             "tags": [t.name for t in self.tags],
         }
 

@@ -47,6 +47,13 @@ def init_db():
         """))
         conn.commit()
 
+    # 迁移：添加 is_pinned 列（如果不存在）
+    with engine.connect() as conn:
+        cols = conn.execute(text("PRAGMA table_info(notes)")).fetchall()
+        if "is_pinned" not in [c[1] for c in cols]:
+            conn.execute(text("ALTER TABLE notes ADD COLUMN is_pinned BOOLEAN DEFAULT 0"))
+            conn.commit()
+            print("[迁移] 已添加 is_pinned 列")
 
 
 def get_db():
@@ -160,7 +167,7 @@ def list_notes(db: Session, skip: int = 0, limit: int = 50, tag: str = None, key
             )
 
     total = query.count()
-    notes = query.order_by(Note.source_created_at.desc().nulls_last(), Note.created_at.desc()).offset(skip).limit(limit).all()
+    notes = query.order_by(Note.is_pinned.desc(), Note.source_created_at.desc().nulls_last(), Note.created_at.desc()).offset(skip).limit(limit).all()
     return total, notes
 
 
