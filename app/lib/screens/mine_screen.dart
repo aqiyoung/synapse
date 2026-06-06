@@ -25,6 +25,15 @@ class _MineScreenState extends State<MineScreen> {
   void initState() {
     super.initState();
     _loadVersion();
+    _autoCheckUpdate();
+  }
+
+  Future<void> _autoCheckUpdate() async {
+    await UpdateService().check();
+    if (mounted && UpdateService().hasUpdate) {
+      setState(() {});
+      _showUpdateDialog(Theme.of(context).colorScheme);
+    }
   }
 
   Future<void> _loadVersion() async {
@@ -212,7 +221,12 @@ class _MineScreenState extends State<MineScreen> {
           _showUpdateDialog(colorScheme);
         } else {
           await UpdateService().check();
-          if (mounted) setState(() {});
+          if (mounted) {
+            setState(() {});
+            if (UpdateService().hasUpdate) {
+              _showUpdateDialog(colorScheme);
+            }
+          }
         }
       },
       borderRadius: BorderRadius.circular(12),
