@@ -220,12 +220,20 @@ class _MineScreenState extends State<MineScreen> {
         if (hasUpdate) {
           _showUpdateDialog(colorScheme);
         } else {
+          // 先显示加载状态
           await UpdateService().check();
-          if (mounted) {
-            setState(() {});
-            if (UpdateService().hasUpdate) {
-              _showUpdateDialog(colorScheme);
-            }
+          if (!mounted) return;
+          setState(() {});
+          if (UpdateService().hasUpdate && UpdateService().cached != null) {
+            _showUpdateDialog(colorScheme);
+          } else {
+            // 没有新版本，提示一下
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('已是最新版本'),
+                duration: Duration(seconds: 2),
+              ),
+            );
           }
         }
       },
