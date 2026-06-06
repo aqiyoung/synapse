@@ -153,20 +153,45 @@ class UpdateService {
       // 方式2：直接访问 GitHub API（备选）
       if (data == null) {
         try {
-          final uri = Uri.parse('https://api.github.com/repos/aqiyoung/synapse/releases/latest');
+          Uri uri;
+          if (_channel == 'beta') {
+            // beta 通道：获取所有 release，找最新的 pre-release
+            uri = Uri.parse('https://api.github.com/repos/aqiyoung/synapse/releases');
+          } else {
+            // 稳定通道：获取 latest release
+            uri = Uri.parse('https://api.github.com/repos/aqiyoung/synapse/releases/latest');
+          }
+
           final resp = await http.get(uri, headers: {
             'Accept': 'application/vnd.github.v3+json',
             'User-Agent': 'Synapse',
           }).timeout(const Duration(seconds: 15));
 
           if (resp.statusCode == 200) {
-            final githubData = jsonDecode(resp.body) as Map<String, dynamic>;
-            final tag = githubData['tag_name'] as String? ?? '';
-            data = {
-              'latest_version': tag.replaceFirst('v', ''),
-              'release_notes': githubData['body'] ?? '',
-              'published_at': githubData['published_at'] ?? '',
-            };
+            final body = jsonDecode(resp.body);
+            Map<String, dynamic>? release;
+
+            if (_channel == 'beta') {
+              // 从 releases 列表中找最新的 pre-release
+              final releases = body as List<dynamic>;
+              for (final r in releases) {
+                if (r['prerelease'] == true) {
+                  release = r as Map<String, dynamic>;
+                  break;
+                }
+              }
+            } else {
+              release = body as Map<String, dynamic>;
+            }
+
+            if (release != null) {
+              final tag = release['tag_name'] as String? ?? '';
+              data = {
+                'latest_version': tag.replaceFirst('v', ''),
+                'release_notes': release['body'] ?? '',
+                'published_at': release['published_at'] ?? '',
+              };
+            }
           }
         } catch (e) {
           debugPrint('GitHub API update check failed: $e');
