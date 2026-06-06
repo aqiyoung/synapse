@@ -72,18 +72,37 @@ class UpdateService {
     var l = latest.startsWith('v') ? latest.substring(1) : latest;
     var c = current.startsWith('v') ? current.substring(1) : current;
 
+    // 分离版本号和构建号
     final lp = l.split('+');
     final cp = c.split('+');
-    final lVer = lp[0].split('.').map((e) => int.tryParse(e) ?? 0).toList();
-    final cVer = cp[0].split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+    // 解析主版本号（处理 beta 后缀）
+    List<int> parseVersion(String ver) {
+      // 移除 -beta, -alpha 等后缀
+      final cleanVer = ver.split('-')[0];
+      return cleanVer.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    }
+
+    final lVer = parseVersion(lp[0]);
+    final cVer = parseVersion(cp[0]);
+
+    // 比较主版本号
     for (int i = 0; i < 3; i++) {
       final lv = i < lVer.length ? lVer[i] : 0;
       final cv = i < cVer.length ? cVer[i] : 0;
       if (lv != cv) return lv > cv;
     }
+
+    // 主版本号相同时，比较构建号
     if (lp.length > 1 && cp.length > 1) {
       return (int.tryParse(lp[1]) ?? 0) > (int.tryParse(cp[1]) ?? 0);
     }
+
+    // 如果一个是 beta 一个不是，beta 视为更新
+    final lIsBeta = l.contains('-beta');
+    final cIsBeta = c.contains('-beta');
+    if (lIsBeta != cIsBeta) return lIsBeta; // beta > stable
+
     return false;
   }
 
