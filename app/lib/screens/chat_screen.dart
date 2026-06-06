@@ -63,6 +63,15 @@ class _ChatScreenState extends State<ChatScreen> {
           references: refs,
         ));
       });
+
+      // 持久化到本地
+      await ApiService.saveChatHistory(
+        question: text,
+        answer: answer,
+        references: refs
+            .map((r) => {'id': r.id, 'title': r.title})
+            .toList(),
+      );
     } catch (e) {
       setState(() {
         _messages.add(_ChatMessage(
@@ -76,6 +85,199 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // ── 历史记录 ──
+
+  Future<void> _showHistory() async {
+    final history = await ApiService.loadChatHistory();
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (_, scrollController) {
+            return Column(
+              children: [
+                // 拖拽指示条
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 4),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // 标题栏
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.history, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text('对话历史',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          )),
+                      const Spacer(),
+                      if (history.isNotEmpty)
+                        TextButton.icon(
+                          icon: const Icon(Icons.delete_sweep, size: 18),
+                          label: const Text('清空'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: theme.colorScheme.error,
+                          ),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: ctx,
+                              builder: (dCtx) => AlertDialog(
+                                title: const Text('清空对话历史'),
+                                content: const Text('确定要清空所有对话历史吗？此操作不可撤销。'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(dCtx, false),
+                                    child: const Text('取消'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(dCtx, true),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: theme.colorScheme.error,
+                                    ),
+                                    child: const Text('清空'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              await ApiService.clearChatHistory();
+                              if (ctx.mounted) Navigator.pop(ctx);
+                            }
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                // 列表
+                Expanded(
+                  child: history.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.history,
+                                  size: 48,
+                                  color: theme.colorScheme.outlineVariant),
+                              const SizedBox(height: 12),
+                              Text('暂无对话历史',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  )),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          controller: scrollController,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: history.length,
+                          separatorBuilder: (_, __) =>
+                              const Divider(height: 1, indent: 16, endIndent: 16),
+                          itemBuilder: (_, i) {
+                            final item = history[i];
+                            final question = item['question'] as String? ?? '';
+                            final answer = item['answer'] as String? ?? '';
+                            final ts = item['timestamp'] as String? ?? '';
+                            final refs = (item['references'] as List?)
+                                    ?.cast<Map<String, dynamic>>() ??
+                                [];
+
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: theme.colorScheme.primaryContainer,
+                                child: Icon(Icons.chat,
+                                    size: 18,
+                                    color: theme.colorScheme.onPrimaryContainer),
+                              ),
+                              title: Text(
+                                question,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  _formatTimestamp(ts),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                _loadHistoryItem(question, answer, refs);
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _loadHistoryItem(
+      String question, String answer, List<Map<String, dynamic>> refs) {
+    setState(() {
+      _messages
+        ..clear()
+        ..add(_ChatMessage(role: 'user', content: question))
+        ..add(_ChatMessage(
+          role: 'assistant',
+          content: answer,
+          references: refs
+              .map((r) => _Reference(
+                    id: r['id'] as int? ?? 0,
+                    title: r['title'] as String? ?? '',
+                  ))
+              .toList(),
+        ));
+    });
+    _scrollToBottom();
+  }
+
+  String _formatTimestamp(String iso) {
+    try {
+      final dt = DateTime.parse(iso);
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+      if (diff.inMinutes < 1) return '刚刚';
+      if (diff.inHours < 1) return '${diff.inMinutes} 分钟前';
+      if (diff.inDays < 1) return '${diff.inHours} 小时前';
+      if (diff.inDays < 7) return '${diff.inDays} 天前';
+      return '${dt.month}/${dt.day} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso;
+    }
+  }
+
+  // ── Build ──
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -84,11 +286,16 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: const Text('AI 知识库助手'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: _showHistory,
+            tooltip: '对话历史',
+          ),
           if (_messages.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_outline),
               onPressed: () => setState(() => _messages.clear()),
-              tooltip: '清空对话',
+              tooltip: '清空当前对话',
             ),
         ],
       ),
