@@ -272,10 +272,10 @@ class UpdateService {
       final uri = Uri.parse(
         'https://github.com/aqiyoung/synapse/releases/download/v${_cachedUpdate!.latestVersion}/synapse-v${_cachedUpdate!.latestVersion}.apk',
       );
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
-      }
+      // 直接尝试打开，不用 canLaunchUrl 检查（某些 Android 版本兼容性问题）
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
+      debugPrint('GitHub download failed: $e');
       _errorMessage = '无法打开下载页面: $e';
       _notifyListeners();
     }
