@@ -72,9 +72,9 @@ class UpdateService {
     var l = latest.startsWith('v') ? latest.substring(1) : latest;
     var c = current.startsWith('v') ? current.substring(1) : current;
 
-    // 分离版本号和构建号
-    final lp = l.split('+');
-    final cp = c.split('+');
+    // 移除构建号（+后面的部分）
+    l = l.split('+')[0];
+    c = c.split('+')[0];
 
     // 解析主版本号（处理 beta 后缀）
     List<int> parseVersion(String ver) {
@@ -83,8 +83,8 @@ class UpdateService {
       return cleanVer.split('.').map((e) => int.tryParse(e) ?? 0).toList();
     }
 
-    final lVer = parseVersion(lp[0]);
-    final cVer = parseVersion(cp[0]);
+    final lVer = parseVersion(l);
+    final cVer = parseVersion(c);
 
     // 比较主版本号
     for (int i = 0; i < 3; i++) {
@@ -93,15 +93,22 @@ class UpdateService {
       if (lv != cv) return lv > cv;
     }
 
-    // 主版本号相同时，比较构建号
-    if (lp.length > 1 && cp.length > 1) {
-      return (int.tryParse(lp[1]) ?? 0) > (int.tryParse(cp[1]) ?? 0);
+    // 主版本号相同时，比较 beta 版本号
+    final lBetaMatch = RegExp(r'-beta\.(\d+)').firstMatch(l);
+    final cBetaMatch = RegExp(r'-beta\.(\d+)').firstMatch(c);
+    
+    if (lBetaMatch != null && cBetaMatch != null) {
+      // 都是 beta 版，比较 beta 版本号
+      final lBetaNum = int.parse(lBetaMatch.group(1)!);
+      final cBetaNum = int.parse(cBetaMatch.group(1)!);
+      return lBetaNum > cBetaNum;
+    } else if (lBetaMatch != null) {
+      // latest 是 beta，current 不是 → beta 视为更新
+      return true;
+    } else if (cBetaMatch != null) {
+      // current 是 beta，latest 不是 → stable 视为更新
+      return true;
     }
-
-    // 如果一个是 beta 一个不是，beta 视为更新
-    final lIsBeta = l.contains('-beta');
-    final cIsBeta = c.contains('-beta');
-    if (lIsBeta != cIsBeta) return lIsBeta; // beta > stable
 
     return false;
   }
