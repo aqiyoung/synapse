@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'note_detail_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -193,7 +194,12 @@ class _ChatScreenState extends State<ChatScreen> {
                                     return GestureDetector(
                                       onTap: () {
                                         // Navigate to note
-                                        Navigator.pop(context, ref.id);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => NoteDetailScreen(noteId: ref.id),
+                                          ),
+                                        );
                                       },
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
