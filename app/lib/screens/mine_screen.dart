@@ -58,21 +58,17 @@ class _MineScreenState extends State<MineScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.8),
-                  colorScheme.primary.withOpacity(0.6),
+                  colorScheme.surface,
+                  colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
             ),
             child: Column(
               children: [
@@ -81,8 +77,22 @@ class _MineScreenState extends State<MineScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.primary,
+                        colorScheme.primary.withOpacity(0.7),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.auto_awesome_rounded,
@@ -97,7 +107,7 @@ class _MineScreenState extends State<MineScreen> {
                     fontFamily: 'MiSans',
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: colorScheme.onSurface,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -107,7 +117,7 @@ class _MineScreenState extends State<MineScreen> {
                   '记录思考，连接知识',
                   style: TextStyle(
                     fontSize: 15,
-                    color: Colors.white.withOpacity(0.9),
+                    color: colorScheme.onSurface.withOpacity(0.7),
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.5,
                   ),
@@ -117,7 +127,7 @@ class _MineScreenState extends State<MineScreen> {
                   '让每一个想法都有归处',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.7),
+                    color: colorScheme.onSurface.withOpacity(0.5),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -125,14 +135,14 @@ class _MineScreenState extends State<MineScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'v$_version',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withOpacity(0.9),
+                      color: colorScheme.primary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
