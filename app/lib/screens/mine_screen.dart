@@ -52,103 +52,85 @@ class _MineScreenState extends State<MineScreen> {
       child: ListView(
         padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 16),
         children: [
-          // 头部 - 版本信息
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.surface,
-                  colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: colorScheme.outline.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              children: [
-                // Logo
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primary.withOpacity(0.7),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.25),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
+          // 头部 - 版本信息（无边框）
+          Column(
+            children: [
+              // Logo
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withOpacity(0.7),
                     ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: const Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 36,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Synapse',
-                  style: TextStyle(
-                    fontFamily: 'MiSans',
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Slogan
-                Text(
-                  '记录思考，连接知识',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: colorScheme.onSurface.withOpacity(0.7),
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '让每一个想法都有归处',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // 版本号
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'v$_version',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w500,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  size: 36,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Synapse',
+                style: TextStyle(
+                  fontFamily: 'MiSans',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Slogan
+              Text(
+                '记录思考，连接知识',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '让每一个想法都有归处',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 版本号
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'v$_version',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
 
