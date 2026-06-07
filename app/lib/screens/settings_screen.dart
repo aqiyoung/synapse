@@ -3,15 +3,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
 import '../services/update_service.dart';
+import '../models/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final bool isDark;
+  final int themeIndex;
+  final ValueChanged<int> onThemeChanged;
 
   const SettingsScreen({
     super.key,
     required this.onToggleTheme,
     required this.isDark,
+    required this.themeIndex,
+    required this.onThemeChanged,
   });
 
   @override
@@ -243,6 +248,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildThemeGrid(ColorScheme colorScheme) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: AppTheme.presets.length,
+      itemBuilder: (context, index) {
+        final preset = AppTheme.presets[index];
+        final selected = index == widget.themeIndex;
+        final displayColor = widget.isDark ? preset.darkPrimary : preset.lightPrimary;
+
+        return GestureDetector(
+          onTap: () {
+            widget.onThemeChanged(index);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: displayColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: selected
+                      ? Border.all(color: colorScheme.onSurface, width: 2.5)
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: displayColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: selected
+                    ? const Icon(Icons.check, color: Colors.white, size: 24)
+                    : null,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                preset.name,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -279,6 +346,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             contentPadding: EdgeInsets.zero,
             onTap: widget.onToggleTheme,
           ),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 主题风格 ──
+          Text(
+            '主题风格',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildThemeGrid(colorScheme),
           const SizedBox(height: 24),
           Divider(color: colorScheme.outline.withOpacity(0.1)),
           const SizedBox(height: 16),

@@ -7,11 +7,15 @@ import 'lint_screen.dart';
 class MineScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final bool isDark;
+  final int themeIndex;
+  final ValueChanged<int> onThemeChanged;
 
   const MineScreen({
     super.key,
     required this.onToggleTheme,
     required this.isDark,
+    required this.themeIndex,
+    required this.onThemeChanged,
   });
 
   @override
@@ -180,6 +184,8 @@ class _MineScreenState extends State<MineScreen> {
                       builder: (_) => SettingsScreen(
                         onToggleTheme: widget.onToggleTheme,
                         isDark: widget.isDark,
+                        themeIndex: widget.themeIndex,
+                        onThemeChanged: widget.onThemeChanged,
                       ),
                     ),
                   ),

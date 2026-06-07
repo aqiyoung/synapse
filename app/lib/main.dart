@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'services/api_service.dart';
 import 'services/update_service.dart';
+import 'models/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,13 +37,32 @@ class KnowledgeBaseApp extends StatefulWidget {
 
 class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
   ThemeMode _themeMode = ThemeMode.light;
+  int _themeIndex = 0;
 
-  void toggleTheme() {
+  @override
+  void initState() {
+    super.initState();
+    _loadThemeMode();
+    _loadThemeIndex();
+  }
+
+  Future<void> _loadThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool('isDark') ?? false;
     setState(() {
-      _themeMode =
-          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     });
-    // Update status bar icons for theme
+    _updateStatusBar();
+  }
+
+  Future<void> _loadThemeIndex() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _themeIndex = prefs.getInt('themeIndex') ?? 0;
+    });
+  }
+
+  void _updateStatusBar() {
     SystemChrome.setSystemUIOverlayStyle(
       _themeMode == ThemeMode.dark
           ? const SystemUiOverlayStyle(
@@ -58,8 +78,28 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
     );
   }
 
+  void toggleTheme() async {
+    setState(() {
+      _themeMode =
+          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    });
+    _updateStatusBar();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDark', _themeMode == ThemeMode.dark);
+  }
+
+  void setThemeIndex(int index) async {
+    setState(() {
+      _themeIndex = index;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('themeIndex', index);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final appTheme = AppTheme.presets[_themeIndex];
+
     return MaterialApp(
       title: 'Synapse',
       debugShowCheckedModeBanner: false,
@@ -67,38 +107,40 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.light(
-          primary: const Color(0xFFc96442),
-          secondary: const Color(0xFFc96442),
-          surface: const Color(0xFFFFFFFF),
-          background: const Color(0xFFf5f4ed),
+          primary: appTheme.lightPrimary,
+          secondary: appTheme.lightPrimary,
+          surface: appTheme.lightSurface,
+          background: appTheme.lightBg,
         ),
-        scaffoldBackgroundColor: const Color(0xFFf5f4ed),
+        scaffoldBackgroundColor: appTheme.lightBg,
         textTheme: const TextTheme().apply(fontFamily: 'MiSans'),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFFFFFFF),
-          foregroundColor: Color(0xFF141413),
+        appBarTheme: AppBarTheme(
+          backgroundColor: appTheme.lightSurface,
+          foregroundColor: const Color(0xFF141413),
           elevation: 0,
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.dark(
-          primary: const Color(0xFFd4785a),
-          secondary: const Color(0xFFd4785a),
-          surface: const Color(0xFF1c1c1a),
-          background: const Color(0xFF141413),
+          primary: appTheme.darkPrimary,
+          secondary: appTheme.darkPrimary,
+          surface: appTheme.darkSurface,
+          background: appTheme.darkBg,
         ),
-        scaffoldBackgroundColor: const Color(0xFF141413),
+        scaffoldBackgroundColor: appTheme.darkBg,
         textTheme: const TextTheme().apply(fontFamily: 'MiSans'),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1c1c1a),
-          foregroundColor: Color(0xFFe4ece0),
+        appBarTheme: AppBarTheme(
+          backgroundColor: appTheme.darkSurface,
+          foregroundColor: const Color(0xFFe4ece0),
           elevation: 0,
         ),
       ),
       home: HomeScreen(
         onToggleTheme: toggleTheme,
         isDark: _themeMode == ThemeMode.dark,
+        themeIndex: _themeIndex,
+        onThemeChanged: setThemeIndex,
       ),
     );
   }

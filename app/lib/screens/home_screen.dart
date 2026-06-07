@@ -16,11 +16,15 @@ import '../services/update_service.dart';
 class HomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final bool isDark;
+  final int themeIndex;
+  final ValueChanged<int> onThemeChanged;
 
   const HomeScreen({
     super.key,
     required this.onToggleTheme,
     required this.isDark,
+    required this.themeIndex,
+    required this.onThemeChanged,
   });
 
   @override
@@ -90,6 +94,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (_) => SettingsScreen(
                     onToggleTheme: widget.onToggleTheme,
                     isDark: widget.isDark,
+                    themeIndex: widget.themeIndex,
+                    onThemeChanged: widget.onThemeChanged,
                   ))),
             ),
           ),
@@ -150,6 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
           MineScreen(
             onToggleTheme: widget.onToggleTheme,
             isDark: widget.isDark,
+            themeIndex: widget.themeIndex,
+            onThemeChanged: widget.onThemeChanged,
           ),
         ],
       ),
