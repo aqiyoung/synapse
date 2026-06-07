@@ -243,7 +243,16 @@ class ApiService {
       body: json.encode({'question': question, 'limit': limit}),
     );
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      final data = json.decode(response.body);
+      // 确保 references 中包含 summary 字段
+      if (data['references'] != null) {
+        data['references'] = (data['references'] as List).map((r) => {
+          'id': r['id'],
+          'title': r['title'] ?? '',
+          'summary': r['summary'] ?? '',
+        }).toList();
+      }
+      return data;
     }
     throw Exception('AI 对话失败: ${response.statusCode}');
   }
@@ -268,8 +277,8 @@ class ApiService {
       'timestamp': DateTime.now().toIso8601String(),
     });
     // 只保留最近 N 条
-    if (list.length > _chatHistoryMax) {
-      list.removeRange(_chatHistoryMax, list.length);
+    while (list.length > _chatHistoryMax) {
+      list.removeLast();
     }
     await prefs.setString(_chatHistoryKey, json.encode(list));
   }
