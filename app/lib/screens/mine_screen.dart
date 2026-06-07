@@ -78,7 +78,7 @@ class _MineScreenState extends State<MineScreen> {
                   ],
                 ),
                 child: const Icon(
-                  Icons.auto_awesome,
+                  Icons.psychology,
                   size: 36,
                   color: Colors.white,
                 ),
