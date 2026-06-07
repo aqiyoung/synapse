@@ -2,20 +2,25 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- 主星：四角星（auto_awesome 风格） -->
+    android:viewBox="0 0 108 108">
+    <!--
+      Material Design auto_awesome (24x24 → 108x108)
+      scale=3.2, offset=(2, 15.6), 整体中心 (54, 54)
+      适配圆形 adaptive icon 遮罩
+    -->
+
+    <!-- 主星 (右上) -->
     <path
-        android:pathData="M54,24 L58,44 L78,54 L58,64 L54,84 L50,64 L30,54 L50,44 Z"
+        android:pathData="M62.8,44.4 L66.8,35.6 L75.6,31.6 L66.8,27.6 L62.8,18.8 L58.8,27.6 L50.0,31.6 L58.8,35.6 Z"
         android:fillColor="#FFFFFF"/>
+
     <!-- 左上小星 -->
     <path
-        android:pathData="M34,32 L36,40 L44,44 L36,48 L34,56 L32,48 L24,44 L32,40 Z"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.7"/>
+        android:pathData="M50.0,18.8 L46.0,27.6 L32.4,28.4 L41.2,32.4 L50.0,44.4 L54.0,35.6 L67.6,28.4 L58.8,24.4 Z"
+        android:fillColor="#FFFFFF"/>
+
     <!-- 右下小星 -->
     <path
-        android:pathData="M74,56 L76,64 L84,68 L76,72 L74,80 L72,72 L64,68 L72,64 Z"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.7"/>
+        android:pathData="M62.8,63.6 L58.8,72.4 L50.0,76.4 L58.8,80.4 L62.8,89.2 L66.8,80.4 L75.6,76.4 L66.8,72.4 Z"
+        android:fillColor="#FFFFFF"/>
 </vector>
