@@ -4,83 +4,18 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Synapse neural network icon - white on terracotta -->
-    <!-- Connection lines -->
+    <!-- 主星：四角星（auto_awesome 风格） -->
     <path
-        android:pathData="M54,34 L34,54"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
-        android:strokeLineCap="round"
-        android:strokeAlpha="0.7"/>
-    <path
-        android:pathData="M54,34 L74,54"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
-        android:strokeLineCap="round"
-        android:strokeAlpha="0.7"/>
-    <path
-        android:pathData="M34,54 L54,74"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
-        android:strokeLineCap="round"
-        android:strokeAlpha="0.7"/>
-    <path
-        android:pathData="M74,54 L54,74"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
-        android:strokeLineCap="round"
-        android:strokeAlpha="0.7"/>
-    <path
-        android:pathData="M34,54 L74,54"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2"
-        android:strokeLineCap="round"
-        android:strokeAlpha="0.5"/>
-    <path
-        android:pathData="M54,34 L54,74"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2"
-        android:strokeLineCap="round"
-        android:strokeAlpha="0.5"/>
-    <!-- Central node (largest - the synapse) -->
-    <path
-        android:pathData="M54,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"
+        android:pathData="M54,24 L58,44 L78,54 L58,64 L54,84 L50,64 L30,54 L50,44 Z"
         android:fillColor="#FFFFFF"/>
-    <!-- Top node -->
+    <!-- 左上小星 -->
     <path
-        android:pathData="M54,34m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
+        android:pathData="M34,32 L36,40 L44,44 L36,48 L34,56 L32,48 L24,44 L32,40 Z"
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.85"/>
-    <!-- Left node -->
+        android:fillAlpha="0.7"/>
+    <!-- 右下小星 -->
     <path
-        android:pathData="M34,54m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
+        android:pathData="M74,56 L76,64 L84,68 L76,72 L74,80 L72,72 L64,68 L72,64 Z"
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.85"/>
-    <!-- Right node -->
-    <path
-        android:pathData="M74,54m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.85"/>
-    <!-- Bottom node -->
-    <path
-        android:pathData="M54,74m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.85"/>
-    <!-- Small accent nodes -->
-    <path
-        android:pathData="M42,42m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.5"/>
-    <path
-        android:pathData="M66,42m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.5"/>
-    <path
-        android:pathData="M42,66m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.5"/>
-    <path
-        android:pathData="M66,66m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.5"/>
+        android:fillAlpha="0.7"/>
 </vector>
