@@ -5,23 +5,24 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <!--
-      Material Design auto_awesome (24x24 → 108x108)
-      scale=3.2, offset=(2, 15.6), 整体中心 (54, 54)
-      适配圆形 adaptive icon 遮罩
+      Auto-awesome style icon for app launcher
+      Large star in center, two smaller stars diagonally
     -->
 
-    <!-- 主星 (右上) -->
+    <!-- Large center star (4-pointed) -->
     <path
-        android:pathData="M62.8,44.4 L66.8,35.6 L75.6,31.6 L66.8,27.6 L62.8,18.8 L58.8,27.6 L50.0,31.6 L58.8,35.6 Z"
+        android:pathData="M54,30 L60,48 L78,54 L60,60 L54,78 L48,60 L30,54 L48,48 Z"
         android:fillColor="#FFFFFF"/>
 
-    <!-- 左上小星 -->
+    <!-- Small top-right star -->
     <path
-        android:pathData="M50.0,18.8 L46.0,27.6 L32.4,28.4 L41.2,32.4 L50.0,44.4 L54.0,35.6 L67.6,28.4 L58.8,24.4 Z"
-        android:fillColor="#FFFFFF"/>
+        android:pathData="M72,24 L76,36 L88,40 L76,44 L72,56 L68,44 L56,40 L68,36 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.8"/>
 
-    <!-- 右下小星 -->
+    <!-- Small bottom-left star -->
     <path
-        android:pathData="M62.8,63.6 L58.8,72.4 L50.0,76.4 L58.8,80.4 L62.8,89.2 L66.8,80.4 L75.6,76.4 L66.8,72.4 Z"
-        android:fillColor="#FFFFFF"/>
+        android:pathData="M36,68 L40,80 L52,84 L40,88 L36,100 L32,88 L20,84 L32,80 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.8"/>
 </vector>
