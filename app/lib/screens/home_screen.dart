@@ -381,6 +381,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     builder: (_) => SettingsScreen(
                                       onToggleTheme: widget.onToggleTheme,
                                       isDark: widget.isDark,
+                                      themeIndex: widget.themeIndex,
+                                      onThemeChanged: widget.onThemeChanged,
                                     ),
                                   ),
                                 ).then((_) => _loadData()),
