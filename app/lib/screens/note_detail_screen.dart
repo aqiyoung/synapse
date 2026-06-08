@@ -46,12 +46,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('加载失败: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('加载失败: $e')),
+      );
     }
   }
 
@@ -164,6 +163,41 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
+  Future<void> _togglePin() async {
+    if (_note == null) return;
+    try {
+      final isPinned = await ApiService.togglePin(widget.noteId);
+      setState(() {
+        _note = Note(
+          id: _note!.id,
+          slug: _note!.slug,
+          title: _note!.title,
+          content: _note!.content,
+          summary: _note!.summary,
+          tags: _note!.tags,
+          createdAt: _note!.createdAt,
+          sourceCreatedAt: _note!.sourceCreatedAt,
+          updatedAt: _note!.updatedAt,
+          isPinned: isPinned,
+        );
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isPinned ? '已置顶' : '已取消置顶'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失败: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _deleteNote() async {
     Navigator.pop(context); // 关闭对话框
     try {
@@ -202,6 +236,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           ),
           title: Text(_note?.title ?? '笔记详情'),
           actions: [
+            IconButton(
+              icon: Icon(
+                _note?.isPinned == true ? Icons.push_pin : Icons.push_pin_outlined,
+              ),
+              onPressed: _note != null ? _togglePin : null,
+              tooltip: _note?.isPinned == true ? '取消置顶' : '置顶',
+            ),
             IconButton(
               icon: const Icon(Icons.link),
               onPressed: _note != null ? _showLinkDialog : null,

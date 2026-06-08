@@ -1,6 +1,6 @@
 """数据库 CRUD 操作"""
-from sqlalchemy import create_engine, text, or_
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine, text, or_, func, IntegrityError
+from sqlalchemy.orm import sessionmaker, Session, joinedload
 from models import Base, Note, Tag, note_tags
 from datetime import datetime, timezone, timedelta
 import os
@@ -47,6 +47,13 @@ def init_db():
         """))
         conn.commit()
 
+    # 迁移：添加 is_pinned 列（如果不存在）
+    with engine.connect() as conn:
+        cols = conn.execute(text("PRAGMA table_info(notes)")).fetchall()
+        if "is_pinned" not in [c[1] for c in cols]:
+            conn.execute(text("ALTER TABLE notes ADD COLUMN is_pinned BOOLEAN DEFAULT 0"))
+            conn.commit()
+            print("[迁移] 已添加 is_pinned 列")
 
 
 def get_db():
@@ -78,16 +85,21 @@ def create_note(db: Session, title: str, content: str, tag_names: list = None, s
     note = Note(title=title, content=content, created_at=now, source_created_at=source_created_at)
     db.add(note)
     db.flush()  # 拿到 id 和 created_at
-    # 生成 slug，重试防竞态
-    for _attempt in range(3):
+
+    # 生成 slug，靠 UNIQUE 约束 + IntegrityError 重试防竞态
+    for attempt in range(5):
         note.slug = _generate_slug(db, note.created_at)
         try:
-            db.commit()
+            # 先尝试 flush slug，触发 UNIQUE 约束检查
+            db.flush()
             break
-        except Exception:
+        except IntegrityError:
             db.rollback()
             db.add(note)
             db.flush()
+            note.slug = None  # 下一轮重新生成
+
+    # 处理标签
     if tag_names:
         for name in tag_names:
             tag = db.query(Tag).filter(Tag.name == name).first()
@@ -95,7 +107,8 @@ def create_note(db: Session, title: str, content: str, tag_names: list = None, s
                 tag = Tag(name=name)
                 db.add(tag)
             note.tags.append(tag)
-        db.commit()
+
+    db.commit()
     db.refresh(note)
     return note
 
@@ -160,7 +173,7 @@ def list_notes(db: Session, skip: int = 0, limit: int = 50, tag: str = None, key
             )
 
     total = query.count()
-    notes = query.order_by(Note.source_created_at.desc().nulls_last(), Note.created_at.desc()).offset(skip).limit(limit).all()
+    notes = query.order_by(Note.is_pinned.desc(), Note.source_created_at.desc().nulls_last(), Note.created_at.desc()).offset(skip).limit(limit).all()
     return total, notes
 
 
@@ -187,35 +200,14 @@ def update_note(db: Session, note_id: int, title: str = None, content: str = Non
 
     note.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
 
-    # 自动移除"孤立"标签
+    # 自动移除"孤立"标签（仅当笔记当前有该标签时才做全表扫描）
     if content is not None:
         orphan_tag = db.query(Tag).filter(Tag.name == "孤立").first()
 
-        if orphan_tag:
-            # 1. 当前笔记有 [[引用]]，移除孤立标签
+        if orphan_tag and orphan_tag in note.tags:
             has_outgoing = bool(re.search(r'\[\[([^\]]+)\]\]', content))
-            if has_outgoing and orphan_tag in note.tags:
+            if has_outgoing:
                 note.tags.remove(orphan_tag)
-
-            # 2. 被引用的笔记：检查是否有 outgoing 或 incoming
-            all_notes = db.query(Note).filter(Note.deleted_at.is_(None), Note.id != note_id).all()
-            incoming_refs = set()
-            for n in all_notes:
-                if n.content:
-                    for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
-                        incoming_refs.add(m.group(1))
-
-            referenced_titles = re.findall(r'\[\[([^\]]+)\]\]', content)
-            for ref_title in referenced_titles:
-                ref_note = db.query(Note).filter(
-                    Note.title == ref_title,
-                    Note.deleted_at.is_(None)
-                ).first()
-                if ref_note and orphan_tag in ref_note.tags:
-                    has_ref_outgoing = bool(re.search(r'\[\[([^\]]+)\]\]', ref_note.content or ""))
-                    has_ref_incoming = ref_note.title in incoming_refs
-                    if has_ref_outgoing or has_ref_incoming:
-                        ref_note.tags.remove(orphan_tag)
 
     db.commit()
     db.refresh(note)
@@ -265,9 +257,17 @@ def list_deleted_notes(db: Session, skip: int = 0, limit: int = 50):
 # ===== 标签 CRUD =====
 
 def list_tags(db: Session):
-    """列出所有标签"""
-    from sqlalchemy.orm import joinedload
-    return db.query(Tag).options(joinedload(Tag.notes)).order_by(Tag.name).all()
+    """列出所有标签（带笔记计数，不加载全部笔记）"""
+    tags = db.query(Tag).order_by(Tag.name).all()
+    # 批量查询每个标签的笔记数
+    counts = dict(
+        db.query(note_tags.c.tag_id, func.count(note_tags.c.note_id))
+        .group_by(note_tags.c.tag_id)
+        .all()
+    )
+    for tag in tags:
+        tag._note_count = counts.get(tag.id, 0)
+    return tags
 
 
 def get_or_create_tag(db: Session, name: str) -> Tag:

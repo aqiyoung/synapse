@@ -7,11 +7,15 @@ import 'lint_screen.dart';
 class MineScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final bool isDark;
+  final int themeIndex;
+  final ValueChanged<int> onThemeChanged;
 
   const MineScreen({
     super.key,
     required this.onToggleTheme,
     required this.isDark,
+    required this.themeIndex,
+    required this.onThemeChanged,
   });
 
   @override
@@ -25,6 +29,15 @@ class _MineScreenState extends State<MineScreen> {
   void initState() {
     super.initState();
     _loadVersion();
+    _autoCheckUpdate();
+  }
+
+  Future<void> _autoCheckUpdate() async {
+    await UpdateService().check();
+    if (mounted && UpdateService().hasUpdate) {
+      setState(() {});
+      _showUpdateDialog(Theme.of(context).colorScheme);
+    }
   }
 
   Future<void> _loadVersion() async {
@@ -43,253 +56,293 @@ class _MineScreenState extends State<MineScreen> {
       child: ListView(
         padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 16),
         children: [
-          // 头部 - 版本信息
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: colorScheme.outline.withOpacity(0.1),
-              ),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 48,
-                  color: colorScheme.primary,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Synapse',
-                  style: TextStyle(
-                    fontFamily: 'MiSans',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
+          // 头部 - 版本信息（无边框）
+          Column(
+            children: [
+              // Logo
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
+                child: const Icon(
+                  Icons.psychology,
+                  size: 36,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Synapse',
+                style: TextStyle(
+                  fontFamily: 'MiSans',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Slogan
+              Text(
+                '记录思考，连接知识',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '让每一个想法都有归处',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 版本号
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
                   'v$_version',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: 11,
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'AI 驱动的个人知识管理',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // 功能入口
+          Row(
+            children: [
+              Expanded(
+                child: _buildQuickAction(
+                  colorScheme,
+                  icon: Icons.health_and_safety_outlined,
+                  label: '健康检查',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LintScreen()),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 更新检查
-          _buildUpdateSection(colorScheme),
-          const SizedBox(height: 12),
-
-          // 健康检查入口
-          _buildSection(
-            colorScheme,
-            title: '知识库健康',
-            icon: Icons.health_and_safety_outlined,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const LintScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-
-          // 设置入口
-          _buildSection(
-            colorScheme,
-            title: '设置',
-            icon: Icons.settings_outlined,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => SettingsScreen(
-                    onToggleTheme: widget.onToggleTheme,
-                    isDark: widget.isDark,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildQuickAction(
+                  colorScheme,
+                  icon: Icons.system_update_outlined,
+                  label: '检查更新',
+                  onTap: () async {
+                    await UpdateService().check();
+                    if (!mounted) return;
+                    setState(() {});
+                    if (UpdateService().hasUpdate) {
+                      _showUpdateDialog(colorScheme);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已是最新版本')),
+                      );
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildQuickAction(
+                  colorScheme,
+                  icon: Icons.settings_outlined,
+                  label: '设置',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SettingsScreen(
+                        onToggleTheme: widget.onToggleTheme,
+                        isDark: widget.isDark,
+                        themeIndex: widget.themeIndex,
+                        onThemeChanged: widget.onThemeChanged,
+                      ),
+                    ),
                   ),
                 ),
-              );
-            },
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // 关于信息
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colorScheme.outline.withOpacity(0.1),
-              ),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '关于',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurface,
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '关于 Synapse',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _buildInfoRow(colorScheme, '技术栈', 'Flutter + FastAPI + SQLite'),
-                _buildInfoRow(colorScheme, 'AI 能力', '自动标签 · 自动关联 · 自动质检'),
-                _buildInfoRow(colorScheme, '开源地址', 'github.com/aqiyoung/synapse'),
+                const SizedBox(height: 16),
+                _buildInfoRow(
+                  colorScheme,
+                  icon: Icons.code_rounded,
+                  label: '技术栈',
+                  value: 'Flutter + FastAPI + SQLite',
+                ),
+                _buildInfoRow(
+                  colorScheme,
+                  icon: Icons.auto_awesome_rounded,
+                  label: 'AI 能力',
+                  value: '自动标签 · 自动关联 · 智能问答',
+                ),
+                _buildInfoRow(
+                  colorScheme,
+                  icon: Icons.storage_rounded,
+                  label: '数据存储',
+                  value: '本地优先，隐私可控',
+                ),
+                _buildInfoRow(
+                  colorScheme,
+                  icon: Icons.link_rounded,
+                  label: '开源地址',
+                  value: 'github.com/aqiyoung/synapse',
+                ),
               ],
             ),
           ),
+          const SizedBox(height: 24),
+          // 底部
+          Center(
+            child: Text(
+              '用心记录，用知识连接未来',
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurface.withOpacity(0.4),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildSection(
+  Widget _buildQuickAction(
     ColorScheme colorScheme, {
-    required String title,
     required IconData icon,
+    required String label,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: colorScheme.primary),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
+    return Material(
+      color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            children: [
+              Icon(icon, size: 24, color: colorScheme.primary),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
               ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: colorScheme.onSurface.withOpacity(0.3),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildUpdateSection(ColorScheme colorScheme) {
-    final hasUpdate = UpdateService().hasUpdate;
-
-    return InkWell(
-      onTap: () async {
-        if (hasUpdate) {
-          _showUpdateDialog(colorScheme);
-        } else {
-          await UpdateService().check();
-          if (mounted) setState(() {});
-        }
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.system_update_outlined,
-              size: 20,
-              color: colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    hasUpdate
-                        ? '新版本 ${UpdateService().cached!.latestVersion} 可用'
-                        : '检查更新',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    hasUpdate ? '点击查看更新内容' : '自动检查新版本',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (hasUpdate)
-              Icon(Icons.arrow_forward_ios, size: 14, color: colorScheme.primary)
-            else
-              Icon(Icons.check_circle_outline, size: 18, color: Colors.green),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(ColorScheme colorScheme, String label, String value) {
+  Widget _buildInfoRow(
+    ColorScheme colorScheme, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 70,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurface.withOpacity(0.5),
-              ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Icon(icon, size: 16, color: colorScheme.primary),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurface.withOpacity(0.8),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colorScheme.onSurface.withOpacity(0.8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

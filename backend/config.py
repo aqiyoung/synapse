@@ -14,5 +14,5 @@ RAG_MAX_CHARS = int(os.environ.get("RAG_MAX_CHARS", "8000"))    # 每篇笔记�
 # API 认证 token（通过环境变量 WIKI_API_TOKEN 设置，留空则不启用认证）
 API_TOKEN = os.environ.get("WIKI_API_TOKEN", "")
 
-# 管理员密码（通过环境变量 WIKI_ADMIN_PASSWORD 设置，默认 synapse2026）
-ADMIN_PASSWORD = os.environ.get("WIKI_ADMIN_PASSWORD", "synapse2026")
+# 管理员密码（通过环境变量 WIKI_ADMIN_PASSWORD 设置，不设则禁用管理员端点）
+ADMIN_PASSWORD = os.environ.get("WIKI_ADMIN_PASSWORD", "")

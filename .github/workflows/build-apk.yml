@@ -23,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取所有历史和 tags，用于 beta 版本号递增
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -71,6 +73,24 @@ jobs:
             echo "name=Synapse v${SEMVER}-beta.${BETA_NUM}" >> $GITHUB_OUTPUT
             echo "prerelease=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Update version for beta
+        if: steps.tag.outputs.prerelease == 'true'
+        working-directory: ./app
+        run: |
+          # 获取当前版本
+          CURRENT_VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}')
+          SEMVER=$(echo "$CURRENT_VERSION" | sed 's/+.*//')
+          BUILD=$(echo "$CURRENT_VERSION" | sed 's/.*+//')
+          
+          # 提取 beta 版本号
+          TAG="${{ steps.tag.outputs.tag }}"
+          BETA_SUFFIX=$(echo "$TAG" | sed "s/v${SEMVER}//")
+          
+          # 更新 pubspec.yaml 版本号
+          NEW_VERSION="${SEMVER}${BETA_SUFFIX}+${BUILD}"
+          sed -i "s/version: ${CURRENT_VERSION}/version: ${NEW_VERSION}/" pubspec.yaml
+          echo "Updated version: ${CURRENT_VERSION} -> ${NEW_VERSION}"
 
       - name: Install dependencies
         working-directory: ./app

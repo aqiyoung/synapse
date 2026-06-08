@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/note.dart';
 
 class ApiService {
@@ -61,6 +62,18 @@ class ApiService {
       body: json.encode(body),
     );
     return response.statusCode == 200;
+  }
+
+  // 切换置顶状态
+  static Future<bool> togglePin(int noteId) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/notes/$noteId/pin'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['is_pinned'] ?? false;
+    }
+    throw Exception('置顶操作失败');
   }
 
   // 获取笔记关联
@@ -150,17 +163,17 @@ class ApiService {
     throw Exception('清除孤立笔记失败');
   }
 
-  /// 清除图谱中的垃圾边（自环、重复边）
-  static Future<Map<String, dynamic>> pruneGraph() async {
+  /// 分析图谱中的问题边（自环、重复边、stale 边）
+  static Future<Map<String, dynamic>> analyzeGraph() async {
     final response = await http.post(
-      Uri.parse('$baseUrl/graph/prune'),
+      Uri.parse('$baseUrl/graph/analyze'),
       headers: _headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('清理图谱失败');
+    throw Exception('分析图谱失败');
   }
 
   /// 统一修复入口，根据 type 调用对应修复方法
@@ -173,7 +186,7 @@ class ApiService {
       case 'no_tags':
         return fixNoTags();
       case 'prune':
-        return pruneGraph();
+        return analyzeGraph();
       default:
         throw Exception('未知修复类型: $type');
     }
@@ -220,5 +233,68 @@ class ApiService {
     } catch (_) {
       return false;
     }
+  }
+
+  /// AI 对话（RAG）
+  static Future<Map<String, dynamic>> chat(String question, {int limit = 5}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/ai/chat'),
+      headers: _headers,
+      body: json.encode({'question': question, 'limit': limit}),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      // 确保 references 中包含 summary 字段
+      if (data['references'] != null) {
+        data['references'] = (data['references'] as List).map((r) => {
+          'id': r['id'],
+          'title': r['title'] ?? '',
+          'summary': r['summary'] ?? '',
+        }).toList();
+      }
+      return data;
+    }
+    throw Exception('AI 对话失败: ${response.statusCode}');
+  }
+
+  // ── 对话历史 ──
+
+  static const _chatHistoryKey = 'chat_history';
+  static const _chatHistoryMax = 20;
+
+  /// 保存一条对话记录
+  static Future<void> saveChatHistory({
+    required String question,
+    required String answer,
+    required List<Map<String, dynamic>> references,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = await loadChatHistory();
+    list.insert(0, {
+      'question': question,
+      'answer': answer,
+      'references': references,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    // 只保留最近 N 条
+    while (list.length > _chatHistoryMax) {
+      list.removeLast();
+    }
+    await prefs.setString(_chatHistoryKey, json.encode(list));
+  }
+
+  /// 加载所有对话历史
+  static Future<List<Map<String, dynamic>>> loadChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_chatHistoryKey);
+    if (raw == null || raw.isEmpty) return [];
+    final decoded = json.decode(raw) as List;
+    return decoded.cast<Map<String, dynamic>>();
+  }
+
+  /// 清空对话历史
+  static Future<void> clearChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_chatHistoryKey);
   }
 }

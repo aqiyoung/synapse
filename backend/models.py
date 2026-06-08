@@ -1,5 +1,5 @@
 """数据模型"""
-from sqlalchemy import Column, Integer, String, Text, DateTime, Table, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Table, ForeignKey, Index
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime, timezone, timedelta
 
@@ -28,6 +28,7 @@ class Note(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))),
                         onupdate=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
     deleted_at = Column(DateTime, nullable=True, default=None)
+    is_pinned = Column(Boolean, default=False, nullable=False, index=True)
 
     # 关联
     tags = relationship("Tag", secondary=note_tags, back_populates="notes")
@@ -43,6 +44,7 @@ class Note(Base):
             "source_created_at": self.source_created_at.isoformat() if self.source_created_at else "",
             "updated_at": self.updated_at.isoformat() if self.updated_at else "",
             "deleted_at": self.deleted_at.isoformat() if self.deleted_at else "",
+            "is_pinned": self.is_pinned,
             "tags": [t.name for t in self.tags],
         }
 
@@ -60,13 +62,13 @@ class Tag(Base):
     notes = relationship("Note", secondary=note_tags, back_populates="tags")
 
     def to_dict(self):
-        # 使用 len() 触发已加载的集合，避免额外 SQL 查询
-        # 调用方应确保使用 joinedload 预加载 notes
-        count = 0
-        try:
-            count = len(self.notes)
-        except Exception:
-            pass
+        # 优先使用 list_tags 注入的 _note_count，避免加载全部笔记
+        count = getattr(self, '_note_count', None)
+        if count is None:
+            try:
+                count = len(self.notes)
+            except Exception:
+                count = 0
         return {
             "id": self.id,
             "name": self.name,

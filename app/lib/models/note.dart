@@ -8,6 +8,7 @@ class Note {
   final DateTime? createdAt;
   final DateTime? sourceCreatedAt;
   final DateTime? updatedAt;
+  final bool isPinned;
 
   Note({
     required this.id,
@@ -19,6 +20,7 @@ class Note {
     this.createdAt,
     this.sourceCreatedAt,
     this.updatedAt,
+    this.isPinned = false,
   });
 
   factory Note.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,33 @@ class Note {
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'])
           : null,
+      isPinned: json['is_pinned'] ?? false,
+    );
+  }
+
+  Note copyWith({
+    int? id,
+    String? slug,
+    String? title,
+    String? content,
+    String? summary,
+    List<String>? tags,
+    DateTime? createdAt,
+    DateTime? sourceCreatedAt,
+    DateTime? updatedAt,
+    bool? isPinned,
+  }) {
+    return Note(
+      id: id ?? this.id,
+      slug: slug ?? this.slug,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      summary: summary ?? this.summary,
+      tags: tags ?? this.tags,
+      createdAt: createdAt ?? this.createdAt,
+      sourceCreatedAt: sourceCreatedAt ?? this.sourceCreatedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isPinned: isPinned ?? this.isPinned,
     );
   }
 }

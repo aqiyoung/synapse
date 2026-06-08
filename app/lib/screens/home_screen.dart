@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
 import 'note_detail_screen.dart';
@@ -8,17 +9,22 @@ import 'graph_screen.dart';
 import 'lint_screen.dart';
 import 'settings_screen.dart';
 import 'mine_screen.dart';
+import 'chat_screen.dart';
 import '../widgets/tag_chip.dart';
 import '../services/update_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final bool isDark;
+  final int themeIndex;
+  final ValueChanged<int> onThemeChanged;
 
   const HomeScreen({
     super.key,
     required this.onToggleTheme,
     required this.isDark,
+    required this.themeIndex,
+    required this.onThemeChanged,
   });
 
   @override
@@ -34,12 +40,14 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
+  List<String> _searchHistory = [];
 
   @override
   void initState() {
     super.initState();
     _loadData();
     _checkUpdate();
+    _loadSearchHistory();
   }
 
   Future<void> _checkUpdate() async {
@@ -72,25 +80,26 @@ class _HomeScreenState extends State<HomeScreen> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      if (mounted) {
-        final msg = e.toString().contains('SocketException')
-            ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
-            : '加载失败: $e';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            action: SnackBarAction(
-              label: '设置',
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => SettingsScreen(
-                    onToggleTheme: widget.onToggleTheme,
-                    isDark: widget.isDark,
-                  ))),
-            ),
+      final msg = e.toString().contains('SocketException')
+          ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
+          : '加载失败: $e';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          action: SnackBarAction(
+            label: '设置',
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => SettingsScreen(
+                  onToggleTheme: widget.onToggleTheme,
+                  isDark: widget.isDark,
+                  themeIndex: widget.themeIndex,
+                  onThemeChanged: widget.onThemeChanged,
+                ))),
           ),
-        );
-      }
+        ),
+      );
     }
   }
 
@@ -101,8 +110,29 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadData();
   }
 
+  Future<void> _loadSearchHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _searchHistory = prefs.getStringList('search_history') ?? [];
+    });
+  }
+
+  Future<void> _saveSearchHistory(String query) async {
+    if (query.trim().isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getStringList('search_history') ?? [];
+    history.remove(query);
+    history.insert(0, query);
+    if (history.length > 10) history.removeLast();
+    await prefs.setStringList('search_history', history);
+    setState(() => _searchHistory = history);
+  }
+
   void _onSearch(String query) {
     setState(() => _searchQuery = query);
+    if (query.trim().isNotEmpty) {
+      _saveSearchHistory(query.trim());
+    }
     _loadData();
   }
 
@@ -121,9 +151,12 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _buildNoteList(colorScheme),
           const GraphScreen(),
+          const ChatScreen(),
           MineScreen(
             onToggleTheme: widget.onToggleTheme,
             isDark: widget.isDark,
+            themeIndex: widget.themeIndex,
+            onThemeChanged: widget.onThemeChanged,
           ),
         ],
       ),
@@ -144,6 +177,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: colorScheme.onSurface.withOpacity(0.6)),
             selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
             label: _isChinese ? '图谱' : 'Graph',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline,
+                color: colorScheme.onSurface.withOpacity(0.6)),
+            selectedIcon: Icon(Icons.chat_bubble, color: colorScheme.primary),
+            label: _isChinese ? 'AI' : 'AI',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline,
@@ -201,6 +240,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       () => _onSearch(value),
                     );
                   },
+                  onSubmitted: (value) {
+                    _searchDebounce?.cancel();
+                    _onSearch(value);
+                  },
                   decoration: InputDecoration(
                     hintText: '搜索笔记...',
                     hintStyle: TextStyle(
@@ -235,6 +278,46 @@ class _HomeScreenState extends State<HomeScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
+                // Search history
+                if (_searchHistory.isNotEmpty && _searchQuery.isEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: _searchHistory.map((item) {
+                      return GestureDetector(
+                        onTap: () {
+                          _searchController.text = item;
+                          _onSearch(item);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: colorScheme.outline.withOpacity(0.15),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.history, size: 14, color: colorScheme.onSurface.withOpacity(0.4)),
+                              const SizedBox(width: 4),
+                              Text(
+                                item,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ],
             ),
           ),
@@ -297,6 +380,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     builder: (_) => SettingsScreen(
                                       onToggleTheme: widget.onToggleTheme,
                                       isDark: widget.isDark,
+                                      themeIndex: widget.themeIndex,
+                                      onThemeChanged: widget.onThemeChanged,
                                     ),
                                   ),
                                 ).then((_) => _loadData()),
@@ -446,8 +531,39 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Build highlighted text spans for a string, matching [_searchQuery] keywords.
+  List<TextSpan> _highlightText(String text, TextStyle baseStyle, ColorScheme colorScheme) {
+    if (_searchQuery.isEmpty || text.isEmpty) {
+      return [TextSpan(text: text, style: baseStyle)];
+    }
+    final lowerText = text.toLowerCase();
+    final lowerQuery = _searchQuery.toLowerCase();
+    final spans = <TextSpan>[];
+    int start = 0;
+    while (true) {
+      final idx = lowerText.indexOf(lowerQuery, start);
+      if (idx == -1) break;
+      if (idx > start) {
+        spans.add(TextSpan(text: text.substring(start, idx), style: baseStyle));
+      }
+      spans.add(TextSpan(
+        text: text.substring(idx, idx + _searchQuery.length),
+        style: baseStyle.copyWith(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ));
+      start = idx + _searchQuery.length;
+    }
+    if (start < text.length) {
+      spans.add(TextSpan(text: text.substring(start), style: baseStyle));
+    }
+    return spans.isEmpty ? [TextSpan(text: text, style: baseStyle)] : spans;
+  }
+
   Widget _buildNoteItem(Note note, ColorScheme colorScheme) {
     final timeAgo = _formatTimeAgo(note.sourceCreatedAt ?? note.createdAt);
+    final hasHighlight = _searchQuery.isNotEmpty;
 
     return InkWell(
       onTap: () {
@@ -458,12 +574,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+      onLongPress: () => _showNoteMenu(note, colorScheme),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
           border: Border(
             left: BorderSide(
-              color: Colors.transparent,
+              color: note.isPinned ? colorScheme.primary : Colors.transparent,
               width: 3,
             ),
           ),
@@ -471,27 +588,68 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              note.title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Row(
+              children: [
+                if (note.isPinned) ...[
+                  Icon(Icons.push_pin, size: 14, color: colorScheme.primary),
+                  const SizedBox(width: 4),
+                ],
+                Expanded(
+                  child: hasHighlight
+                      ? RichText(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          text: TextSpan(
+                            children: _highlightText(
+                              note.title,
+                              TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurface,
+                              ),
+                              colorScheme,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          note.title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                ),
+              ],
             ),
             if (note.summary.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text(
-                note.summary,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSurface.withOpacity(0.5),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              hasHighlight
+                  ? RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        children: _highlightText(
+                          note.summary,
+                          TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                          colorScheme,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      note.summary,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
             ],
             const SizedBox(height: 6),
             Row(
@@ -522,6 +680,42 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNoteMenu(Note note, ColorScheme colorScheme) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                note.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+                color: colorScheme.primary,
+              ),
+              title: Text(note.isPinned ? '取消置顶' : '置顶'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                try {
+                  await ApiService.togglePin(note.id);
+                  _loadData();
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('操作失败: $e')),
+                    );
+                  }
+                }
+              },
             ),
           ],
         ),

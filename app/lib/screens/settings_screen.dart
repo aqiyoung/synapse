@@ -3,15 +3,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
 import '../services/update_service.dart';
+import '../models/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final bool isDark;
+  final int themeIndex;
+  final ValueChanged<int> onThemeChanged;
 
   const SettingsScreen({
     super.key,
     required this.onToggleTheme,
     required this.isDark,
+    required this.themeIndex,
+    required this.onThemeChanged,
   });
 
   @override
@@ -26,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLoggedIn = false;
   int _versionTapCount = 0;
   String _currentVersion = '';
+  String _updateChannel = 'stable';
 
   // 管理员密码已改为服务端校验，不再硬编码在客户端
 
@@ -37,6 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadServer();
     _checkLoginState();
     _loadVersion();
+    _loadUpdateChannel();
   }
 
   Future<void> _loadVersion() async {
@@ -53,7 +60,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _loadUpdateChannel() async {
+    await UpdateService().loadChannel();
+    if (mounted) {
+      setState(() {
+        _updateChannel = UpdateService().channel;
+      });
+    }
+  }
+
+  Future<void> _setUpdateChannel(String channel) async {
+    await UpdateService().setChannel(channel);
+    if (mounted) {
+      setState(() {
+        _updateChannel = channel;
+      });
+    }
+  }
+
   Future<void> _checkUpdate() async {
+    UpdateService().onStatusChange = () {
+      if (mounted) setState(() {});
+    };
     await UpdateService().check();
     if (mounted) setState(() {});
   }
@@ -115,6 +143,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: const Text('更新'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpdateSection(ColorScheme colorScheme) {
+    final updateService = UpdateService();
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              final version = snapshot.data?.version ?? '...';
+              return ListTile(
+                leading: Icon(Icons.info_outline, color: colorScheme.onSurface.withOpacity(0.5), size: 20),
+                title: const Text('当前版本'),
+                trailing: Text('v$version', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6), fontSize: 14)),
+              );
+            },
+          ),
+          Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
+          if (updateService.downloading) ...[
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          value: updateService.downloadProgress > 0 ? updateService.downloadProgress : null,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        updateService.downloadProgress > 0
+                            ? '下载中... ${(updateService.downloadProgress * 100).toInt()}%'
+                            : '准备下载...',
+                        style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+                      ),
+                    ],
+                  ),
+                  if (updateService.downloadProgress > 0) ...[
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: updateService.downloadProgress,
+                      backgroundColor: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.primary,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ] else if (updateService.hasUpdate) ...[
+            ListTile(
+              leading: Icon(Icons.download, color: colorScheme.primary, size: 20),
+              title: Text('发现新版本 v${updateService.cached!.latestVersion}',
+                style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w500)),
+              trailing: Icon(Icons.chevron_right, color: colorScheme.onSurface.withOpacity(0.3)),
+              onTap: () => _showUpdateDialog(context, colorScheme),
+            ),
+          ] else ...[
+            ListTile(
+              leading: updateService.checking
+                  ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary))
+                  : Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+              title: Text(
+                updateService.checking ? '检查中...' : '已是最新版本',
+                style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+              ),
+              trailing: TextButton(
+                onPressed: updateService.checking ? null : () async {
+                  await _checkUpdate();
+                },
+                child: const Text('检查更新'),
+              ),
+            ),
+          ],
+          if (updateService.errorMessage != null) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                updateService.errorMessage!,
+                style: TextStyle(fontSize: 12, color: Colors.red.withOpacity(0.8)),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -223,6 +347,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildThemeGrid(ColorScheme colorScheme) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: AppTheme.presets.length,
+      itemBuilder: (context, index) {
+        final preset = AppTheme.presets[index];
+        final selected = index == widget.themeIndex;
+        final displayColor = widget.isDark ? preset.darkPrimary : preset.lightPrimary;
+
+        return GestureDetector(
+          onTap: () {
+            widget.onThemeChanged(index);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: displayColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: selected
+                      ? Border.all(color: colorScheme.onSurface, width: 2.5)
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: displayColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: selected
+                    ? const Icon(Icons.check, color: Colors.white, size: 24)
+                    : null,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                preset.name,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -259,6 +445,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
             contentPadding: EdgeInsets.zero,
             onTap: widget.onToggleTheme,
           ),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 主题风格 ──
+          Text(
+            '主题风格',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildThemeGrid(colorScheme),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 更新通道 ──
+          Text(
+            '更新通道',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                RadioListTile<String>(
+                  title: const Text('稳定版'),
+                  subtitle: Text(
+                    '推荐，经过充分测试',
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+                  ),
+                  value: 'stable',
+                  groupValue: _updateChannel,
+                  onChanged: (v) => _setUpdateChannel(v!),
+                  activeColor: colorScheme.primary,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
+                RadioListTile<String>(
+                  title: const Text('测试版'),
+                  subtitle: Text(
+                    '抢先体验新功能，可能不稳定',
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+                  ),
+                  value: 'beta',
+                  groupValue: _updateChannel,
+                  onChanged: (v) => _setUpdateChannel(v!),
+                  activeColor: colorScheme.primary,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 检查更新 ──
+          Text(
+            '应用更新',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildUpdateSection(colorScheme),
           const SizedBox(height: 24),
           Divider(color: colorScheme.outline.withOpacity(0.1)),
           const SizedBox(height: 16),
