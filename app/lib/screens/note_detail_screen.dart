@@ -4,7 +4,9 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/note.dart';
+import '../models/folder.dart';
 import '../services/api_service.dart';
+import '../services/folder_service.dart';
 
 class NoteDetailScreen extends StatefulWidget {
   final int noteId;
@@ -20,12 +22,15 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Relations? _relations;
   bool _loading = true;
   bool _isAdmin = false;
+  String? _currentFolderName;
+  int? _currentFolderId;
 
   @override
   void initState() {
     super.initState();
     _checkAdmin();
     _loadNote();
+    _loadFolderInfo();
   }
 
   Future<void> _checkAdmin() async {
@@ -33,6 +38,95 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     setState(() {
       _isAdmin = prefs.getBool('admin_logged_in') ?? false;
     });
+  }
+
+  Future<void> _loadFolderInfo() async {
+    if (_note == null) return;
+    try {
+      final folders = await FolderService.getFolders();
+      if (_note!.folderId != null) {
+        final folder = folders.where((f) => f.id == _note!.folderId).firstOrNull;
+        if (mounted) {
+          setState(() {
+            _currentFolderId = _note!.folderId;
+            _currentFolderName = folder?.name;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _setFolder(int? folderId) async {
+    if (_note == null) return;
+    Navigator.pop(context);
+    try {
+      final success = await FolderService.setNoteFolder(_note!.id, folderId);
+      if (success && mounted) {
+        final folders = await FolderService.getFolders();
+        final folder = folderId != null
+            ? folders.where((f) => f.id == folderId).firstOrNull
+            : null;
+        setState(() {
+          _currentFolderId = folderId;
+          _currentFolderName = folder?.name;
+          _note = _note!.copyWith(folderId: folderId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(folderId != null ? '已移动到「${folder!.name}」' : '已移到未分类')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失败: $e')),
+        );
+      }
+    }
+  }
+
+  void _showFolderPicker(List<Folder> folders) {
+    showDialog(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('选择分类'),
+        children: [
+          SimpleDialogOption(
+            child: const Text('未分类'),
+            onPressed: () => _setFolder(null),
+          ),
+          ...folders.map((f) => SimpleDialogOption(
+            child: Row(
+              children: [
+                Icon(Icons.folder, size: 18, color: Color(int.parse(f.color.substring(1), radix: 16) + 0xFF000000)),
+                const SizedBox(width: 8),
+                Text(f.name),
+              ],
+            ),
+            onPressed: () => _setFolder(f.id),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFolderSelector() {
+    return FutureBuilder<List<Folder>>(
+      future: FolderService.getFolders(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final folders = snapshot.data!;
+        return InkWell(
+          onTap: () => _showFolderPicker(folders),
+          borderRadius: BorderRadius.circular(16),
+          child: Chip(
+            label: Text(_currentFolderName ?? '未分类'),
+            avatar: const Icon(Icons.folder, size: 18),
+            deleteIcon: const Icon(Icons.expand_more, size: 16),
+            onDeleted: () => _showFolderPicker(folders),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _loadNote() async {
@@ -107,17 +201,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
       if (success && mounted) {
         setState(() {
-          _note = Note(
-            id: _note!.id,
-            slug: _note!.slug,
-            title: _note!.title,
-            content: newContent,
-            summary: _note!.summary,
-            tags: _note!.tags,
-            createdAt: _note!.createdAt,
-            sourceCreatedAt: _note!.sourceCreatedAt,
-            updatedAt: _note!.updatedAt,
-          );
+          _note = _note!.copyWith(content: newContent);
         });
 
         // 刷新关联数据
@@ -168,18 +252,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     try {
       final isPinned = await ApiService.togglePin(widget.noteId);
       setState(() {
-        _note = Note(
-          id: _note!.id,
-          slug: _note!.slug,
-          title: _note!.title,
-          content: _note!.content,
-          summary: _note!.summary,
-          tags: _note!.tags,
-          createdAt: _note!.createdAt,
-          sourceCreatedAt: _note!.sourceCreatedAt,
-          updatedAt: _note!.updatedAt,
-          isPinned: isPinned,
-        );
+        _note = _note!.copyWith(isPinned: isPinned);
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -287,6 +360,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               color: colorScheme.onSurface,
             ),
           ),
+          const SizedBox(height: 8),
+          // Folder selector
+          _buildFolderSelector(),
           const SizedBox(height: 12),
           // Meta
           Wrap(
