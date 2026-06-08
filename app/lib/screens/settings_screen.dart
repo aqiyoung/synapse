@@ -79,6 +79,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _checkUpdate() async {
+    UpdateService().onStatusChange = () {
+      if (mounted) setState(() {});
+    };
     await UpdateService().check();
     if (mounted) setState(() {});
   }
@@ -140,6 +143,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: const Text('更新'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpdateSection(ColorScheme colorScheme) {
+    final updateService = UpdateService();
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              final version = snapshot.data?.version ?? '...';
+              return ListTile(
+                leading: Icon(Icons.info_outline, color: colorScheme.onSurface.withOpacity(0.5), size: 20),
+                title: const Text('当前版本'),
+                trailing: Text('v$version', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6), fontSize: 14)),
+              );
+            },
+          ),
+          Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
+          if (updateService.downloading) ...[
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          value: updateService.downloadProgress > 0 ? updateService.downloadProgress : null,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        updateService.downloadProgress > 0
+                            ? '下载中... ${(updateService.downloadProgress * 100).toInt()}%'
+                            : '准备下载...',
+                        style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+                      ),
+                    ],
+                  ),
+                  if (updateService.downloadProgress > 0) ...[
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: updateService.downloadProgress,
+                      backgroundColor: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.primary,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ] else if (updateService.hasUpdate) ...[
+            ListTile(
+              leading: Icon(Icons.download, color: colorScheme.primary, size: 20),
+              title: Text('发现新版本 v${updateService.cached!.latestVersion}',
+                style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w500)),
+              trailing: Icon(Icons.chevron_right, color: colorScheme.onSurface.withOpacity(0.3)),
+              onTap: () => _showUpdateDialog(context, colorScheme),
+            ),
+          ] else ...[
+            ListTile(
+              leading: updateService.checking
+                  ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary))
+                  : Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+              title: Text(
+                updateService.checking ? '检查中...' : '已是最新版本',
+                style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+              ),
+              trailing: TextButton(
+                onPressed: updateService.checking ? null : () async {
+                  await _checkUpdate();
+                },
+                child: const Text('检查更新'),
+              ),
+            ),
+          ],
+          if (updateService.errorMessage != null) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                updateService.errorMessage!,
+                style: TextStyle(fontSize: 12, color: Colors.red.withOpacity(0.8)),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -408,6 +507,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 检查更新 ──
+          Text(
+            '应用更新',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildUpdateSection(colorScheme),
           const SizedBox(height: 24),
           Divider(color: colorScheme.outline.withOpacity(0.1)),
           const SizedBox(height: 16),

@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,6 +29,8 @@ class UpdateService {
   UpdateInfo? _cachedUpdate;
   bool _checked = false;
   bool _checking = false;
+  bool _downloading = false;
+  double _downloadProgress = 0;
   String? _errorMessage;
   String _channel = 'stable';
 
@@ -34,6 +39,8 @@ class UpdateService {
   bool get hasUpdate => _cachedUpdate != null;
   bool get checking => _checking;
   bool get checked => _checked;
+  bool get downloading => _downloading;
+  double get downloadProgress => _downloadProgress;
   String? get errorMessage => _errorMessage;
   String get channel => _channel;
 
@@ -43,7 +50,6 @@ class UpdateService {
     _channel = channel;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('update_channel', channel);
-    // 通道切换后清除缓存，下次检查时重新请求
     _cachedUpdate = null;
     _checked = false;
     _notifyListeners();
@@ -68,17 +74,12 @@ class UpdateService {
   }
 
   bool _isNewer(String latest, String current) {
-    // 移除可能的 v 前缀
     var l = latest.startsWith('v') ? latest.substring(1) : latest;
     var c = current.startsWith('v') ? current.substring(1) : current;
-
-    // 移除构建号（+后面的部分）
     l = l.split('+')[0];
     c = c.split('+')[0];
 
-    // 解析主版本号（处理 beta 后缀）
     List<int> parseVersion(String ver) {
-      // 移除 -beta, -alpha 等后缀
       final cleanVer = ver.split('-')[0];
       return cleanVer.split('.').map((e) => int.tryParse(e) ?? 0).toList();
     }
@@ -86,31 +87,25 @@ class UpdateService {
     final lVer = parseVersion(l);
     final cVer = parseVersion(c);
 
-    // 比较主版本号
     for (int i = 0; i < 3; i++) {
       final lv = i < lVer.length ? lVer[i] : 0;
       final cv = i < cVer.length ? cVer[i] : 0;
       if (lv != cv) return lv > cv;
     }
 
-    // 主版本号相同，比较 beta 状态
     final lBetaMatch = RegExp(r'-beta\.(\d+)').firstMatch(l);
     final cBetaMatch = RegExp(r'-beta\.(\d+)').firstMatch(c);
     final lBetaNum = lBetaMatch != null ? int.parse(lBetaMatch.group(1)!) : null;
     final cBetaNum = cBetaMatch != null ? int.parse(cBetaMatch.group(1)!) : null;
 
     if (lBetaNum != null && cBetaNum != null) {
-      // 都是 beta，比较 beta 号
       return lBetaNum > cBetaNum;
     } else if (lBetaNum != null && cBetaNum == null) {
-      // latest 是 beta，current 是 stable → 不是更新
       return false;
     } else if (lBetaNum == null && cBetaNum != null) {
-      // latest 是 stable，current 是 beta → 是更新
       return true;
     }
 
-    // 都是 stable，版本号相同 → 不是更新
     return false;
   }
 
@@ -122,7 +117,6 @@ class UpdateService {
     _errorMessage = null;
     _notifyListeners();
 
-    // 确保通道设置已加载
     if (_channel.isEmpty) await loadChannel();
 
     try {
@@ -156,10 +150,8 @@ class UpdateService {
         try {
           Uri uri;
           if (_channel == 'beta') {
-            // beta 通道：获取所有 release，找最新的 pre-release
             uri = Uri.parse('https://api.github.com/repos/aqiyoung/synapse/releases');
           } else {
-            // 稳定通道：获取 latest release
             uri = Uri.parse('https://api.github.com/repos/aqiyoung/synapse/releases/latest');
           }
 
@@ -173,7 +165,6 @@ class UpdateService {
             Map<String, dynamic>? release;
 
             if (_channel == 'beta') {
-              // 从 releases 列表中找最新的 pre-release
               final releases = body as List<dynamic>;
               for (final r in releases) {
                 if (r['prerelease'] == true) {
@@ -213,7 +204,6 @@ class UpdateService {
         return;
       }
 
-      // 移除 v 前缀
       if (latestVersion.startsWith('v')) {
         latestVersion = latestVersion.substring(1);
       }
@@ -225,7 +215,6 @@ class UpdateService {
         return;
       }
 
-      // 有新版本
       _cachedUpdate = UpdateInfo(
         latestVersion: latestVersion,
         releaseNotes: data['release_notes'] as String?,
@@ -242,42 +231,78 @@ class UpdateService {
     _notifyListeners();
   }
 
-  /// 下载更新（在浏览器中打开）
+  /// 下载更新并安装
   Future<void> downloadUpdate() async {
-    if (_cachedUpdate == null) return;
-
-    // 确保通道设置已加载
+    if (_cachedUpdate == null || _downloading) return;
     if (_channel.isEmpty) await loadChannel();
 
-    // 优先从服务器下载
-    final prefs = await SharedPreferences.getInstance();
-    final server = prefs.getString('server') ?? '';
-    if (server.isNotEmpty) {
-      try {
+    _downloading = true;
+    _downloadProgress = 0;
+    _errorMessage = null;
+    _notifyListeners();
+
+    try {
+      final dir = await getTemporaryDirectory();
+      final filePath = '${dir.path}/synapse-v${_cachedUpdate!.latestVersion}.apk';
+      final file = File(filePath);
+
+      // 构建下载 URL：优先服务器代理，备选 GitHub 直连
+      String downloadUrl = '';
+      final prefs = await SharedPreferences.getInstance();
+      final server = prefs.getString('server') ?? '';
+
+      if (server.isNotEmpty) {
         var base = server;
         if (base.endsWith('/')) base = base.substring(0, base.length - 1);
         if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
-
-        final uri = Uri.parse('$base/api/update/download?channel=$_channel');
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.platformDefault);
-          return;
-        }
-      } catch (e) {
-        debugPrint('Server download failed, trying GitHub: $e');
+        downloadUrl = '$base/api/update/download?channel=$_channel';
       }
-    }
 
-    // 备选：从 GitHub 下载
-    try {
-      final uri = Uri.parse(
-        'https://github.com/aqiyoung/synapse/releases/download/v${_cachedUpdate!.latestVersion}/synapse-v${_cachedUpdate!.latestVersion}.apk',
-      );
-      // 直接尝试打开，不用 canLaunchUrl 检查（某些 Android 版本兼容性问题）
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // 流式下载
+      final client = http.Client();
+      try {
+        final request = http.Request('GET', Uri.parse(downloadUrl));
+        request.headers['User-Agent'] = 'Synapse';
+        final response = await client.send(request).timeout(const Duration(seconds: 30));
+
+        if (response.statusCode != 200) {
+          throw Exception('服务器返回 ${response.statusCode}');
+        }
+
+        final contentLength = response.contentLength ?? 0;
+        int downloaded = 0;
+        final sink = file.openWrite();
+
+        await response.stream.forEach((chunk) {
+          sink.add(chunk);
+          downloaded += chunk.length;
+          if (contentLength > 0) {
+            _downloadProgress = downloaded / contentLength;
+            _notifyListeners();
+          }
+        });
+
+        await sink.flush();
+        await sink.close();
+      } finally {
+        client.close();
+      }
+
+      _downloading = false;
+      _downloadProgress = 1.0;
+      _notifyListeners();
+
+      // 打开系统安装器
+      final result = await OpenFile.open(filePath);
+      if (result.type != ResultType.done) {
+        _errorMessage = '无法打开 APK: ${result.message}';
+        _notifyListeners();
+      }
     } catch (e) {
-      debugPrint('GitHub download failed: $e');
-      _errorMessage = '无法打开下载页面: $e';
+      _downloading = false;
+      _downloadProgress = 0;
+      _errorMessage = '下载失败: $e';
+      debugPrint('Download failed: $e');
       _notifyListeners();
     }
   }
