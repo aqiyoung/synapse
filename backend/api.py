@@ -18,11 +18,14 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-from models import Tag, note_tags, Note
+from models import Tag, note_tags, Note, Folder, ReadingStats, Notification
 from crud import (
     get_db, create_note, get_note, get_note_by_slug, list_notes,
     update_note, delete_note, list_tags, get_or_create_tag,
     restore_note, permanent_delete_note, list_deleted_notes,
+    create_folder, list_folders, update_folder, delete_folder, get_folder_notes,
+    record_read, get_reading_stats, get_overall_stats,
+    create_notification, list_notifications, mark_read, mark_all_read,
 )
 from config import API_TOKEN, ADMIN_PASSWORD
 
@@ -584,6 +587,144 @@ def admin_verify(req: AdminVerifyRequest):
     if hmac.compare_digest(req.password, ADMIN_PASSWORD):
         return {"ok": True}
     raise HTTPException(401, "密码错误")
+
+
+# ===== 阅读统计 API =====
+
+@app.get("/api/stats")
+def api_stats(db: Session = Depends(get_db)):
+    """全局阅读统计"""
+    return get_overall_stats(db)
+
+@app.get("/api/stats/note/{note_id}")
+def api_note_stats(note_id: int, db: Session = Depends(get_db)):
+    """单篇笔记阅读统计"""
+    stat = get_reading_stats(db, note_id)
+    if not stat:
+        return {"read_count": 0, "total_read_time": 0, "last_read_at": None, "first_read_at": None}
+    return {
+        "read_count": stat.read_count,
+        "total_read_time": stat.total_read_time,
+        "last_read_at": stat.last_read_at.isoformat() if stat.last_read_at else None,
+        "first_read_at": stat.first_read_at.isoformat() if stat.first_read_at else None,
+    }
+
+@app.post("/api/stats/note/{note_id}/read")
+def api_record_read(note_id: int, db: Session = Depends(get_db)):
+    """记录一次阅读"""
+    note = get_note(db, note_id)
+    if not note:
+        raise HTTPException(404, "笔记不存在")
+    record_read(db, note_id)
+    return {"ok": True}
+
+
+# ===== 分类文件夹 API =====
+
+class FolderCreate(BaseModel):
+    name: str
+    icon: str = "folder"
+    color: str = "#c96442"
+    parent_id: Optional[int] = None
+
+class FolderUpdate(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    parent_id: Optional[int] = None
+    sort_order: Optional[int] = None
+
+@app.get("/api/folders")
+def api_list_folders(db: Session = Depends(get_db)):
+    """列出所有分类"""
+    folders = list_folders(db)
+    return [f.to_dict() for f in folders]
+
+@app.post("/api/folders")
+def api_create_folder(data: FolderCreate, db: Session = Depends(get_db)):
+    """创建分类"""
+    folder = create_folder(db, name=data.name, icon=data.icon, color=data.color, parent_id=data.parent_id)
+    return folder.to_dict()
+
+@app.put("/api/folders/{folder_id}")
+def api_update_folder(folder_id: int, data: FolderUpdate, db: Session = Depends(get_db)):
+    """更新分类"""
+    kwargs = {k: v for k, v in data.dict().items() if v is not None}
+    folder = update_folder(db, folder_id, **kwargs)
+    if not folder:
+        raise HTTPException(404, "分类不存在")
+    return folder.to_dict()
+
+@app.delete("/api/folders/{folder_id}")
+def api_delete_folder(folder_id: int, db: Session = Depends(get_db)):
+    """删除分类"""
+    folder = delete_folder(db, folder_id)
+    if not folder:
+        raise HTTPException(404, "分类不存在")
+    return {"ok": True, "deleted": folder.name}
+
+@app.get("/api/folders/{folder_id}/notes")
+def api_folder_notes(
+    folder_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """获取分类下的笔记"""
+    total, notes = get_folder_notes(db, folder_id, skip=skip, limit=limit)
+    return {"total": total, "notes": [n.to_dict() for n in notes]}
+
+@app.put("/api/notes/{note_id}/folder")
+def api_set_note_folder(note_id: int, folder_id: Optional[int] = None, db: Session = Depends(get_db)):
+    """设置笔记分类"""
+    note = get_note(db, note_id)
+    if not note:
+        raise HTTPException(404, "笔记不存在")
+    note.folder_id = folder_id
+    db.commit()
+    db.refresh(note)
+    return {"ok": True, "folder_id": folder_id}
+
+
+# ===== 通知 API =====
+
+@app.get("/api/notifications")
+def api_list_notifications(
+    limit: int = Query(50, ge=1, le=200),
+    unread_only: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    """获取通知列表"""
+    notifs = list_notifications(db, limit=limit, unread_only=unread_only)
+    return [n.to_dict() for n in notifs]
+
+@app.get("/api/notifications/unread-count")
+def api_unread_count(db: Session = Depends(get_db)):
+    """未读通知数"""
+    count = db.query(Notification).filter(Notification.is_read == False).count()
+    return {"count": count}
+
+@app.post("/api/notifications/{notif_id}/read")
+def api_mark_read(notif_id: int, db: Session = Depends(get_db)):
+    """标记已读"""
+    mark_read(db, notif_id)
+    return {"ok": True}
+
+@app.post("/api/notifications/read-all")
+def api_mark_all_read(db: Session = Depends(get_db)):
+    """全部已读"""
+    mark_all_read(db)
+    return {"ok": True}
+
+@app.delete("/api/notifications/{notif_id}")
+def api_delete_notification(notif_id: int, db: Session = Depends(get_db)):
+    """删除通知"""
+    notif = db.query(Notification).filter(Notification.id == notif_id).first()
+    if not notif:
+        raise HTTPException(404, "通知不存在")
+    db.delete(notif)
+    db.commit()
+    return {"ok": True}
 
 
 # ===== AI API =====
