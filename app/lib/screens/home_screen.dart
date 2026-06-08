@@ -80,27 +80,26 @@ class _HomeScreenState extends State<HomeScreen> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      if (mounted) {
-        final msg = e.toString().contains('SocketException')
-            ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
-            : '加载失败: $e';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            action: SnackBarAction(
-              label: '设置',
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => SettingsScreen(
-                    onToggleTheme: widget.onToggleTheme,
-                    isDark: widget.isDark,
-                    themeIndex: widget.themeIndex,
-                    onThemeChanged: widget.onThemeChanged,
-                  ))),
-            ),
+      final msg = e.toString().contains('SocketException')
+          ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
+          : '加载失败: $e';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          action: SnackBarAction(
+            label: '设置',
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => SettingsScreen(
+                  onToggleTheme: widget.onToggleTheme,
+                  isDark: widget.isDark,
+                  themeIndex: widget.themeIndex,
+                  onThemeChanged: widget.onThemeChanged,
+                ))),
           ),
-        );
-      }
+        ),
+      );
     }
   }
 

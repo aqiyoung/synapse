@@ -163,17 +163,17 @@ class ApiService {
     throw Exception('清除孤立笔记失败');
   }
 
-  /// 清除图谱中的垃圾边（自环、重复边）
-  static Future<Map<String, dynamic>> pruneGraph() async {
+  /// 分析图谱中的问题边（自环、重复边、stale 边）
+  static Future<Map<String, dynamic>> analyzeGraph() async {
     final response = await http.post(
-      Uri.parse('$baseUrl/graph/prune'),
+      Uri.parse('$baseUrl/graph/analyze'),
       headers: _headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('清理图谱失败');
+    throw Exception('分析图谱失败');
   }
 
   /// 统一修复入口，根据 type 调用对应修复方法
@@ -186,7 +186,7 @@ class ApiService {
       case 'no_tags':
         return fixNoTags();
       case 'prune':
-        return pruneGraph();
+        return analyzeGraph();
       default:
         throw Exception('未知修复类型: $type');
     }

@@ -32,7 +32,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _typingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
-    )..repeat();
+    );
   }
 
   @override
@@ -66,6 +66,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _messages.add(_ChatMessage(role: 'user', content: text));
       _isLoading = true;
     });
+    _typingController.repeat();
     _controller.clear();
     _focusNode.unfocus();
     _scrollToBottom();
@@ -106,6 +107,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ));
       });
     } finally {
+      _typingController.stop();
       setState(() => _isLoading = false);
       _scrollToBottom();
     }
@@ -226,7 +228,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         ),
                       )
                     : ListView.separated(
-                        controller: ScrollController(),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         itemCount: history.length,

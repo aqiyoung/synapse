@@ -1,44 +1,38 @@
 """FastAPI 路由"""
+import asyncio
+import hmac
 import logging
+import os
+import re
+import uuid
+import zipfile
+import io
+from datetime import datetime, timezone, timedelta
+from typing import List, Optional
 
-logger = logging.getLogger(__name__)
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import List, Optional
-import os, shutil, uuid, zipfile, io, asyncio
-from datetime import datetime, timezone, timedelta
+
+logger = logging.getLogger(__name__)
 
 from models import Tag, note_tags, Note
 from crud import (
-    init_db, get_db, create_note, get_note, get_note_by_slug, list_notes,
+    get_db, create_note, get_note, get_note_by_slug, list_notes,
     update_note, delete_note, list_tags, get_or_create_tag,
-    restore_note, permanent_delete_note, list_deleted_notes, backfill_slugs,
+    restore_note, permanent_delete_note, list_deleted_notes,
 )
 from config import API_TOKEN, ADMIN_PASSWORD
 
-# 初始化数据库
-init_db()
-
-# 自动迁移 slug
-from crud import SessionLocal, backfill_slugs
-_mig_db = SessionLocal()
-try:
-    _count = backfill_slugs(_mig_db)
-    if _count:
-        print(f"[迁移] 已为 {_count} 篇笔记生成 slug")
-finally:
-    _mig_db.close()
-
 app = FastAPI(title="知识库 API", version="1.1.0")
 
-# CORS
+# CORS - 从环境变量读取允许的源，默认只允许本地和自己的域名
+_cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost,http://127.0.0.1,https://wiki.threel.site").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure for your domain in production
+    allow_origins=[o.strip() for o in _cors_origins],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -68,6 +62,69 @@ def _make_snippet(content, keyword, max_len=150):
     # 转义 HTML 特殊字符，防止 XSS
     snippet = snippet.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     return snippet
+
+
+def _fts_search(db: Session, query_text: str, limit: int = 20, title_only: bool = False) -> list[int]:
+    """FTS5 全文搜索，返回笔记 ID 列表。失败时回退到 LIKE。"""
+    from sqlalchemy import text as sa_text
+
+    safe_q = re.sub(r'[^\w\s一-鿿]', '', query_text)
+    terms = safe_q.strip().split()
+    if not terms:
+        return []
+    match_expr = '"' + '" AND "'.join(terms) + '"'
+
+    if title_only:
+        fts_sql = sa_text("""
+            SELECT rowid FROM note_search
+            WHERE title MATCH :q AND rowid IN (SELECT id FROM notes WHERE deleted_at IS NULL)
+            ORDER BY rank LIMIT :limit
+        """)
+    else:
+        fts_sql = sa_text("""
+            SELECT rowid FROM note_search
+            WHERE note_search MATCH :q AND rowid IN (SELECT id FROM notes WHERE deleted_at IS NULL)
+            ORDER BY rank LIMIT :limit
+        """)
+
+    try:
+        rows = db.execute(fts_sql, {"q": match_expr, "limit": limit}).fetchall()
+        return [r[0] for r in rows]
+    except Exception:
+        # FTS5 失败时回退到 LIKE
+        _, notes_list = list_notes(db, keyword=query_text, limit=limit, title_only=title_only)
+        return [n.id for n in notes_list]
+
+
+def _find_orphan_notes(db: Session, notes: list) -> list:
+    """找出孤立笔记：无 outgoing wikilink、无 incoming 引用、无共享标签"""
+    all_titles = {n.title for n in notes}
+
+    # 收集所有被引用的标题
+    referenced = set()
+    for n in notes:
+        if n.content:
+            for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
+                referenced.add(m.group(1))
+
+    # 构建标签→笔记映射，共享标签的笔记互相关联
+    tag_note_map: dict[str, set] = {}
+    for n in notes:
+        for t in (n.tags or []):
+            tag_note_map.setdefault(t.name, set()).add(n.id)
+    shared_tag_notes = set()
+    for tag_name, note_ids in tag_note_map.items():
+        if len(note_ids) > 1:
+            shared_tag_notes.update(note_ids)
+
+    orphans = []
+    for n in notes:
+        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
+        has_incoming = n.title in referenced
+        has_shared_tag = n.id in shared_tag_notes
+        if not has_outgoing and not has_incoming and not has_shared_tag:
+            orphans.append(n)
+    return orphans
 
 
 # 公开接口不需要认证的路径
@@ -171,7 +228,8 @@ async def api_create_note(data: NoteCreate, db: Session = Depends(get_db)):
     if data.source_created_at:
         try:
             src = datetime.fromisoformat(data.source_created_at)
-        except: pass
+        except (ValueError, TypeError):
+            logger.warning(f"无效的 source_created_at 格式: {data.source_created_at}")
     note = create_note(db, title=data.title, content=data.content, tag_names=data.tags, source_created_at=src)
     if data.content and len(data.content) > 50:
         asyncio.create_task(_auto_analyze_note(note.id))
@@ -254,49 +312,10 @@ def api_search(
     db: Session = Depends(get_db),
 ):
     """全文搜索，使用 FTS5"""
-    from sqlalchemy import text as sa_text
-
-    # FTS5 查询：严格过滤用户输入，防止 FTS5 注入
-    # 只允许中文、英文、数字、空格，移除所有 FTS5 特殊字符（" * ^ OR AND NOT NEAR 等）
-    import re as _re
-    safe_q = _re.sub(r'[^\w\s一-鿿]', '', q)  # 只保留字字符和中文
-    # 分词：按空格分割，每个词用引号包裹支持 AND 匹配
-    terms = safe_q.strip().split()
-    if not terms:
-        return {"query": q, "total": 0, "results": []}
-    match_expr = '"' + '" AND "'.join(terms) + '"'
-
-    if filter == "title":
-        fts_sql = sa_text("""
-            SELECT rowid FROM note_search
-            WHERE title MATCH :q AND rowid IN (SELECT id FROM notes WHERE deleted_at IS NULL)
-            ORDER BY rank LIMIT :limit
-        """)
-    else:
-        fts_sql = sa_text("""
-            SELECT rowid FROM note_search
-            WHERE note_search MATCH :q AND rowid IN (SELECT id FROM notes WHERE deleted_at IS NULL)
-            ORDER BY rank LIMIT :limit
-        """)
-
-    try:
-        rows = db.execute(fts_sql, {"q": match_expr, "limit": limit}).fetchall()
-        ids = [r[0] for r in rows]
-    except Exception:
-        # FTS5 失败时回退到 LIKE
-        total, notes = list_notes(db, keyword=q, limit=limit, title_only=(filter == "title"))
-        results = []
-        for n in notes:
-            d = n.to_dict()
-            d["snippet"] = _make_snippet(n.content, q)
-            results.append(d)
-        return {"query": q, "total": total, "results": results}
-
+    ids = _fts_search(db, q, limit=limit, title_only=(filter == "title"))
     if not ids:
         return {"query": q, "total": 0, "results": []}
 
-    # 按 FTS5 返回顺序获取笔记（用 ORM 查询以获取 to_dict()）
-    from models import Note
     fts_notes = db.query(Note).filter(Note.id.in_(ids), Note.deleted_at.is_(None)).all()
     note_map = {n.id: n for n in fts_notes}
     ordered = [note_map[i] for i in ids if i in note_map]
@@ -532,6 +551,9 @@ def api_export_all_notes(
 def api_get_upload(filename: str):
     """获取上传的文件"""
     filepath = os.path.join(UPLOAD_DIR, filename)
+    # 防止路径穿越
+    if not os.path.realpath(filepath).startswith(os.path.realpath(UPLOAD_DIR)):
+        raise HTTPException(status_code=403, detail="禁止访问")
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="文件不存在")
     return FileResponse(filepath)
@@ -559,7 +581,7 @@ def admin_verify(req: AdminVerifyRequest):
     """验证管理员密码（服务端校验，密码不暴露在客户端）"""
     if not ADMIN_PASSWORD:
         raise HTTPException(500, "管理员密码未配置")
-    if req.password == ADMIN_PASSWORD:
+    if hmac.compare_digest(req.password, ADMIN_PASSWORD):
         return {"ok": True}
     raise HTTPException(401, "密码错误")
 
@@ -864,7 +886,7 @@ async def api_overview(db: Session = Depends(get_db)):
     # 统计标签使用
     tag_stats = []
     for t in tags:
-        count = len(t.notes)
+        count = t.note_count_query(db)
         if count > 0:
             tag_stats.append({"name": t.name, "count": count, "color": t.color})
     tag_stats.sort(key=lambda x: x["count"], reverse=True)
@@ -872,32 +894,8 @@ async def api_overview(db: Session = Depends(get_db)):
     # 统计最近活跃
     recent_notes = sorted(notes, key=lambda n: n.source_created_at or n.created_at or datetime.min, reverse=True)[:10]
 
-    # 统计孤立笔记（无 wikilink 引用 且 无标签关联）
-    import re
-    all_titles = {n.title for n in notes}
-    referenced = set()
-    for n in notes:
-        if n.content:
-            for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
-                referenced.add(m.group(1))
-
-    # 标签关联：共享标签的笔记互相关联
-    tag_note_map: dict[str, set] = {}
-    for n in notes:
-        for t in (n.tags or []):
-            tag_note_map.setdefault(t.name, set()).add(n.id)
-    shared_tag_notes = set()
-    for tag_name, note_ids in tag_note_map.items():
-        if len(note_ids) > 1:
-            shared_tag_notes.update(note_ids)
-
-    orphan_notes = []
-    for n in notes:
-        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
-        has_incoming = n.title in referenced
-        has_shared_tag = n.id in shared_tag_notes
-        if not has_outgoing and not has_incoming and not has_shared_tag:
-            orphan_notes.append({"id": n.id, "title": n.title})
+    # 孤立笔记
+    orphan_notes = [{"id": n.id, "title": n.title} for n in _find_orphan_notes(db, notes)]
 
     return {
         "total_notes": total,
@@ -917,9 +915,10 @@ async def ai_overview_generate(db: Session = Depends(get_db)):
 
     # 统计各标签的笔记数
     tag_counts = sorted(
-        [(t.name, len(t.notes)) for t in tags if t.notes],
+        [(t.name, t.note_count_query(db)) for t in tags],
         key=lambda x: -x[1]
     )
+    tag_counts = [(n, c) for n, c in tag_counts if c > 0]
 
     # 最近活跃笔记
     recent = sorted(notes, key=lambda n: n.updated_at or n.created_at, reverse=True)[:10]
@@ -927,7 +926,8 @@ async def ai_overview_generate(db: Session = Depends(get_db)):
     # 标签聚合：按标签归类笔记
     tag_notes: dict[str, list[str]] = {}
     for t in tags:
-        if t.notes:
+        count = t.note_count_query(db)
+        if count > 0:
             tag_notes[t.name] = [n.title for n in t.notes[:10]]
 
     # 无标签笔记数
@@ -936,7 +936,7 @@ async def ai_overview_generate(db: Session = Depends(get_db)):
     return {
         "overview": {
             "total_notes": total,
-            "total_tags": len([t for t in tags if t.notes]),
+            "total_tags": len(tag_counts),
             "no_tag_notes": no_tag_count,
             "top_tags": [{"name": n, "count": c} for n, c in tag_counts[:15]],
             "recent_notes": [n.title for n in recent],
@@ -948,55 +948,24 @@ async def ai_overview_generate(db: Session = Depends(get_db)):
 @app.post("/api/ai/lint")
 async def ai_lint(db: Session = Depends(get_db)):
     """Wiki 健康检查 - 借鉴 Karpathy Wiki 的 Lint 概念
-    
+
     检查项目：
-    1. 孤立笔记（无交叉引用）
+    1. 孤立笔记（无交叉引用且无共享标签）
     2. 断链（引用了不存在的笔记）
     3. 缺少标签的笔记
     4. 内容过短的笔记
-    5. 矛盾或重复内容
     """
-    import re
-
     total, notes = list_notes(db, limit=1000)
     tags = list_tags(db)
     all_titles = {n.title for n in notes}
-    title_to_id = {n.title: n.id for n in notes}
 
     issues = []
 
-    # 1. 孤立笔记（无交叉引用 且 无标签关联）
-    referenced = set()
-    for n in notes:
-        if n.content:
-            for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
-                referenced.add(m.group(1))
-
-    # 构建标签→笔记映射，共享标签的笔记互相关联
-    tag_note_map: dict[str, set] = {}  # tag_name -> set of note ids
-    for n in notes:
-        for t in (n.tags or []):
-            tag_note_map.setdefault(t.name, set()).add(n.id)
-    # 只保留有 2+ 笔记的标签（共享标签）
-    shared_tag_notes = set()
-    for tag_name, note_ids in tag_note_map.items():
-        if len(note_ids) > 1:
-            shared_tag_notes.update(note_ids)
-
-    # 已被标记为孤立的笔记，不再重复告警
+    # 1. 孤立笔记（排除已标记的）
     orphan_tagged_ids = {
         nt.note_id for nt in db.query(note_tags).join(Tag).filter(Tag.name == "孤立").all()
     }
-
-    orphans = []
-    for n in notes:
-        if n.id in orphan_tagged_ids:
-            continue
-        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
-        has_incoming = n.title in referenced
-        has_shared_tag = n.id in shared_tag_notes
-        if not has_outgoing and not has_incoming and not has_shared_tag:
-            orphans.append(n)
+    orphans = [n for n in _find_orphan_notes(db, notes) if n.id not in orphan_tagged_ids]
 
     if orphans:
         issues.append({
@@ -1044,9 +1013,15 @@ async def ai_lint(db: Session = Depends(get_db)):
         })
 
     # 5. 统计
+    referenced = set()
+    for n in notes:
+        if n.content:
+            for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
+                referenced.add(m.group(1))
+
     stats = {
         "total_notes": total,
-        "total_tags": len([t for t in tags if t.notes]),
+        "total_tags": len([t for t in tags if t.note_count_query(db) > 0]),
         "orphan_count": len(orphans),
         "broken_link_count": len(broken_links),
         "no_tag_count": len(no_tags),
@@ -1110,21 +1085,8 @@ async def lint_fix_orphans(req: LintFixRequest = None, db: Session = Depends(get
     if req is None:
         req = LintFixRequest()
     """修复孤立笔记：给孤立笔记添加 '孤立' 标签，方便用户批量处理"""
-    import re
-
     total, notes = list_notes(db, limit=1000)
-    referenced = set()
-    for n in notes:
-        if n.content:
-            for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
-                referenced.add(m.group(1))
-
-    orphans = []
-    for n in notes:
-        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
-        has_incoming = n.title in referenced
-        if not has_outgoing and not has_incoming:
-            orphans.append(n)
+    orphans = _find_orphan_notes(db, notes)
 
     if not req.dry_run:
         orphan_tag = db.query(Tag).filter(Tag.name == "孤立").first()
@@ -1136,7 +1098,6 @@ async def lint_fix_orphans(req: LintFixRequest = None, db: Session = Depends(get
     fixes = []
     for n in orphans:
         if not req.dry_run:
-            # 如果已经有"孤立"标签就跳过
             if orphan_tag not in n.tags:
                 n.tags.append(orphan_tag)
                 n.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
@@ -1273,16 +1234,14 @@ async def lint_fix_link_orphans(req: LintFixRequest = None, db: Session = Depend
     }
 
 
-@app.post("/api/graph/prune")
-async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
-    """清除图谱垃圾边：
+@app.post("/api/graph/analyze")
+async def graph_analyze(db: Session = Depends(get_db)):
+    """分析图谱问题边：
     1. 自环（source == target）
     2. 重复边
     3. 指向已删除笔记的边（stale）
-    返回清理统计和被清理的边列表
+    返回统计和问题边列表（只读，不修改数据）
     """
-    import re
-
     total, notes = list_notes(db, limit=1000, include_deleted=True)
     active_notes = [n for n in notes if n.deleted_at is None]
     all_titles = {n.title for n in active_notes}
@@ -1291,7 +1250,7 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
     duplicates = 0
     stale = 0
     edge_set = set()
-    pruned_edges = []
+    problem_edges = []
 
     for n in notes:
         if not n.content or n.deleted_at is not None:
@@ -1299,32 +1258,29 @@ async def graph_prune(req: LintFixRequest, db: Session = Depends(get_db)):
         for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
             target_title = m.group(1)
 
-            # 自环
             if target_title == n.title:
                 self_loops += 1
-                pruned_edges.append({"from": n.title, "to": target_title, "reason": "self_loop"})
+                problem_edges.append({"from": n.title, "to": target_title, "reason": "self_loop"})
                 continue
 
-            # 指向已删除笔记
             if target_title not in all_titles:
                 stale += 1
-                pruned_edges.append({"from": n.title, "to": target_title, "reason": "stale"})
+                problem_edges.append({"from": n.title, "to": target_title, "reason": "stale"})
                 continue
 
-            # 重复边
             key = (n.id, target_title)
             if key in edge_set:
                 duplicates += 1
-                pruned_edges.append({"from": n.title, "to": target_title, "reason": "duplicate"})
+                problem_edges.append({"from": n.title, "to": target_title, "reason": "duplicate"})
                 continue
             edge_set.add(key)
 
     return {
-        "fixed_count": self_loops + duplicates + stale,
+        "problem_count": self_loops + duplicates + stale,
         "self_loops": self_loops,
         "duplicates": duplicates,
         "stale_edges": stale,
-        "pruned_edges": pruned_edges[:20],
+        "problem_edges": problem_edges[:20],
     }
 
 
@@ -1398,26 +1354,28 @@ async def update_download(channel: str = Query("stable")):
     ]
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as gh_client:
             if channel == "stable":
-                resp = await client.get(
+                resp = await gh_client.get(
                     "https://api.github.com/repos/aqiyoung/synapse/releases/latest",
                     headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
                 )
+                if resp.status_code != 200:
+                    raise HTTPException(status_code=502, detail="获取版本信息失败")
+                data = resp.json()
             else:
-                resp = await client.get(
+                resp = await gh_client.get(
                     "https://api.github.com/repos/aqiyoung/synapse/releases",
                     headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Synapse"},
                 )
-                if resp.status_code == 200:
-                    releases = resp.json()
-                    beta_releases = [r for r in releases if r.get("prerelease")]
-                    if beta_releases:
-                        resp = type("Resp", (), {"status_code": 200, "json": lambda self=None: beta_releases[0]})()
+                if resp.status_code != 200:
+                    raise HTTPException(status_code=502, detail="获取版本信息失败")
+                releases = resp.json()
+                beta_releases = [r for r in releases if r.get("prerelease")]
+                if not beta_releases:
+                    raise HTTPException(status_code=404, detail="暂无 beta 版本")
+                data = beta_releases[0]
 
-            if resp.status_code != 200:
-                raise HTTPException(status_code=502, detail="获取版本信息失败")
-            data = resp.json()
             tag = data["tag_name"]
             version = tag.lstrip("v")
             apk_url = f"https://github.com/aqiyoung/synapse/releases/download/{tag}/synapse-v{version}.apk"
@@ -1464,34 +1422,10 @@ async def api_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
     if not is_enabled():
         raise HTTPException(status_code=503, detail="AI 未配置，请设置 LLM_API_KEY 环境变量")
 
-    # 1. 检索相关笔记
-    from sqlalchemy import text as sa_text
-    import re as _re
-
-    safe_q = _re.sub(r'[^\w\s一-鿿]', '', req.question)
-    terms = safe_q.strip().split()
-    if not terms:
-        raise HTTPException(status_code=400, detail="问题内容无效")
-
-    match_expr = '"' + '" AND "'.join(terms) + '"'
-    fts_sql = sa_text("""
-        SELECT rowid FROM note_search
-        WHERE note_search MATCH :q AND rowid IN (SELECT id FROM notes WHERE deleted_at IS NULL)
-        ORDER BY rank LIMIT :limit
-    """)
-
-    try:
-        rows = db.execute(fts_sql, {"q": match_expr, "limit": req.limit}).fetchall()
-        ids = [r[0] for r in rows]
-    except Exception:
-        # FTS5 失败时回退到 LIKE
-        _, notes_list = list_notes(db, keyword=req.question, limit=req.limit)
-        ids = [n.id for n in notes_list]
-
+    ids = _fts_search(db, req.question, limit=req.limit)
     if not ids:
         return {"answer": "知识库中没有找到相关内容。", "references": []}
 
-    # 2. 获取笔记内容
     notes = db.query(Note).filter(Note.id.in_(ids)).all()
     context_parts = []
     references = []
@@ -1501,7 +1435,6 @@ async def api_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
 
     context = "\n\n---\n\n".join(context_parts)
 
-    # 3. 构建 prompt
     system = """你是知识库助手。根据用户的问题和知识库中的相关内容，给出准确、简洁的回答。
 规则：
 - 只基于提供的知识库内容回答，不要编造信息
@@ -1513,9 +1446,7 @@ async def api_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
 
 用户问题：{req.question}"""
 
-    # 4. 生成回答
     answer = complete(prompt, system=system)
-
     return {"answer": answer, "references": references}
 
 
@@ -1526,29 +1457,7 @@ async def api_ai_chat_stream(req: ChatRequest, db: Session = Depends(get_db)):
     if not is_enabled():
         raise HTTPException(status_code=503, detail="AI 未配置")
 
-    # 检索相关笔记（同上）
-    from sqlalchemy import text as sa_text
-    import re as _re
-
-    safe_q = _re.sub(r'[^\w\s一-鿿]', '', req.question)
-    terms = safe_q.strip().split()
-    if not terms:
-        raise HTTPException(status_code=400, detail="问题内容无效")
-
-    match_expr = '"' + '" AND "'.join(terms) + '"'
-    fts_sql = sa_text("""
-        SELECT rowid FROM note_search
-        WHERE note_search MATCH :q AND rowid IN (SELECT id FROM notes WHERE deleted_at IS NULL)
-        ORDER BY rank LIMIT :limit
-    """)
-
-    try:
-        rows = db.execute(fts_sql, {"q": match_expr, "limit": req.limit}).fetchall()
-        ids = [r[0] for r in rows]
-    except Exception:
-        _, notes_list = list_notes(db, keyword=req.question, limit=req.limit)
-        ids = [n.id for n in notes_list]
-
+    ids = _fts_search(db, req.question, limit=req.limit)
     if not ids:
         async def empty():
             yield "data: 知识库中没有找到相关内容。\n\n"

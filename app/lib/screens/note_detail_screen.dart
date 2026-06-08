@@ -46,12 +46,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('加载失败: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('加载失败: $e')),
+      );
     }
   }
 

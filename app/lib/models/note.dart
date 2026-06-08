@@ -43,6 +43,32 @@ class Note {
       isPinned: json['is_pinned'] ?? false,
     );
   }
+
+  Note copyWith({
+    int? id,
+    String? slug,
+    String? title,
+    String? content,
+    String? summary,
+    List<String>? tags,
+    DateTime? createdAt,
+    DateTime? sourceCreatedAt,
+    DateTime? updatedAt,
+    bool? isPinned,
+  }) {
+    return Note(
+      id: id ?? this.id,
+      slug: slug ?? this.slug,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      summary: summary ?? this.summary,
+      tags: tags ?? this.tags,
+      createdAt: createdAt ?? this.createdAt,
+      sourceCreatedAt: sourceCreatedAt ?? this.sourceCreatedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isPinned: isPinned ?? this.isPinned,
+    );
+  }
 }
 
 class Tag {

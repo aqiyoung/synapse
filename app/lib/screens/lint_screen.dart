@@ -289,7 +289,7 @@ class _LintScreenState extends State<LintScreen> {
         severityIcon = Icons.info_outline;
     }
 
-    final fixableTypes = {'broken_link', 'orphan', 'no_tags', 'short_content'};
+    final fixableTypes = {'broken_link', 'orphan', 'no_tags'};
     final isFixable = fixableTypes.contains(type);
     final isFixing = _fixing.contains(type);
 

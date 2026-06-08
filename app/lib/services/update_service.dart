@@ -93,23 +93,24 @@ class UpdateService {
       if (lv != cv) return lv > cv;
     }
 
-    // 主版本号相同时，比较 beta 版本号
+    // 主版本号相同，比较 beta 状态
     final lBetaMatch = RegExp(r'-beta\.(\d+)').firstMatch(l);
     final cBetaMatch = RegExp(r'-beta\.(\d+)').firstMatch(c);
-    
-    if (lBetaMatch != null && cBetaMatch != null) {
-      // 都是 beta 版，比较 beta 版本号
-      final lBetaNum = int.parse(lBetaMatch.group(1)!);
-      final cBetaNum = int.parse(cBetaMatch.group(1)!);
+    final lBetaNum = lBetaMatch != null ? int.parse(lBetaMatch.group(1)!) : null;
+    final cBetaNum = cBetaMatch != null ? int.parse(cBetaMatch.group(1)!) : null;
+
+    if (lBetaNum != null && cBetaNum != null) {
+      // 都是 beta，比较 beta 号
       return lBetaNum > cBetaNum;
-    } else if (lBetaMatch != null) {
-      // latest 是 beta，current 不是 → beta 视为更新
-      return true;
-    } else if (cBetaMatch != null) {
-      // current 是 beta，latest 不是 → stable 视为更新
+    } else if (lBetaNum != null && cBetaNum == null) {
+      // latest 是 beta，current 是 stable → 不是更新
+      return false;
+    } else if (lBetaNum == null && cBetaNum != null) {
+      // latest 是 stable，current 是 beta → 是更新
       return true;
     }
 
+    // 都是 stable，版本号相同 → 不是更新
     return false;
   }
 

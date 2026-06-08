@@ -197,6 +197,14 @@ class _GraphWidgetState extends State<_GraphWidget>
       if (_graphNodes.isEmpty) return;
       _simulate();
       setState(() {});
+      // 检测平衡态：总动能低于阈值时停止 ticker，节省电量
+      double totalEnergy = 0;
+      for (final n in _graphNodes) {
+        totalEnergy += n.vx * n.vx + n.vy * n.vy;
+      }
+      if (totalEnergy < 0.01 && _dragNode == null) {
+        _ticker.stop();
+      }
     });
     _ticker.start();
   }
@@ -310,13 +318,10 @@ class _GraphWidgetState extends State<_GraphWidget>
       }
     }
 
-    // Center gravity + slight jitter to keep alive
+    // Center gravity
     for (final n in _graphNodes) {
       n.vx += (0 - n.x) * 0.001 * alpha;
       n.vy += (0 - n.y) * 0.001 * alpha;
-      // Tiny random jitter to prevent complete stillness
-      n.vx += (_random.nextDouble() - 0.5) * 0.05;
-      n.vy += (_random.nextDouble() - 0.5) * 0.05;
     }
 
     // Apply velocity
@@ -371,6 +376,7 @@ class _GraphWidgetState extends State<_GraphWidget>
         },
         onScaleStart: (details) {
           _resumeTimer?.cancel();
+          _ensureTickerRunning();
           _lastFocal = details.focalPoint;
           _panStart = details.focalPoint - _pan;
         },
