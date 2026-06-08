@@ -17,7 +17,7 @@ class ApiService {
     _token = token;
   }
 
-  static Map<String, String> get _headers => {
+  static Map<String, String> get headers => {
         'Content-Type': 'application/json',
         if (_token.isNotEmpty) 'Authorization': 'Bearer $_token',
       };
@@ -28,7 +28,7 @@ class ApiService {
     if (tag != null && tag.isNotEmpty) url += '&tag=${Uri.encodeQueryComponent(tag)}';
     if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeQueryComponent(search)}';
 
-    final response = await http.get(Uri.parse(url), headers: _headers);
+    final response = await http.get(Uri.parse(url), headers: headers);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final notes = (data['notes'] as List)
@@ -42,7 +42,7 @@ class ApiService {
   // 获取单个笔记
   static Future<Note> getNote(int id) async {
     final response =
-        await http.get(Uri.parse('$baseUrl/notes/$id'), headers: _headers);
+        await http.get(Uri.parse('$baseUrl/notes/$id'), headers: headers);
     if (response.statusCode == 200) {
       return Note.fromJson(json.decode(response.body));
     }
@@ -58,7 +58,7 @@ class ApiService {
 
     final response = await http.put(
       Uri.parse('$baseUrl/notes/$id'),
-      headers: _headers,
+      headers: headers,
       body: json.encode(body),
     );
     return response.statusCode == 200;
@@ -68,7 +68,7 @@ class ApiService {
   static Future<bool> togglePin(int noteId) async {
     final response = await http.patch(
       Uri.parse('$baseUrl/notes/$noteId/pin'),
-      headers: _headers,
+      headers: headers,
     );
     if (response.statusCode == 200) {
       return json.decode(response.body)['is_pinned'] ?? false;
@@ -80,7 +80,7 @@ class ApiService {
   static Future<Relations> getRelations(int id) async {
     final response = await http.get(
       Uri.parse('$baseUrl/notes/$id/relations'),
-      headers: _headers,
+      headers: headers,
     );
     if (response.statusCode == 200) {
       return Relations.fromJson(json.decode(response.body));
@@ -91,7 +91,7 @@ class ApiService {
   // 获取所有标签
   static Future<List<Tag>> getTags() async {
     final response =
-        await http.get(Uri.parse('$baseUrl/tags'), headers: _headers);
+        await http.get(Uri.parse('$baseUrl/tags'), headers: headers);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return (data as List).map((t) => Tag.fromJson(t)).toList();
@@ -107,7 +107,7 @@ class ApiService {
   // 获取图谱数据
   static Future<Map<String, dynamic>> getGraph() async {
     final response =
-        await http.get(Uri.parse('$baseUrl/graph'), headers: _headers);
+        await http.get(Uri.parse('$baseUrl/graph'), headers: headers);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -118,7 +118,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getLint() async {
     final response = await http.post(
       Uri.parse('$baseUrl/ai/lint'),
-      headers: _headers,
+      headers: headers,
     );
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -130,7 +130,7 @@ class ApiService {
   static Future<bool> deleteNote(int id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/notes/$id'),
-      headers: _headers,
+      headers: headers,
     );
     return response.statusCode == 200;
   }
@@ -141,7 +141,7 @@ class ApiService {
   static Future<Map<String, dynamic>> fixBrokenLinks() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/broken-links'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -154,7 +154,7 @@ class ApiService {
   static Future<Map<String, dynamic>> fixOrphans() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/orphans'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -167,7 +167,7 @@ class ApiService {
   static Future<Map<String, dynamic>> analyzeGraph() async {
     final response = await http.post(
       Uri.parse('$baseUrl/graph/analyze'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -196,7 +196,7 @@ class ApiService {
   static Future<Map<String, dynamic>> fixNoTags() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/no-tags'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -209,7 +209,7 @@ class ApiService {
   static Future<Map<String, dynamic>> linkOrphans() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/link-orphans'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -223,7 +223,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin/verify'),
-        headers: _headers,
+        headers: headers,
         body: json.encode({'password': password}),
       );
       if (response.statusCode == 200) {
@@ -239,7 +239,7 @@ class ApiService {
   static Future<Map<String, dynamic>> chat(String question, {int limit = 5}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/ai/chat'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({'question': question, 'limit': limit}),
     );
     if (response.statusCode == 200) {

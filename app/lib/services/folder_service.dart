@@ -6,7 +6,7 @@ import 'api_service.dart';
 
 class FolderService {
   static Future<List<Folder>> getFolders() async {
-    final r = await http.get(Uri.parse('${ApiService.baseUrl}/folders'), headers: ApiService._headers);
+    final r = await http.get(Uri.parse('${ApiService.baseUrl}/folders'), headers: ApiService.headers);
     if (r.statusCode == 200) {
       return (json.decode(r.body) as List).map((e) => Folder.fromJson(e)).toList();
     }
@@ -15,7 +15,7 @@ class FolderService {
 
   static Future<Folder?> createFolder({required String name, String icon = 'folder', String color = '#c96442', int? parentId}) async {
     final r = await http.post(Uri.parse('${ApiService.baseUrl}/folders'),
-      headers: ApiService._headers,
+      headers: ApiService.headers,
       body: json.encode({'name': name, 'icon': icon, 'color': color, 'parent_id': parentId}),
     );
     if (r.statusCode == 200) return Folder.fromJson(json.decode(r.body));
@@ -30,19 +30,19 @@ class FolderService {
     if (parentId != null) body['parent_id'] = parentId;
     if (sortOrder != null) body['sort_order'] = sortOrder;
     final r = await http.put(Uri.parse('${ApiService.baseUrl}/folders/$id'),
-      headers: ApiService._headers,
+      headers: ApiService.headers,
       body: json.encode(body),
     );
     return r.statusCode == 200;
   }
 
   static Future<bool> deleteFolder(int id) async {
-    final r = await http.delete(Uri.parse('${ApiService.baseUrl}/folders/$id'), headers: ApiService._headers);
+    final r = await http.delete(Uri.parse('${ApiService.baseUrl}/folders/$id'), headers: ApiService.headers);
     return r.statusCode == 200;
   }
 
   static Future<List<Note>> getFolderNotes(int folderId) async {
-    final r = await http.get(Uri.parse('${ApiService.baseUrl}/folders/$folderId/notes'), headers: ApiService._headers);
+    final r = await http.get(Uri.parse('${ApiService.baseUrl}/folders/$folderId/notes'), headers: ApiService.headers);
     if (r.statusCode == 200) {
       final data = json.decode(r.body);
       return (data['notes'] as List).map((n) => Note.fromJson(n)).toList();
@@ -52,7 +52,7 @@ class FolderService {
 
   static Future<bool> setNoteFolder(int noteId, int? folderId) async {
     final r = await http.put(Uri.parse('${ApiService.baseUrl}/notes/$noteId/folder'),
-      headers: ApiService._headers,
+      headers: ApiService.headers,
       body: json.encode({'folder_id': folderId}),
     );
     return r.statusCode == 200;
