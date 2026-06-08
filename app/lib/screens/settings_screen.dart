@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
 import '../services/update_service.dart';
+import '../services/notification_service.dart';
+import 'notifications_screen.dart';
 import '../models/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -32,6 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _versionTapCount = 0;
   String _currentVersion = '';
   String _updateChannel = 'stable';
+  bool _notificationsEnabled = true;
+  int _unreadCount = 0;
 
   // 管理员密码已改为服务端校验，不再硬编码在客户端
 
@@ -44,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _checkLoginState();
     _loadVersion();
     _loadUpdateChannel();
+    _loadNotificationState();
   }
 
   Future<void> _loadVersion() async {
@@ -57,6 +62,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return info.version;
     } catch (_) {
       return '2.2.4';
+    }
+  }
+
+  Future<void> _loadNotificationState() async {
+    final enabled = await NotificationService.isEnabled();
+    final count = await NotificationService.getUnreadCount();
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled = enabled;
+        _unreadCount = count;
+      });
     }
   }
 
@@ -459,6 +475,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
           _buildThemeGrid(colorScheme),
+          const SizedBox(height: 24),
+          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          // ── 通知设置 ──
+          Text(
+            '通知',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            title: const Text('推送通知'),
+            subtitle: const Text('接收系统通知和更新提醒'),
+            value: _notificationsEnabled,
+            onChanged: (v) async {
+              await NotificationService.setEnabled(v);
+              setState(() => _notificationsEnabled = v);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications_outlined),
+            title: const Text('通知中心'),
+            trailing: _unreadCount > 0
+                ? Badge(label: Text('$_unreadCount'))
+                : null,
+            onTap: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(themeIndex: widget.themeIndex)));
+              _loadNotificationState();
+            },
+          ),
           const SizedBox(height: 24),
           Divider(color: colorScheme.outline.withOpacity(0.1)),
           const SizedBox(height: 16),
