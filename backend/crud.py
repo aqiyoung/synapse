@@ -1,7 +1,7 @@
 """数据库 CRUD 操作"""
 from sqlalchemy import create_engine, text, or_, func, IntegrityError
 from sqlalchemy.orm import sessionmaker, Session, joinedload
-from models import Base, Note, Tag, note_tags
+from models import Base, Note, Tag, Folder, ReadingStats, Notification, note_tags
 from datetime import datetime, timezone, timedelta
 import os
 
@@ -279,3 +279,105 @@ def get_or_create_tag(db: Session, name: str) -> Tag:
         db.commit()
         db.refresh(tag)
     return tag
+
+
+# === Folder CRUD ===
+
+def create_folder(db, name, icon="folder", color="#c96442", parent_id=None, sort_order=0):
+    folder = Folder(name=name, icon=icon, color=color, parent_id=parent_id, sort_order=sort_order)
+    db.add(folder)
+    db.commit()
+    db.refresh(folder)
+    return folder
+
+def list_folders(db):
+    return db.query(Folder).order_by(Folder.sort_order, Folder.name).all()
+
+def update_folder(db, folder_id, **kwargs):
+    folder = db.query(Folder).filter(Folder.id == folder_id).first()
+    if not folder: return None
+    for k, v in kwargs.items():
+        if hasattr(folder, k): setattr(folder, k, v)
+    db.commit()
+    db.refresh(folder)
+    return folder
+
+def delete_folder(db, folder_id):
+    folder = db.query(Folder).filter(Folder.id == folder_id).first()
+    if not folder: return None
+    db.query(Note).filter(Note.folder_id == folder_id).update({"folder_id": None})
+    db.delete(folder)
+    db.commit()
+    return folder
+
+def get_folder_notes(db, folder_id, skip=0, limit=50):
+    total = db.query(Note).filter(Note.folder_id == folder_id, Note.deleted_at.is_(None)).count()
+    notes = db.query(Note).filter(Note.folder_id == folder_id, Note.deleted_at.is_(None)).order_by(Note.updated_at.desc()).offset(skip).limit(limit).all()
+    return total, notes
+
+
+# === Stats CRUD ===
+
+def record_read(db, note_id):
+    stat = db.query(ReadingStats).filter(ReadingStats.note_id == note_id).first()
+    now = datetime.now(tz=timezone(timedelta(hours=8)))
+    if not stat:
+        stat = ReadingStats(note_id=note_id, read_count=1, first_read_at=now, last_read_at=now)
+        db.add(stat)
+    else:
+        stat.read_count += 1
+        stat.last_read_at = now
+    db.commit()
+
+def get_reading_stats(db, note_id):
+    return db.query(ReadingStats).filter(ReadingStats.note_id == note_id).first()
+
+def get_overall_stats(db):
+    total_notes = db.query(Note).filter(Note.deleted_at.is_(None)).count()
+    total_tags = db.query(Tag).count()
+    total_reads = db.query(func.sum(ReadingStats.read_count)).scalar() or 0
+    total_read_time = db.query(func.sum(ReadingStats.total_read_time)).scalar() or 0
+    week_ago = datetime.now(tz=timezone(timedelta(hours=8))) - timedelta(days=7)
+    recent_reads = db.query(func.sum(ReadingStats.read_count)).filter(ReadingStats.last_read_at >= week_ago).scalar() or 0
+    hot_notes = db.query(Note, ReadingStats.read_count).join(ReadingStats).filter(Note.deleted_at.is_(None)).order_by(ReadingStats.read_count.desc()).limit(10).all()
+    thirty_days_ago = datetime.now(tz=timezone(timedelta(hours=8))) - timedelta(days=30)
+    daily = db.query(
+        func.date(ReadingStats.last_read_at).label('date'),
+        func.sum(ReadingStats.read_count).label('count')
+    ).filter(ReadingStats.last_read_at >= thirty_days_ago).group_by(func.date(ReadingStats.last_read_at)).all()
+    return {
+        "total_notes": total_notes,
+        "total_tags": total_tags,
+        "total_reads": total_reads,
+        "total_read_time": total_read_time,
+        "recent_reads": recent_reads,
+        "hot_notes": [{"id": n.id, "title": n.title, "reads": c} for n, c in hot_notes],
+        "daily_trend": [{"date": str(d.date), "count": d.count} for d in daily],
+    }
+
+
+# === Notification CRUD ===
+
+def create_notification(db, title, body="", type="system", action_url=None):
+    notif = Notification(title=title, body=body, type=type, action_url=action_url)
+    db.add(notif)
+    db.commit()
+    db.refresh(notif)
+    return notif
+
+def list_notifications(db, limit=50, unread_only=False):
+    q = db.query(Notification)
+    if unread_only:
+        q = q.filter(Notification.is_read == False)
+    return q.order_by(Notification.created_at.desc()).limit(limit).all()
+
+def mark_read(db, notif_id):
+    notif = db.query(Notification).filter(Notification.id == notif_id).first()
+    if notif:
+        notif.is_read = True
+        db.commit()
+    return notif
+
+def mark_all_read(db):
+    db.query(Notification).filter(Notification.is_read == False).update({"is_read": True})
+    db.commit()
