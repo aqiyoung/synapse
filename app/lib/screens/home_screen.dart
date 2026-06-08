@@ -12,6 +12,9 @@ import 'mine_screen.dart';
 import 'chat_screen.dart';
 import '../widgets/tag_chip.dart';
 import '../services/update_service.dart';
+import '../services/notification_service.dart';
+import '../services/stats_service.dart';
+import '../models/stats.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -185,8 +188,35 @@ class _HomeScreenState extends State<HomeScreen> {
             label: _isChinese ? 'AI' : 'AI',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline,
-                color: colorScheme.onSurface.withOpacity(0.6)),
+            icon: FutureBuilder<int>(
+              future: NotificationService.getUnreadCount(),
+              builder: (ctx, snap) {
+                final count = snap.data ?? 0;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(Icons.person_outline,
+                        color: colorScheme.onSurface.withOpacity(0.6)),
+                    if (count > 0)
+                      Positioned(
+                        right: -6,
+                        top: -3,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                              color: Colors.red, shape: BoxShape.circle),
+                          constraints: const BoxConstraints(
+                              minWidth: 14, minHeight: 14),
+                          child: Text('$count',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 8),
+                              textAlign: TextAlign.center),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
             selectedIcon: Icon(Icons.person, color: colorScheme.primary),
             label: _isChinese ? '我的' : 'Mine',
           ),
@@ -321,6 +351,31 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+          // Quick stats row
+          FutureBuilder<OverallStats>(
+            future: StatsService.getOverall(),
+            builder: (ctx, snap) {
+              if (!snap.hasData) return const SizedBox();
+              final stats = snap.data!;
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _quickStat('📝', '${stats.totalNotes}', '笔记'),
+                    _quickStat('🏷️', '${stats.totalTags}', '标签'),
+                    _quickStat('📖', '${stats.totalReads}', '阅读'),
+                  ],
+                ),
+              );
+            },
+          ),
+
           // Tags
           if (_tags.isNotEmpty)
             Container(
@@ -720,6 +775,30 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _quickStat(String emoji, String value, String label) {
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 20)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+        ),
+      ],
     );
   }
 

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/update_service.dart';
+import '../services/notification_service.dart';
 import 'settings_screen.dart';
 import 'lint_screen.dart';
+import 'stats_screen.dart';
+import 'folders_screen.dart';
+import 'notifications_screen.dart';
 
 class MineScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -193,6 +197,40 @@ class _MineScreenState extends State<MineScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+
+          // 阅读统计
+          ListTile(
+            leading: const Icon(Icons.bar_chart),
+            title: const Text('阅读统计'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StatsScreen(themeIndex: widget.themeIndex))),
+          ),
+
+          // 分类管理
+          ListTile(
+            leading: const Icon(Icons.folder_open),
+            title: const Text('分类管理'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FoldersScreen(themeIndex: widget.themeIndex))),
+          ),
+
+          // 通知中心
+          ListTile(
+            leading: const Icon(Icons.notifications_outlined),
+            title: const Text('通知中心'),
+            trailing: FutureBuilder<int>(
+              future: NotificationService.getUnreadCount(),
+              builder: (ctx, snap) {
+                final count = snap.data ?? 0;
+                return count > 0
+                    ? Badge(label: Text('$count'))
+                    : const Icon(Icons.chevron_right);
+              },
+            ),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(themeIndex: widget.themeIndex))),
+          ),
+
           const SizedBox(height: 20),
 
           // 关于信息
