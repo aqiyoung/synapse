@@ -1,6 +1,7 @@
 """向量搜索模块 - 使用SiliconFlow Embedding API实现RAG"""
 
 import json
+import os
 import requests
 import numpy as np
 from typing import List, Tuple
@@ -10,14 +11,17 @@ from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
-# SiliconFlow配置（从openclaw复用）
-SILICONFLOW_API_KEY = "sk-dbagbhhfsydarnnypjwyzhfusdriykjsigzjdpmuswpamvem"
-SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
+# SiliconFlow配置（从环境变量读取，失败则启动时明确报错，不要用默认值隐藏配错）
+SILICONFLOW_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
+SILICONFLOW_BASE_URL = os.environ.get("SILICONFLOW_BASE_URL", "https://api.siliconflow.cn/v1")
 EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-0.6B"
 
 
 def get_embedding(text: str) -> List[float]:
     """获取文本的向量表示"""
+    if not SILICONFLOW_API_KEY:
+        logger.error("SILICONFLOW_API_KEY 未设置（请在 .env 中配置或设置环境变量）")
+        return None
     try:
         response = requests.post(
             f"{SILICONFLOW_BASE_URL}/embeddings",

@@ -17,6 +17,7 @@ class NoteDetailScreen extends StatefulWidget {
 
 class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Note? _note;
+  Relations? _relations;
   bool _loading = true;
   bool _isAdmin = false;
 
@@ -25,6 +26,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     super.initState();
     _checkAdmin();
     _loadNote();
+    _loadRelations();
   }
 
   Future<void> _checkAdmin() async {
@@ -32,6 +34,18 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     setState(() {
       _isAdmin = prefs.getBool('admin_logged_in') ?? false;
     });
+  }
+
+  Future<void> _loadRelations() async {
+    try {
+      final relations = await ApiService.getRelations(widget.noteId);
+      if (!mounted) return;
+      setState(() {
+        _relations = relations;
+      });
+    } catch (_) {
+      // 关联加载失败不阻塞主流程
+    }
   }
 
 
@@ -260,8 +274,146 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           const SizedBox(height: 24),
           // Content - split into markdown segments and code blocks
           _buildMixedContent(colorScheme),
+          // 关联笔记（恢复 776e360 删除的模块）
+          if (_hasRelations()) ...[
+            const SizedBox(height: 32),
+            _buildRelationsSection(colorScheme),
+          ],
           const SizedBox(height: 80),
         ],
+      ),
+    );
+  }
+
+  bool _hasRelations() {
+    if (_relations == null) return false;
+    return _relations!.outgoing.isNotEmpty || _relations!.incoming.isNotEmpty;
+  }
+
+  Widget _buildRelationsSection(ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.link, size: 18, color: colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              '关联笔记',
+              style: TextStyle(
+                fontFamily: 'MiSans',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_relations!.outgoing.isNotEmpty) ...[
+          _buildRelationGroup(
+            label: '本文引用',
+            icon: Icons.arrow_outward,
+            notes: _relations!.outgoing,
+            colorScheme: colorScheme,
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (_relations!.incoming.isNotEmpty)
+          _buildRelationGroup(
+            label: '被引用',
+            icon: Icons.subdirectory_arrow_right,
+            notes: _relations!.incoming,
+            colorScheme: colorScheme,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRelationGroup({
+    required String label,
+    required IconData icon,
+    required List<Map<String, dynamic>> notes,
+    required ColorScheme colorScheme,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+              const SizedBox(width: 4),
+              Text(
+                '$label · ${notes.length}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...notes.map((n) => _buildRelationTile(n, colorScheme)),
+      ],
+    );
+  }
+
+  Widget _buildRelationTile(Map<String, dynamic> note, ColorScheme colorScheme) {
+    final id = note['id'] as int?;
+    final title = (note['title'] as String?) ?? '未命名';
+    if (id == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NoteDetailScreen(noteId: id),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.08),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.article_outlined,
+                size: 16,
+                color: colorScheme.primary.withOpacity(0.7),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurface,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: colorScheme.onSurface.withOpacity(0.3),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

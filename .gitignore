@@ -58,6 +58,8 @@ app/android/app/*.jks
 # Environment
 .env
 .env.*
+# 例外：.env.example 是模板，允许入库
+!.env.example
 
 # Temporary files
 *.tmp
