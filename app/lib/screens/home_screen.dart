@@ -266,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onChanged: (value) {
                     _searchDebounce?.cancel();
                     _searchDebounce = Timer(
-                      const Duration(milliseconds: 300),
+                      const Duration(milliseconds: 500),  // 从 300ms 调到 500ms，减少中间请求
                       () => _onSearch(value),
                     );
                   },
@@ -450,6 +450,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         onRefresh: _loadData,
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(vertical: 8),
+                          // 性能优化：预构建额外 item 减少滚动时的重建
+                          cacheExtent: 600,
+                          // 不设置 itemExtent（笔记高度可变，有/无 summary）
                           itemCount: _notes.length,
                           itemBuilder: (context, index) =>
                               _buildNoteItem(_notes[index], colorScheme),

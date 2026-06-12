@@ -1,7 +1,7 @@
 """数据库 CRUD 操作"""
 from sqlalchemy import create_engine, text, or_, func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker, Session, joinedload
+from sqlalchemy.orm import sessionmaker, Session, joinedload, selectinload
 from models import Base, Note, Tag, Folder, ReadingStats, Notification, note_tags
 from datetime import datetime, timezone, timedelta
 import os
@@ -15,6 +15,52 @@ def init_db():
     """初始化数据库"""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     Base.metadata.create_all(engine)
+
+    # 性能优化：显式创建复合/部分索引
+    # create_all 只覆盖 __table_args__/index=True 声明，单列索引已建；
+    # 这里补建 list_notes / stats 用的复合索引与部分索引
+    with engine.connect() as conn:
+        # 笔记列表排序：置顶优先 + source_created_at DESC（NULL 排后）
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_notes_pinned_srcdate "
+            "ON notes(is_pinned DESC, source_created_at DESC)"
+        ))
+        # 按 updated_at 排（如 folder 笔记）
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_notes_updated_at "
+            "ON notes(updated_at DESC) WHERE deleted_at IS NULL"
+        ))
+        # deleted_at 过滤：大部分查询都需要
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_notes_deleted_at "
+            "ON notes(deleted_at) WHERE deleted_at IS NULL"
+        ))
+        # folder_id 过滤
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_notes_folder_id "
+            "ON notes(folder_id) WHERE folder_id IS NOT NULL AND deleted_at IS NULL"
+        ))
+        # 标签-笔记反向查询（删除标签、计数）
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_note_tags_tag_note "
+            "ON note_tags(tag_id, note_id)"
+        ))
+        # 阅读统计：按 last_read_at 排序 + 过滤
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_reading_stats_last_read "
+            "ON reading_stats(last_read_at DESC)"
+        ))
+        # 通知：按 created_at DESC
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_notifications_created_at "
+            "ON notifications(created_at DESC)"
+        ))
+        # 通知未读过滤
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_notifications_unread "
+            "ON notifications(is_read) WHERE is_read = 0"
+        ))
+        conn.commit()
 
     # 创建 FTS5 全文搜索表
     with engine.connect() as conn:
@@ -115,8 +161,13 @@ def create_note(db: Session, title: str, content: str, tag_names: list = None, s
 
 
 def get_note(db: Session, note_id: int) -> Note:
-    """获取单条笔记"""
-    return db.query(Note).filter(Note.id == note_id).first()
+    """获取单条笔记（预加载标签和文件夹，1 次 JOIN 查询代替 N+1）"""
+    return (
+        db.query(Note)
+        .options(joinedload(Note.folder), selectinload(Note.tags))
+        .filter(Note.id == note_id)
+        .first()
+    )
 
 
 def get_note_by_slug(db: Session, slug: str) -> Note:
@@ -174,7 +225,12 @@ def list_notes(db: Session, skip: int = 0, limit: int = 50, tag: str = None, key
             )
 
     total = query.count()
-    notes = query.order_by(Note.is_pinned.desc(), Note.source_created_at.desc().nulls_last(), Note.created_at.desc()).offset(skip).limit(limit).all()
+    notes = (
+        query
+        .options(joinedload(Note.folder), selectinload(Note.tags))
+        .order_by(Note.is_pinned.desc(), Note.source_created_at.desc().nulls_last(), Note.created_at.desc())
+        .offset(skip).limit(limit).all()
+    )
     return total, notes
 
 
