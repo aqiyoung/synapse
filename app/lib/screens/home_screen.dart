@@ -14,8 +14,6 @@ import '../widgets/tag_chip.dart';
 import '../widgets/glass_container.dart';
 import '../services/update_service.dart';
 import '../services/notification_service.dart';
-import '../services/stats_service.dart';
-import '../models/stats.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -346,77 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           horizontal: 12, vertical: 10),
                     ),
                   ),
-                  // 搜索历史
-                  if (_searchHistory.isNotEmpty && _searchQuery.isEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: _searchHistory.map((item) {
-                        return GestureDetector(
-                          onTap: () {
-                            _searchController.text = item;
-                            _onSearch(item);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surface.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: colorScheme.outline.withOpacity(0.15),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.history,
-                                    size: 14,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.4)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  item,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                  // 快速统计
-                  FutureBuilder<OverallStats>(
-                    future: StatsService.getOverall(),
-                    builder: (ctx, snap) {
-                      if (!snap.hasData) return const SizedBox.shrink();
-                      final stats = snap.data!;
-                      return Container(
-                        margin: const EdgeInsets.only(top: 10),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _quickStat('📝', '${stats.totalNotes}', '笔记'),
-                            _quickStat('🏷️', '${stats.totalTags}', '标签'),
-                            _quickStat('📖', '${stats.totalReads}', '阅读'),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  // 标签栏
+                  // 标签栏（过滤日期和无意义标签，按热度排序，随机显示5个热门标签）
                   if (_tags.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
@@ -434,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 onTap: () => _onTagSelected(''),
                               ),
                             ),
-                            ..._tags.take(5).map((tag) => Padding(
+                            ..._getPopularTags().map((tag) => Padding(
                                   padding: const EdgeInsets.only(right: 8),
                                   child: TagChip(
                                     label: tag.name,
@@ -446,12 +374,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                    ),
-                  // 更新提示 banner
-                  if (UpdateService().hasUpdate)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: _buildUpdateBanner(colorScheme),
                     ),
                 ],
               ),
@@ -508,131 +430,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildUpdateBanner(ColorScheme colorScheme) {
-    final update = UpdateService();
-    final info = update.cached!;
-
-    return GestureDetector(
-      onTap: () => _showUpdateDialog(colorScheme),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              colorScheme.primary.withOpacity(0.1),
-              colorScheme.primary.withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: colorScheme.primary.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.system_update, size: 20, color: colorScheme.primary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '新版本 v${info.latestVersion} 可用',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        info.releaseNotes!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurface.withOpacity(0.5),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, size: 14, color: colorScheme.primary),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showUpdateDialog(ColorScheme colorScheme) {
-    final info = UpdateService().cached!;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.system_update, color: colorScheme.primary, size: 24),
-            const SizedBox(width: 8),
-            Text('v${info.latestVersion}', style: const TextStyle(fontSize: 18)),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty) ...[
-                Text(
-                  '更新内容',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  info.releaseNotes!,
-                  style: TextStyle(fontSize: 14, height: 1.6, color: colorScheme.onSurface),
-                ),
-              ] else
-                Text(
-                  '发现新版本，是否前往下载？',
-                  style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('取消', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              UpdateService().downloadUpdate();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('更新'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -828,30 +625,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _quickStat(String emoji, String value, String label) {
-    return Column(
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 20)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-          ),
-        ),
-      ],
-    );
-  }
-
   String _formatTimeAgo(DateTime? dateTime) {
     if (dateTime == null) return '';
     final now = DateTime.now();
@@ -862,5 +635,36 @@ class _HomeScreenState extends State<HomeScreen> {
     if (diff.inDays < 1) return '${diff.inHours}小时前';
     if (diff.inDays < 30) return '${diff.inDays}天前';
     return '${dateTime.month}月${dateTime.day}日';
+  }
+
+  /// 获取热门标签（过滤日期和无意义标签，按热度排序，随机选择5个）
+  List<Tag> _getPopularTags() {
+    // 过滤掉日期格式和无意义标签
+    final filteredTags = _tags.where((tag) {
+      final name = tag.name.trim();
+
+      // 过滤日期格式：2026、2026-04、2026-05 等
+      if (RegExp(r'^\d{4}(-\d{2})?$').hasMatch(name)) return false;
+
+      // 过滤无意义标签（太短或明显无意义）
+      if (name.length <= 1) return false;
+      if (['了什么', '的工', '的工作', '入十几', '入十几万', '什么', '现在', '需要', '全天'].contains(name)) return false;
+
+      // 过滤note_count为0的标签
+      if (tag.noteCount <= 0) return false;
+
+      return true;
+    }).toList();
+
+    // 按热度排序（note_count降序）
+    filteredTags.sort((a, b) => b.noteCount.compareTo(a.noteCount));
+
+    // 取前20个热门标签，然后随机选择5个
+    final topTags = filteredTags.take(20).toList();
+    if (topTags.length <= 5) return topTags;
+
+    // 随机选择5个（使用固定的种子，保证同一会话内顺序一致）
+    topTags.shuffle();
+    return topTags.take(5).toList();
   }
 }

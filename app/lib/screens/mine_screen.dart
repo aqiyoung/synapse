@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/update_service.dart';
-import '../services/notification_service.dart';
 import 'settings_screen.dart';
 import 'lint_screen.dart';
-import 'stats_screen.dart';
-import 'folders_screen.dart';
-import 'notifications_screen.dart';
+import '../widgets/glass_container.dart';
 
 class MineScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -58,87 +55,65 @@ class _MineScreenState extends State<MineScreen> {
     return Container(
       color: colorScheme.surface,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 16),
+        padding: EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top + 8, 8, 16),
         children: [
-          // 头部 - 版本信息（无边框）
-          Column(
-            children: [
-              // Logo
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.7),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.psychology,
-                  size: 36,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Synapse',
-                style: TextStyle(
-                  fontFamily: 'MiSans',
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Slogan
-              Text(
-                '记录思考，连接知识',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '让每一个想法都有归处',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSurface.withOpacity(0.5),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // 版本号
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'v$_version',
+          // 液态玻璃 Header
+          GlassContainer(
+            margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.45,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            child: Column(
+              children: [
+                Text(
+                  'Synapse',
                   style: TextStyle(
-                    fontSize: 11,
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500,
+                    fontFamily: 'MiSans',
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                    letterSpacing: 1.2,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                // Slogan
+                Text(
+                  '记录思考，连接知识',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '让每一个想法都有归处',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // 版本号
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'v$_version',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -154,26 +129,6 @@ class _MineScreenState extends State<MineScreen> {
                     context,
                     MaterialPageRoute(builder: (_) => const LintScreen()),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickAction(
-                  colorScheme,
-                  icon: Icons.system_update_outlined,
-                  label: '检查更新',
-                  onTap: () async {
-                    await UpdateService().check();
-                    if (!mounted) return;
-                    setState(() {});
-                    if (UpdateService().hasUpdate) {
-                      _showUpdateDialog(colorScheme);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已是最新版本')),
-                      );
-                    }
-                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -197,40 +152,6 @@ class _MineScreenState extends State<MineScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-
-          // 阅读统计
-          ListTile(
-            leading: const Icon(Icons.bar_chart),
-            title: const Text('阅读统计'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StatsScreen(themeIndex: widget.themeIndex))),
-          ),
-
-          // 分类管理
-          ListTile(
-            leading: const Icon(Icons.folder_open),
-            title: const Text('分类管理'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FoldersScreen(themeIndex: widget.themeIndex))),
-          ),
-
-          // 通知中心
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('通知中心'),
-            trailing: FutureBuilder<int>(
-              future: NotificationService.getUnreadCount(),
-              builder: (ctx, snap) {
-                final count = snap.data ?? 0;
-                return count > 0
-                    ? Badge(label: Text('$count'))
-                    : const Icon(Icons.chevron_right);
-              },
-            ),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(themeIndex: widget.themeIndex))),
-          ),
-
           const SizedBox(height: 20),
 
           // 关于信息

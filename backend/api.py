@@ -97,7 +97,13 @@ def _fts_search(db: Session, query_text: str, limit: int = 20, title_only: bool 
 
     try:
         rows = db.execute(fts_sql, {"q": match_expr, "limit": limit}).fetchall()
-        return [r[0] for r in rows]
+        fts_results = [r[0] for r in rows]
+        # 如果FTS5返回结果，使用FTS5结果
+        if fts_results:
+            return fts_results
+        # FTS5返回空时，回退到LIKE搜索（支持中文分词）
+        _, notes_list = list_notes(db, keyword=query_text, limit=limit, title_only=title_only)
+        return [n.id for n in notes_list]
     except Exception:
         # FTS5 失败时回退到 LIKE
         _, notes_list = list_notes(db, keyword=query_text, limit=limit, title_only=title_only)
@@ -1617,6 +1623,24 @@ class ChatRequest(BaseModel):
     limit: int = 5  # 检索笔记数量
 
 
+def _smart_search(db: Session, query: str, limit: int = 5) -> list[int]:
+    """智能搜索：优先使用向量搜索，回退到FTS搜索"""
+    from vector_search import vector_search, get_index_stats
+
+    # 检查是否有向量索引
+    stats = get_index_stats(db)
+    if stats["total_notes"] > 0:
+        # 使用向量搜索
+        ids = vector_search(db, query, limit=limit)
+        if ids:
+            logger.info(f"向量搜索成功: {len(ids)} 个结果")
+            return ids
+
+    # 回退到FTS搜索
+    logger.info("回退到FTS搜索")
+    return _fts_search(db, query, limit=limit)
+
+
 @app.post("/api/ai/chat")
 async def api_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
     """RAG 对话：检索知识库 + LLM 生成回答"""
@@ -1624,7 +1648,7 @@ async def api_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
     if not is_enabled():
         raise HTTPException(status_code=503, detail="AI 未配置，请设置 LLM_API_KEY 环境变量")
 
-    ids = _fts_search(db, req.question, limit=req.limit)
+    ids = _smart_search(db, req.question, limit=req.limit)
     if not ids:
         return {"answer": "知识库中没有找到相关内容。", "references": []}
 
@@ -1659,7 +1683,7 @@ async def api_ai_chat_stream(req: ChatRequest, db: Session = Depends(get_db)):
     if not is_enabled():
         raise HTTPException(status_code=503, detail="AI 未配置")
 
-    ids = _fts_search(db, req.question, limit=req.limit)
+    ids = _smart_search(db, req.question, limit=req.limit)
     if not ids:
         async def empty():
             yield "data: 知识库中没有找到相关内容。\n\n"
@@ -1698,6 +1722,37 @@ async def api_ai_chat_stream(req: ChatRequest, db: Session = Depends(get_db)):
 
     from fastapi.responses import StreamingResponse
     return StreamingResponse(stream_with_refs(), media_type="text/event-stream")
+
+
+@app.post("/api/ai/build-index")
+async def api_build_vector_index(db: Session = Depends(get_db)):
+    """构建向量索引"""
+    from vector_search import build_index, get_index_stats
+
+    # 获取所有未删除的笔记
+    notes = db.query(Note).filter(Note.deleted_at.is_(None)).all()
+    notes_data = [(n.id, n.title, n.content) for n in notes]
+
+    # 构建索引
+    indexed = build_index(db, notes_data, batch_size=5)
+
+    # 获取统计
+    stats = get_index_stats(db)
+
+    return {
+        "success": True,
+        "indexed": indexed,
+        "total": len(notes_data),
+        "stats": stats
+    }
+
+
+@app.get("/api/ai/index-stats")
+async def api_get_index_stats(db: Session = Depends(get_db)):
+    """获取向量索引统计信息"""
+    from vector_search import get_index_stats
+    stats = get_index_stats(db)
+    return stats
 
 
 # ===== 标签→分类映射规则管理 =====

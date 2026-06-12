@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../services/api_service.dart';
 import 'note_detail_screen.dart';
+import '../widgets/glass_container.dart';
 
 class GraphScreen extends StatefulWidget {
   const GraphScreen({super.key});
@@ -57,9 +58,13 @@ class _GraphScreenState extends State<GraphScreen> {
       color: colorScheme.surface,
       child: Column(
         children: [
-          Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 12),
-            color: colorScheme.surface,
+          // 液态玻璃 Header
+          GlassContainer(
+            margin: EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top + 8, 8, 8),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.45,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Row(
               children: [
                 Text(
