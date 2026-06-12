@@ -1,10 +1,14 @@
 """数据库 CRUD 操作"""
+import hashlib as _hashlib
+import logging
 from sqlalchemy import create_engine, text, or_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, Session, joinedload, selectinload
 from models import Base, Note, Tag, Folder, ReadingStats, Notification, note_tags
 from datetime import datetime, timezone, timedelta
 import os
+
+logger = logging.getLogger("synapse.crud")
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "knowledge.db")
 engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
@@ -127,7 +131,39 @@ def _generate_slug(db: Session, created_at: datetime) -> str:
 
 
 def create_note(db: Session, title: str, content: str, tag_names: list = None, source_created_at: datetime = None) -> Note:
-    """创建笔记"""
+    """创建笔记（幂等）：如果存在相同 content 的 active 笔记，直接返回它。
+
+    去重依据：md5(content)。同一篇内容被重复推（公众号同步、脚本批导、
+    APP 重复创建）时，返回原笔记，不写新行。重复检测只对未删除的 active
+    笔记生效；恢复后池子里允许存在多份 md5 相同但不是同时 active 的笔记。
+
+    实现说明：SQLite 不内置 md5()，用 Python 算后拉全量 active 笔记的
+    (id, content) 逐个比较。O(N) 对千条以内合算。超过千条时建议后续
+    加 notes.content_hash 列 + 索引（待性能优化阶段考虑）。
+    """
+    content_hash = _hashlib.md5((content or "").encode("utf-8")).hexdigest()
+    if content_hash and content:
+        # 先按 length 收窄，避免不必要的 md5 计算
+        target_len = len(content)
+        for cand in (
+            db.query(Note.id, Note.title)
+            .filter(Note.deleted_at.is_(None))
+            .filter(func.length(Note.content) == target_len)
+            .all()
+        ):
+            # 同 length 极可能是同内容，算 md5 确认
+            cand_content = (
+                db.query(Note.content).filter(Note.id == cand.id).first()
+            )
+            if cand_content and _hashlib.md5(
+                (cand_content[0] or "").encode("utf-8")
+            ).hexdigest() == content_hash:
+                logger.info(
+                    f"create_note idempotent skip: md5={content_hash[:8]} "
+                    f"existing_id={cand.id} title='{cand.title}' (requested '{title}')"
+                )
+                return db.query(Note).filter(Note.id == cand.id).first()
+
     now = datetime.now(tz=timezone(timedelta(hours=8)))
     note = Note(title=title, content=content, created_at=now, source_created_at=source_created_at)
     db.add(note)
