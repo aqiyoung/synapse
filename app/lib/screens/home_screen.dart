@@ -11,6 +11,7 @@ import 'settings_screen.dart';
 import 'mine_screen.dart';
 import 'chat_screen.dart';
 import '../widgets/tag_chip.dart';
+import '../widgets/glass_container.dart';
 import '../services/update_service.dart';
 import '../services/notification_service.dart';
 import '../services/stats_service.dart';
@@ -149,6 +150,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
+      extendBody: true,  // 让 body 延伸到 bottomNav 后面，液态玻璃才有东西可模糊
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -163,12 +166,21 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-        backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.primary.withOpacity(0.12),
-        destinations: [
+      bottomNavigationBar: GlassContainer(
+        margin: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+        borderRadius: BorderRadius.circular(24),
+        blur: 24,
+        tintOpacity: 0.4,
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          indicatorColor: colorScheme.primary.withOpacity(0.18),
+          height: 64,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: [
           NavigationDestination(
             icon: Icon(Icons.library_books_outlined,
                 color: colorScheme.onSurface.withOpacity(0.6)),
@@ -221,246 +233,281 @@ class _HomeScreenState extends State<HomeScreen> {
             label: _isChinese ? '我的' : 'Mine',
           ),
         ],
+        ),
       ),
       floatingActionButton: null,
     );
   }
 
   Widget _buildNoteList(ColorScheme colorScheme) {
-    return Container(
-      color: colorScheme.surface,
-      child: Column(
-        children: [
-          // Header (padding includes status bar height)
-          Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 12),
-            color: colorScheme.surface,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Synapse',
-                      style: TextStyle(
-                        fontFamily: 'MiSans',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${_notes.length} 篇',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Search
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    _searchDebounce?.cancel();
-                    _searchDebounce = Timer(
-                      const Duration(milliseconds: 500),  // 从 300ms 调到 500ms，减少中间请求
-                      () => _onSearch(value),
-                    );
-                  },
-                  onSubmitted: (value) {
-                    _searchDebounce?.cancel();
-                    _onSearch(value);
-                  },
-                  decoration: InputDecoration(
-                    hintText: '搜索笔记...',
-                    hintStyle: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.4),
-                    ),
-                    prefixIcon: Icon(Icons.search,
-                        color: colorScheme.onSurface.withOpacity(0.4)),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.clear,
-                                color: colorScheme.onSurface.withOpacity(0.4)),
-                            onPressed: () {
-                              _searchController.clear();
-                              _onSearch('');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colorScheme.primary),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-                // Search history
-                if (_searchHistory.isNotEmpty && _searchQuery.isEmpty) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: _searchHistory.map((item) {
-                      return GestureDetector(
-                        onTap: () {
-                          _searchController.text = item;
-                          _onSearch(item);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.outline.withOpacity(0.15),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.history, size: 14, color: colorScheme.onSurface.withOpacity(0.4)),
-                              const SizedBox(width: 4),
-                              Text(
-                                item,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+    return Stack(
+      children: [
+        // 底层：渐变背景，让玻璃透出颜色
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primary.withOpacity(0.10),
+                  colorScheme.primary.withOpacity(0.03),
+                  colorScheme.surface,
                 ],
-              ],
+                stops: const [0.0, 0.3, 0.7],
+              ),
             ),
           ),
-          // Quick stats row
-          FutureBuilder<OverallStats>(
-            future: StatsService.getOverall(),
-            builder: (ctx, snap) {
-              if (!snap.hasData) return const SizedBox();
-              final stats = snap.data!;
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _quickStat('📝', '${stats.totalNotes}', '笔记'),
-                    _quickStat('🏷️', '${stats.totalTags}', '标签'),
-                    _quickStat('📖', '${stats.totalReads}', '阅读'),
-                  ],
-                ),
-              );
-            },
-          ),
-
-          // Tags
-          if (_tags.isNotEmpty)
-            Container(
-              height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: colorScheme.surface,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
+        ),
+        Column(
+          children: [
+            // 液态玻璃 Header（包含 title + search + tags + update banner）
+            GlassContainer(
+              margin: EdgeInsets.fromLTRB(8,
+                  MediaQuery.of(context).padding.top + 8, 8, 8),
+              borderRadius: BorderRadius.circular(20),
+              blur: 24,
+              tintOpacity: 0.45,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: TagChip(
-                      label: '全部',
-                      selected: _selectedTag.isEmpty,
-                      count: _notes.length,
-                      onTap: () => _onTagSelected(''),
+                  // Title row
+                  Row(
+                    children: [
+                      Text(
+                        'Synapse',
+                        style: TextStyle(
+                          fontFamily: 'MiSans',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_notes.length} 篇',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // 搜索框
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      _searchDebounce?.cancel();
+                      _searchDebounce = Timer(
+                        const Duration(milliseconds: 500),
+                        () => _onSearch(value),
+                      );
+                    },
+                    onSubmitted: (value) {
+                      _searchDebounce?.cancel();
+                      _onSearch(value);
+                    },
+                    decoration: InputDecoration(
+                      hintText: '搜索笔记...',
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                      prefixIcon: Icon(Icons.search,
+                          color: colorScheme.onSurface.withOpacity(0.4)),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear,
+                                  color: colorScheme.onSurface.withOpacity(0.4)),
+                              onPressed: () {
+                                _searchController.clear();
+                                _onSearch('');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: colorScheme.surface.withOpacity(0.6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                            color: colorScheme.outline.withOpacity(0.2)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                            color: colorScheme.outline.withOpacity(0.2)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: colorScheme.primary),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
                     ),
                   ),
-                  ..._tags.take(5).map((tag) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: TagChip(
-                          label: tag.name,
-                          selected: _selectedTag == tag.name,
-                          count: tag.noteCount,
-                          onTap: () => _onTagSelected(tag.name),
+                  // 搜索历史
+                  if (_searchHistory.isNotEmpty && _searchQuery.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _searchHistory.map((item) {
+                        return GestureDetector(
+                          onTap: () {
+                            _searchController.text = item;
+                            _onSearch(item);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: colorScheme.outline.withOpacity(0.15),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.history,
+                                    size: 14,
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.4)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  item,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                  // 快速统计
+                  FutureBuilder<OverallStats>(
+                    future: StatsService.getOverall(),
+                    builder: (ctx, snap) {
+                      if (!snap.hasData) return const SizedBox.shrink();
+                      final stats = snap.data!;
+                      return Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      )),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _quickStat('📝', '${stats.totalNotes}', '笔记'),
+                            _quickStat('🏷️', '${stats.totalTags}', '标签'),
+                            _quickStat('📖', '${stats.totalReads}', '阅读'),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  // 标签栏
+                  if (_tags.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: SizedBox(
+                        height: 36,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: TagChip(
+                                label: '全部',
+                                selected: _selectedTag.isEmpty,
+                                count: _notes.length,
+                                onTap: () => _onTagSelected(''),
+                              ),
+                            ),
+                            ..._tags.take(5).map((tag) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: TagChip(
+                                    label: tag.name,
+                                    selected: _selectedTag == tag.name,
+                                    count: tag.noteCount,
+                                    onTap: () => _onTagSelected(tag.name),
+                                  ),
+                                )),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // 更新提示 banner
+                  if (UpdateService().hasUpdate)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: _buildUpdateBanner(colorScheme),
+                    ),
                 ],
               ),
             ),
-          Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
-          // Update banner
-          if (UpdateService().hasUpdate)
-            _buildUpdateBanner(colorScheme),
-          // Note list
-          Expanded(
-            child: _loading
-                ? Center(
-                    child: CircularProgressIndicator(color: colorScheme.primary))
-                : _notes.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withOpacity(0.4),
+            // 笔记列表
+            Expanded(
+              child: _loading
+                  ? Center(
+                      child:
+                          CircularProgressIndicator(color: colorScheme.primary))
+                  : _notes.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
+                                style: TextStyle(
+                                  color: colorScheme.onSurface.withOpacity(0.4),
+                                ),
                               ),
-                            ),
-                            if (!ApiService.isConfigured) ...[
-                              const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => SettingsScreen(
-                                      onToggleTheme: widget.onToggleTheme,
-                                      isDark: widget.isDark,
-                                      themeIndex: widget.themeIndex,
-                                      onThemeChanged: widget.onThemeChanged,
+                              if (!ApiService.isConfigured) ...[
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SettingsScreen(
+                                        onToggleTheme: widget.onToggleTheme,
+                                        isDark: widget.isDark,
+                                        themeIndex: widget.themeIndex,
+                                        onThemeChanged:
+                                            widget.onThemeChanged,
+                                      ),
                                     ),
-                                  ),
-                                ).then((_) => _loadData()),
-                                child: const Text('前往设置'),
-                              ),
+                                  ).then((_) => _loadData()),
+                                  child: const Text('前往设置'),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            cacheExtent: 600,
+                            itemCount: _notes.length,
+                            itemBuilder: (context, index) =>
+                                _buildNoteItem(_notes[index], colorScheme),
+                          ),
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadData,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          // 性能优化：预构建额外 item 减少滚动时的重建
-                          cacheExtent: 600,
-                          // 不设置 itemExtent（笔记高度可变，有/无 summary）
-                          itemCount: _notes.length,
-                          itemBuilder: (context, index) =>
-                              _buildNoteItem(_notes[index], colorScheme),
-                        ),
-                      ),
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
