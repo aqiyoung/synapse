@@ -130,9 +130,12 @@ class _GlassPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // 取出形状的 path（加 1px inset 以避免 borderWidth 2px 边突到 ClipPath 外）
+    final path = shape.getOuterPath(Offset.zero & size);
+
     // 1. 底色 tint
     final fillPaint = Paint()..color = tint.withOpacity(tintOpacity);
-    shape.paint(canvas, size, fillPaint);
+    canvas.drawPath(path, fillPaint);
 
     // 2. 顶部高光渐变（模拟光线折射）
     if (highlightStrength > 0) {
@@ -144,12 +147,12 @@ class _GlassPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            (isDark ? Colors.white : Colors.white).withOpacity(0.25 * highlightStrength),
+            Colors.white.withOpacity(0.25 * highlightStrength),
             Colors.transparent,
           ],
           stops: const [0.0, 0.5],
         ).createShader(rect);
-      shape.paint(canvas, size, highlightPaint);
+      canvas.drawPath(path, highlightPaint);
     }
 
     // 3. 边框（1px 描边）
@@ -158,7 +161,7 @@ class _GlassPainter extends CustomPainter {
         ..color = borderColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = borderWidth;
-      shape.paint(canvas, size, borderPaint);
+      canvas.drawPath(path, borderPaint);
     }
   }
 
