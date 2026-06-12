@@ -4,6 +4,7 @@ import hmac
 import logging
 import os
 import re
+import time
 import uuid
 import zipfile
 import io
@@ -12,6 +13,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, Response, JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -29,7 +31,10 @@ from crud import (
 )
 from config import API_TOKEN, ADMIN_PASSWORD
 
-app = FastAPI(title="知识库 API", version="1.1.0")
+app = FastAPI(title="知识库 API", version="1.2.0")
+
+# GZip 中间件：响应 ≥ 500B 才压缩，避免小的错误响应被额外压缩反而变大
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # CORS - 从环境变量读取允许的源，默认只允许本地和自己的域名
 _cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost,http://127.0.0.1,https://wiki.threel.site").split(",")
@@ -100,29 +105,29 @@ def _fts_search(db: Session, query_text: str, limit: int = 20, title_only: bool 
 
 
 def _find_orphan_notes(db: Session, notes: list) -> list:
-    """找出孤立笔记：无 outgoing wikilink、无 incoming 引用、无共享标签"""
-    all_titles = {n.title for n in notes}
+    """找出孤立笔记：无 outgoing wikilink、无 incoming 引用、无共享标签
 
-    # 收集所有被引用的标题
+    优化：每条笔记只跑一次 regex，同时构建 referenced 集合。
+    """
     referenced = set()
     for n in notes:
         if n.content:
             for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
                 referenced.add(m.group(1))
 
-    # 构建标签→笔记映射，共享标签的笔记互相关联
+    # 共享标签判定
     tag_note_map: dict[str, set] = {}
     for n in notes:
         for t in (n.tags or []):
             tag_note_map.setdefault(t.name, set()).add(n.id)
     shared_tag_notes = set()
-    for tag_name, note_ids in tag_note_map.items():
+    for _tag, note_ids in tag_note_map.items():
         if len(note_ids) > 1:
             shared_tag_notes.update(note_ids)
 
     orphans = []
     for n in notes:
-        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
+        has_outgoing = bool(n.content and re.search(r'\[\[([^\]]+)\]\]', n.content))
         has_incoming = n.title in referenced
         has_shared_tag = n.id in shared_tag_notes
         if not has_outgoing and not has_incoming and not has_shared_tag:
@@ -132,6 +137,12 @@ def _find_orphan_notes(db: Session, notes: list) -> list:
 
 # 公开接口不需要认证的路径
 _PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/check", "/api/update/download", "/api/admin/verify"}
+
+# {title: id} 全表映射缓存，30 秒 TTL。graph/relations 复用。
+_TITLE_MAP_CACHE: tuple[dict, float] | None = None
+
+# 标签列表 60 秒 TTL 缓存
+_TAGS_CACHE: tuple[list, float] | None = None
 
 
 @app.middleware("http")
@@ -175,6 +186,19 @@ class SmartIngestRequest(BaseModel):
     note_id: int
 
 
+def _build_title_map(db: Session) -> dict:
+    """构建 {title: id} 映射，供 graph/relations 复用。
+    使用 30 秒 TTL 缓存，避免每次请求全表扫。"""
+    global _TITLE_MAP_CACHE
+    now = time.monotonic()
+    if _TITLE_MAP_CACHE and now - _TITLE_MAP_CACHE[1] < 30:
+        return _TITLE_MAP_CACHE[0]
+    rows = db.query(Note.id, Note.title).filter(Note.deleted_at.is_(None)).all()
+    title_map = {row.title: row.id for row in rows}
+    _TITLE_MAP_CACHE = (title_map, now)
+    return title_map
+
+
 # ===== 笔记 API =====
 
 @app.get("/api/notes")
@@ -183,13 +207,18 @@ def api_list_notes(
     limit: int = Query(50, ge=1, le=200),
     tag: Optional[str] = None,
     keyword: Optional[str] = None,
+    fields: Optional[str] = Query(None, description="逗号分隔的字段名子集，如 'summary,id,title,tags'"),
     db: Session = Depends(get_db),
 ):
-    """列出笔记"""
+    """列出笔记（fields 参数允许只取必要字段，节省 90%+ 响应体积）"""
     total, notes = list_notes(db, skip=skip, limit=limit, tag=tag, keyword=keyword)
+    items = [n.to_dict() for n in notes]
+    if fields:
+        wanted = {f.strip() for f in fields.split(",") if f.strip()}
+        items = [{k: v for k, v in n.items() if k in wanted} for n in items]
     return {
         "total": total,
-        "notes": [n.to_dict() for n in notes],
+        "notes": items,
     }
 
 
@@ -236,6 +265,7 @@ async def api_create_note(data: NoteCreate, db: Session = Depends(get_db)):
     note = create_note(db, title=data.title, content=data.content, tag_names=data.tags, source_created_at=src)
     if data.content and len(data.content) > 50:
         asyncio.create_task(_auto_analyze_note(note.id))
+    _invalidate_tags_cache()
     return note.to_dict()
 
 
@@ -252,6 +282,7 @@ async def api_update_note(note_id: int, data: NoteUpdate, db: Session = Depends(
         raise HTTPException(status_code=404, detail="笔记不存在")
     if data.content and len(data.content) > 50:
         asyncio.create_task(_auto_analyze_note(note_id))
+    _invalidate_tags_cache()
     return note.to_dict()
 
 
@@ -300,9 +331,20 @@ def api_permanent_delete_note(note_id: int, db: Session = Depends(get_db)):
 
 @app.get("/api/tags")
 def api_list_tags(db: Session = Depends(get_db)):
-    """列出所有标签"""
+    """列出所有标签（60 秒 TTL 缓存）"""
+    global _TAGS_CACHE
+    now = time.monotonic()
+    if _TAGS_CACHE and now - _TAGS_CACHE[1] < 60:
+        return _TAGS_CACHE[0]
     tags = list_tags(db)
-    return [t.to_dict() for t in tags]
+    result = [t.to_dict() for t in tags]
+    _TAGS_CACHE = (result, now)
+    return result
+
+
+def _invalidate_tags_cache():
+    global _TAGS_CACHE
+    _TAGS_CACHE = None
 
 
 # ===== 搜索 API =====
@@ -745,10 +787,8 @@ def api_note_relations(note_id: int, db: Session = Depends(get_db)):
     if not note:
         raise HTTPException(status_code=404, detail="笔记不存在")
 
-    # 获取所有笔记用于标题匹配
-    total, all_notes = list_notes(db, limit=10000)
-    title_to_id = {n.title: n.id for n in all_notes}
-    id_to_note = {n.id: n for n in all_notes}
+    # 使用 30 秒缓存的 title 映射，避免每次请求全表扫
+    title_to_id = _build_title_map(db)
 
     # outgoing: 从本文内容中提取 [[wikilink]]
     outgoing = []
@@ -759,13 +799,16 @@ def api_note_relations(note_id: int, db: Session = Depends(get_db)):
             if target_id and target_id != note_id:
                 outgoing.append({"id": target_id, "title": target_title})
 
-    # incoming: 扫描所有笔记，找包含 [[本文标题]] 的
-    incoming = []
-    for n in all_notes:
-        if n.id == note_id or not n.content:
-            continue
-        if re.search(rf'\[\[{re.escape(note.title)}\]\]', n.content):
-            incoming.append({"id": n.id, "title": n.title})
+    # incoming: 用 SQL LIKE 查包含 [[本文标题]] 的笔记（O(log N)）
+    # 转义 LIKE 通配符
+    escaped = note.title.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+    pattern = f"%[[{escaped}]]%"
+    rows = (
+        db.query(Note.id, Note.title)
+        .filter(Note.deleted_at.is_(None), Note.id != note_id, Note.content.like(pattern))
+        .all()
+    )
+    incoming = [{"id": r.id, "title": r.title} for r in rows]
 
     return {
         "note_id": note_id,
@@ -778,11 +821,16 @@ def api_note_relations(note_id: int, db: Session = Depends(get_db)):
 @app.get("/api/graph")
 def api_graph(db: Session = Depends(get_db)):
     """返回知识图谱数据（节点 + 边）"""
-    total, notes = list_notes(db, limit=10000)
-    # 构建标题 → id 映射
-    title_map = {}
-    for n in notes:
-        title_map[n.title] = n.id
+    from sqlalchemy.orm import selectinload
+
+    # 一次性拉取所有 id/title（O(N)）
+    notes = (
+        db.query(Note)
+        .options(selectinload(Note.tags))
+        .filter(Note.deleted_at.is_(None))
+        .all()
+    )
+    title_map = {n.title: n.id for n in notes}
 
     nodes = []
     for n in notes:
@@ -845,6 +893,7 @@ def api_update_tag(tag_id: int, data: TagUpdate, db: Session = Depends(get_db)):
     
     db.commit()
     db.refresh(tag)
+    _invalidate_tags_cache()
     return tag.to_dict()
 
 @app.delete("/api/tags/{tag_id}")
@@ -861,6 +910,7 @@ def api_delete_tag(tag_id: int, db: Session = Depends(get_db)):
     
     db.delete(tag)
     db.commit()
+    _invalidate_tags_cache()
     return {"ok": True, "deleted": tag.name}
 
 

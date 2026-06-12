@@ -132,7 +132,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Future<void> _loadNote() async {
     setState(() => _loading = true);
     try {
-      final note = await ApiService.getNote(widget.noteId);
+      final note = await ApiService.getNoteFull(widget.noteId);
       final relations = await ApiService.getRelations(widget.noteId);
       setState(() {
         _note = note;
