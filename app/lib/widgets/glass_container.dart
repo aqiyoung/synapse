@@ -139,9 +139,9 @@ class _GlassPainter extends CustomPainter {
 
     // 2. 顶部高光渐变（模拟光线折射）
     if (highlightStrength > 0) {
-      final rect = shape is RoundedRectangleBorder
-          ? (shape as RoundedRectangleBorder).borderRadius.resolve(TextDirection.ltr).toRect(Offset.zero & size)
-          : Offset.zero & size;
+      // 用形状的 path.getBounds() 作为 shader 范围，
+      // 这样渐变在边角处也是沿着形状的。
+      final shaderRect = path.getBounds();
       final highlightPaint = Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
@@ -151,7 +151,7 @@ class _GlassPainter extends CustomPainter {
             Colors.transparent,
           ],
           stops: const [0.0, 0.5],
-        ).createShader(rect);
+        ).createShader(shaderRect);
       canvas.drawPath(path, highlightPaint);
     }
 
