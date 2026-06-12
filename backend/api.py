@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-from models import Tag, note_tags, Note, Folder, ReadingStats, Notification
+from models import Tag, note_tags, Note, Folder, ReadingStats, Notification, TagFolderRule
 from crud import (
     get_db, create_note, get_note, get_note_by_slug, list_notes,
     update_note, delete_note, list_tags, get_or_create_tag,
@@ -948,6 +948,17 @@ async def _auto_analyze_note(note_id: int):
                             db.add(tag)
                         note.tags.append(tag)
 
+                    # 自动归类：根据标签匹配分类
+                    rules = db.query(TagFolderRule).order_by(TagFolderRule.priority.desc()).all()
+                    for rule in rules:
+                        for tag_name in tags:
+                            if rule.tag_name.lower() in tag_name.lower() or tag_name.lower() in rule.tag_name.lower():
+                                folder = db.query(Folder).filter(Folder.id == rule.folder_id).first()
+                                if folder:
+                                    note.folder_id = folder.id
+                                    logger.info(f"Auto-categorized note {note_id} to folder '{folder.name}' via tag '{tag_name}'")
+                                    break
+
                 if summary:
                     note.summary = summary
 
@@ -1637,3 +1648,85 @@ async def api_ai_chat_stream(req: ChatRequest, db: Session = Depends(get_db)):
 
     from fastapi.responses import StreamingResponse
     return StreamingResponse(stream_with_refs(), media_type="text/event-stream")
+
+
+# ===== 标签→分类映射规则管理 =====
+
+class TagFolderRuleCreate(BaseModel):
+    tag_name: str
+    folder_id: int
+    priority: int = 0
+
+class TagFolderRuleUpdate(BaseModel):
+    tag_name: Optional[str] = None
+    folder_id: Optional[int] = None
+    priority: Optional[int] = None
+
+@app.get("/api/tag-folder-rules")
+def api_list_tag_folder_rules(db: Session = Depends(get_db)):
+    """获取所有标签→分类映射规则"""
+    rules = db.query(TagFolderRule).order_by(TagFolderRule.priority.desc()).all()
+    return [{"id": r.id, "tag_name": r.tag_name, "folder_id": r.folder_id, "folder_name": r.folder.name if r.folder else None, "priority": r.priority} for r in rules]
+
+@app.post("/api/tag-folder-rules")
+def api_create_tag_folder_rule(req: TagFolderRuleCreate, db: Session = Depends(get_db)):
+    """创建标签→分类映射规则"""
+    folder = db.query(Folder).filter(Folder.id == req.folder_id).first()
+    if not folder:
+        raise HTTPException(404, "分类不存在")
+    rule = TagFolderRule(tag_name=req.tag_name, folder_id=req.folder_id, priority=req.priority)
+    db.add(rule)
+    db.commit()
+    db.refresh(rule)
+    return {"id": rule.id, "tag_name": rule.tag_name, "folder_id": rule.folder_id, "priority": rule.priority}
+
+@app.put("/api/tag-folder-rules/{rule_id}")
+def api_update_tag_folder_rule(rule_id: int, req: TagFolderRuleUpdate, db: Session = Depends(get_db)):
+    """更新标签→分类映射规则"""
+    rule = db.query(TagFolderRule).filter(TagFolderRule.id == rule_id).first()
+    if not rule:
+        raise HTTPException(404, "规则不存在")
+    if req.tag_name is not None:
+        rule.tag_name = req.tag_name
+    if req.folder_id is not None:
+        rule.folder_id = req.folder_id
+    if req.priority is not None:
+        rule.priority = req.priority
+    db.commit()
+    return {"ok": True}
+
+@app.delete("/api/tag-folder-rules/{rule_id}")
+def api_delete_tag_folder_rule(rule_id: int, db: Session = Depends(get_db)):
+    """删除标签→分类映射规则"""
+    rule = db.query(TagFolderRule).filter(TagFolderRule.id == rule_id).first()
+    if not rule:
+        raise HTTPException(404, "规则不存在")
+    db.delete(rule)
+    db.commit()
+    return {"ok": True}
+
+@app.post("/api/auto-categorize")
+def api_auto_categorize(db: Session = Depends(get_db)):
+    """手动触发：对所有未分类笔记执行自动归类"""
+    rules = db.query(TagFolderRule).order_by(TagFolderRule.priority.desc()).all()
+    if not rules:
+        return {"message": "没有配置映射规则", "updated": 0}
+    notes = db.query(Note).filter(Note.folder_id.is_(None), Note.deleted_at.is_(None)).all()
+    updated = 0
+    for note in notes:
+        tag_names = [t.name for t in note.tags]
+        for rule in rules:
+            matched = False
+            for tag_name in tag_names:
+                if rule.tag_name.lower() in tag_name.lower() or tag_name.lower() in rule.tag_name.lower():
+                    matched = True
+                    break
+            if matched:
+                folder = db.query(Folder).filter(Folder.id == rule.folder_id).first()
+                if folder:
+                    note.folder_id = folder.id
+                    updated += 1
+                    break
+    db.commit()
+    return {"message": f"已自动归类 {updated} 篇笔记", "updated": updated}
+

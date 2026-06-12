@@ -141,3 +141,17 @@ class Notification(Base):
             "action_url": self.action_url,
             "created_at": self.created_at.isoformat() if self.created_at else "",
         }
+
+
+class TagFolderRule(Base):
+    """标签→分类自动映射规则"""
+    __tablename__ = "tag_folder_rules"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tag_name = Column(String(100), nullable=False, index=True)
+    folder_id = Column(Integer, ForeignKey("folders.id"), nullable=False)
+    priority = Column(Integer, default=0)
+    created_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
+
+    folder = relationship("Folder")
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/folder.dart';
 import '../models/app_theme.dart';
+import 'note_detail_screen.dart';
 import '../services/folder_service.dart';
 
 class FoldersScreen extends StatefulWidget {
@@ -168,10 +169,14 @@ class _FoldersScreenState extends State<FoldersScreen> {
                           }
                         },
                       ),
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('查看 "${f.name}" 的笔记')),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => FolderNotesScreen(folder: f, themeIndex: widget.themeIndex),
+                          ),
                         );
+                        _load();
                       },
                     );
                   },
@@ -183,3 +188,73 @@ class _FoldersScreenState extends State<FoldersScreen> {
     );
   }
 }
+
+
+class FolderNotesScreen extends StatefulWidget {
+  final Folder folder;
+  final int themeIndex;
+  const FolderNotesScreen({super.key, required this.folder, required this.themeIndex});
+  @override
+  State<FolderNotesScreen> createState() => _FolderNotesScreenState();
+}
+
+class _FolderNotesScreenState extends State<FolderNotesScreen> {
+  List<Note> _notes = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    final notes = await FolderService.getFolderNotes(widget.folder.id);
+    if (mounted) {
+      setState(() { _notes = notes; _loading = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AppTheme.presets[widget.themeIndex];
+    final color = Color(int.parse(widget.folder.color.substring(1), radix: 16) + 0xFF000000);
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            CircleAvatar(radius: 12, backgroundColor: color, child: const Icon(Icons.folder, size: 14, color: Colors.white)),
+            const SizedBox(width: 8),
+            Text(widget.folder.name),
+          ],
+        ),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _notes.isEmpty
+              ? const Center(child: Text('暂无笔记'))
+              : ListView.builder(
+                  itemCount: _notes.length,
+                  itemBuilder: (ctx, i) {
+                    final n = _notes[i];
+                    return ListTile(
+                      title: Text(n.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(n.summary ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => NoteDetailScreen(noteId: n.id),
+                          ),
+                        );
+                        _load();
+                      },
+                    );
+                  },
+                ),
+    );
+  }
+}
+

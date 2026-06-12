@@ -1,5 +1,6 @@
 """数据库 CRUD 操作"""
-from sqlalchemy import create_engine, text, or_, func, IntegrityError
+from sqlalchemy import create_engine, text, or_, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, Session, joinedload
 from models import Base, Note, Tag, Folder, ReadingStats, Notification, note_tags
 from datetime import datetime, timezone, timedelta
