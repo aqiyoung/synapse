@@ -64,3 +64,6 @@ app/android/app/*.jks
 # Temporary files
 *.tmp
 *.log
+
+# Generated icon assets (regenerate via scripts)
+app/assets/icons/*.png

@@ -26,8 +26,9 @@ class ApiService {
   // summary: 列表只展示元数据，content 不需要 → 节省 ~80% 响应体积
   static const String _listFields = 'id,slug,title,summary,tags,created_at,source_created_at,updated_at,is_pinned,folder_id';
 
-  static Future<List<Note>> getNotes({String? tag, String? search}) async {
-    var url = '$baseUrl/notes?limit=100&fields=${Uri.encodeQueryComponent(_listFields)}';
+  static Future<List<Note>> getNotes({String? tag, String? search, int limit = 200}) async {
+    // 限制 200 是后端 list_notes 允许的最大值（api.py le=200）；超过需后端加 cursor 分页
+    var url = '$baseUrl/notes?limit=$limit&fields=${Uri.encodeQueryComponent(_listFields)}';
     if (tag != null && tag.isNotEmpty) url += '&tag=${Uri.encodeQueryComponent(tag)}';
     if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeQueryComponent(search)}';
 
