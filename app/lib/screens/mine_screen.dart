@@ -70,14 +70,31 @@ class _MineScreenState extends State<MineScreen> {
                 // Logo + 标题
                 Row(
                   children: [
-                    // Logo - 使用统一的logo图标
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        'assets/icons/logo.png',
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
+                    // Logo - 橙色背景 + 白色S
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFc96442),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFc96442).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          'S',
+                          style: TextStyle(
+                            fontFamily: 'MiSans',
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -225,8 +242,19 @@ class _MineScreenState extends State<MineScreen> {
                   label: '数据存储',
                   value: '本地优先，隐私可控',
                 ),
-                // GitHub 仓库链接 - 带猫猫头像
-                _buildGitHubRow(colorScheme),
+                // GitHub 仓库链接
+                _buildInfoRow(
+                  colorScheme,
+                  icon: Icons.code_rounded,
+                  label: '开源地址',
+                  value: 'github.com/aqiyoung/synapse',
+                  onTap: () async {
+                    final uri = Uri.parse('https://github.com/aqiyoung/synapse');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -286,73 +314,23 @@ class _MineScreenState extends State<MineScreen> {
     required IconData icon,
     required String label,
     required String value,
+    VoidCallback? onTap,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: colorScheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withOpacity(0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGitHubRow(ColorScheme colorScheme) {
     return InkWell(
-      onTap: () async {
-        final uri = Uri.parse('https://github.com/aqiyoung/synapse');
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-      },
+      onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.only(bottom: 14),
         child: Row(
           children: [
-            // GitHub Octocat 图标
             Container(
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Center(
-                child: Text('🐱', style: TextStyle(fontSize: 18)),
-              ),
+              child: Icon(icon, size: 16, color: colorScheme.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -360,29 +338,33 @@ class _MineScreenState extends State<MineScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'GitHub 开源',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'github.com/aqiyoung/synapse',
+                    label,
                     style: TextStyle(
                       fontSize: 11,
                       color: colorScheme.onSurface.withOpacity(0.5),
                     ),
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ),
-            Icon(
-              Icons.open_in_new_rounded,
-              size: 16,
-              color: colorScheme.primary,
-            ),
+            if (onTap != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Icon(
+                  Icons.open_in_new_rounded,
+                  size: 14,
+                  color: colorScheme.primary.withOpacity(0.6),
+                ),
+              ),
           ],
         ),
       ),
