@@ -4,25 +4,55 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!--
-      Auto-awesome style icon for app launcher
-      Large star in center, two smaller stars diagonally
-    -->
-
-    <!-- Large center star (4-pointed) -->
+  <group android:scaleX="0.8"
+      android:scaleY="0.8"
+      android:translateX="10.8"
+      android:translateY="10.8">
+    <!-- 中心节点 -->
     <path
-        android:pathData="M54,30 L60,48 L78,54 L60,60 L54,78 L48,60 L30,54 L48,48 Z"
-        android:fillColor="#FFFFFF"/>
-
-    <!-- Small top-right star -->
+        android:fillColor="#4299e1"
+        android:pathData="M54,46m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"/>
     <path
-        android:pathData="M72,24 L76,36 L88,40 L76,44 L72,56 L68,44 L56,40 L68,36 Z"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.8"/>
+        android:fillColor="#ffffff"
+        android:pathData="M54,46m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"/>
 
-    <!-- Small bottom-left star -->
+    <!-- 左上节点 -->
     <path
-        android:pathData="M36,68 L40,80 L52,84 L40,88 L36,100 L32,88 L20,84 L32,80 Z"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.8"/>
+        android:fillColor="#4299e1"
+        android:pathData="M30,30m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"/>
+    <!-- 右上节点 -->
+    <path
+        android:fillColor="#4299e1"
+        android:pathData="M78,30m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"/>
+    <!-- 左下节点 -->
+    <path
+        android:fillColor="#4299e1"
+        android:pathData="M30,66m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"/>
+    <!-- 右下节点 -->
+    <path
+        android:fillColor="#4299e1"
+        android:pathData="M78,66m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"/>
+
+    <!-- 连接线 -->
+    <path
+        android:fillColor="#4299e1"
+        android:pathData="M36,36 L48,42"
+        android:strokeWidth="2"
+        android:strokeColor="#4299e1"/>
+    <path
+        android:fillColor="#4299e1"
+        android:pathData="M72,36 L60,42"
+        android:strokeWidth="2"
+        android:strokeColor="#4299e1"/>
+    <path
+        android:fillColor="#4299e1"
+        android:pathData="M36,60 L48,54"
+        android:strokeWidth="2"
+        android:strokeColor="#4299e1"/>
+    <path
+        android:fillColor="#4299e1"
+        android:pathData="M72,60 L60,54"
+        android:strokeWidth="2"
+        android:strokeColor="#4299e1"/>
+  </group>
 </vector>

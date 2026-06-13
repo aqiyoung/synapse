@@ -55,7 +55,7 @@ class _MineScreenState extends State<MineScreen> {
     return Container(
       color: colorScheme.surface,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 24, 16, 24),
+        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 40, 16, 24),
         children: [
           // 液态玻璃 Header
           GlassContainer(
