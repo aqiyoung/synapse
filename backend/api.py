@@ -980,8 +980,9 @@ def _algo_analyze(title: str, content: str) -> tuple[list[str], str]:
 _auto_analyze_locks: dict[int, asyncio.Lock] = {}
 
 async def _auto_analyze_note(note_id: int):
-    """后台自动分析笔记：关键词标签 + 首段摘要（加锁防并发）"""
+    """后台自动分析笔记：关键词标签 + 首段摘要 + AI关联分析（加锁防并发）"""
     import asyncio
+    import re as _re
     lock = _auto_analyze_locks.setdefault(note_id, asyncio.Lock())
     async with lock:
         try:
@@ -1020,6 +1021,14 @@ async def _auto_analyze_note(note_id: int):
 
                 db.commit()
                 logger.info(f"Auto-analyzed note {note_id}: tags={tags}, summary={summary[:30]}...")
+
+                # AI自动关联分析
+                if note.content and len(note.content) > 100:
+                    try:
+                        await _auto_link_note(note_id, db)
+                    except Exception as e:
+                        logger.warning(f"AI auto-link failed for note {note_id}: {e}")
+
             finally:
                 db.close()
         except Exception as e:
@@ -1027,6 +1036,69 @@ async def _auto_analyze_note(note_id: int):
         finally:
             # 清理锁
             _auto_analyze_locks.pop(note_id, None)
+
+
+async def _auto_link_note(note_id: int, db: Session):
+    """AI自动关联：分析笔记内容，添加wikilink"""
+    import re as _re
+
+    note = db.query(Note).filter(Note.id == note_id).first()
+    if not note or not note.content:
+        return
+
+    # 获取所有笔记标题
+    all_notes = db.query(Note.id, Note.title).filter(Note.deleted_at.is_(None), Note.id != note_id).all()
+    if not all_notes:
+        return
+
+    # 检查是否已有足够的关联
+    existing_links = _re.findall(r'\[\[([^\]]+)\]\]', note.content)
+    if len(existing_links) >= 3:
+        return  # 已有足够关联
+
+    # 构建笔记索引
+    note_index = "\n".join([f"- {n.title}" for n in all_notes[:100]])
+
+    # AI分析
+    prompt = f"""分析以下笔记内容，找出最相关的 1-3 篇笔记标题。
+
+## 当前笔记
+标题：{note.title}
+内容：{note.content[:500]}
+
+## 可选笔记列表
+{note_index}
+
+只返回最相关的笔记标题，每行一个。如果没有相关的，返回空。"""
+
+    try:
+        result = llm.complete(prompt, system="你是知识管理助手，分析笔记内容找出关联。")
+        if not result:
+            return
+
+        # 解析AI返回的标题
+        suggested_titles = [line.strip().lstrip('- ').strip() for line in result.strip().split('\n') if line.strip()]
+
+        # 验证标题是否存在
+        valid_titles = []
+        for title in suggested_titles:
+            for n in all_notes:
+                if n.title == title and title not in existing_links:
+                    valid_titles.append(title)
+                    break
+
+        if not valid_titles:
+            return
+
+        # 在笔记末尾添加关联链接
+        links_to_add = '\n\n' + '\n'.join([f'[[{t}]]' for t in valid_titles[:2]])
+        note.content = note.content.rstrip() + links_to_add
+        note.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
+        db.commit()
+
+        logger.info(f"AI auto-linked note {note_id} to: {valid_titles}")
+    except Exception as e:
+        logger.warning(f"AI auto-link error for note {note_id}: {e}")
 
 
 @app.post("/api/ai/smart-ingest")
