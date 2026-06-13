@@ -150,6 +150,87 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       extendBody: true,  // 让 body 延伸到 bottomNav 后面，液态玻璃才有东西可模糊
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'S',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Synapse',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '记录思考，连接知识',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.settings_outlined, color: colorScheme.primary),
+              title: const Text('设置'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SettingsScreen(
+                      onToggleTheme: widget.onToggleTheme,
+                      isDark: widget.isDark,
+                      themeIndex: widget.themeIndex,
+                      onThemeChanged: widget.onThemeChanged,
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.health_and_safety_outlined, color: colorScheme.primary),
+              title: const Text('健康检查'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LintScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -273,6 +354,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Title row
                   Row(
                     children: [
+                      Builder(
+                        builder: (context) => IconButton(
+                          icon: Icon(Icons.menu, color: colorScheme.onSurface),
+                          onPressed: () => Scaffold.of(context).openDrawer(),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         'Synapse',
                         style: TextStyle(

@@ -69,23 +69,16 @@ class _MineScreenState extends State<MineScreen> {
                 // Logo + 标题
                 Row(
                   children: [
-                    // Logo
+                    // Logo - 橙色背景 + 白色S
                     Container(
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            colorScheme.primary,
-                            colorScheme.primary.withOpacity(0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: const Color(0xFFc96442),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: colorScheme.primary.withOpacity(0.3),
+                            color: const Color(0xFFc96442).withOpacity(0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
