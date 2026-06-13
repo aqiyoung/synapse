@@ -4,33 +4,25 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  <!-- 优雅的S字母 - 流畅曲线 + 知识节点装饰 -->
-
-  <!-- 装饰圈 (外圈) -->
-  <path
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="1.5"
-      android:fillColor="#00000000"
-      android:pathData="M54,14 C76.1,14 94,31.9 94,54 C94,76.1 76.1,94 54,94 C31.9,94 14,76.1 14,54 C14,31.9 31.9,14 54,14 Z"/>
-
-  <!-- 装饰圈 (内圈) -->
-  <path
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="0.75"
-      android:fillColor="#00000000"
-      android:pathData="M54,20 C70.6,20 84,33.4 84,50 C84,66.6 70.6,80 54,80 C37.4,80 24,66.6 24,50 C24,33.4 37.4,20 54,20 Z"/>
-
-  <!-- 优雅的S字母 -->
+  <!-- 简单的S字母 - 用矩形条组成 -->
+  <!-- 上横条 -->
   <path
       android:fillColor="#FFFFFF"
-      android:pathData="M68,26 C44,22 22,34 22,48 C22,60 36,66 48,66 C60,66 72,74 72,86 C72,98 56,104 40,100 L40,88 C48,90 56,86 56,80 C56,74 48,70 40,70 C32,70 26,66 26,58 C26,50 34,44 44,44 L68,44 L68,26 Z"/>
-
-  <!-- 知识节点装饰 (左上) -->
-  <circle cx="26" cy="48" r="4" fill="#4299E1"/>
-
-  <!-- 知识节点装饰 (右下) -->
-  <circle cx="72" cy="86" r="4" fill="#4299E1"/>
-
-  <!-- 中心节点 -->
-  <circle cx="54" cy="66" r="5" fill="#4299E1"/>
+      android:pathData="M28,24 L72,24 L72,36 L28,36 Z"/>
+  <!-- 上左竖条 -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M28,24 L40,24 L40,52 L28,52 Z"/>
+  <!-- 中间横条 -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M28,46 L72,46 L72,58 L28,58 Z"/>
+  <!-- 下右竖条 -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M60,46 L72,46 L72,76 L60,76 Z"/>
+  <!-- 下横条 -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M28,68 L72,68 L72,80 L28,80 Z"/>
 </vector>
