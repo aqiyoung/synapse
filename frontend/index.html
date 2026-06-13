@@ -36,63 +36,63 @@
 }
 :root {
   color-scheme: light;
-  /* 液态玻璃主题 - 亮色 */
-  --bg: #f0f4f8;
-  --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.4);
-  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.12);
-  --glass-blur: 16px;
-  --panel: rgba(255, 255, 255, 0.85);
-  --panel-2: rgba(240, 244, 248, 0.9);
-  --panel-menu: rgba(250, 250, 252, 0.95);
-  --text: #1a1a2e;
+  /* 液态玻璃主题 - 亮色（柔和蓝灰） */
+  --bg: #f5f7fa;
+  --bg-gradient: linear-gradient(180deg, #f5f7fa 0%, #e8ecf1 100%);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(200, 210, 220, 0.5);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --glass-blur: 12px;
+  --panel: rgba(255, 255, 255, 0.95);
+  --panel-2: rgba(245, 247, 250, 0.95);
+  --panel-menu: rgba(250, 250, 252, 0.98);
+  --text: #1a202c;
   --text-secondary: #4a5568;
-  --muted: #718096;
-  --line: rgba(255, 255, 255, 0.5);
-  --line-strong: rgba(200, 210, 220, 0.6);
-  --accent: #667eea;
-  --accent-light: rgba(102, 126, 234, 0.1);
-  --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --muted: #a0aec0;
+  --line: rgba(200, 210, 220, 0.4);
+  --line-strong: rgba(160, 174, 192, 0.5);
+  --accent: #4299e1;
+  --accent-light: rgba(66, 153, 225, 0.1);
+  --accent-gradient: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   --green: #48bb78;
   --amber: #d69e2e;
   --red: #e53e3e;
-  --radius: 16px;
-  --radius-sm: 10px;
-  --radius-lg: 24px;
-  --shadow: 0 4px 20px rgba(31, 38, 135, 0.08);
-  --shadow-lg: 0 12px 40px rgba(31, 38, 135, 0.15);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
   --font: 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
   --font-serif: 'MiSans', Georgia, 'Times New Roman', 'Noto Serif SC', serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  /* 液态玻璃主题 - 暗色 */
-  --bg: #0f0f1a;
-  --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1a 100%);
-  --glass-bg: rgba(25, 25, 45, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --glass-blur: 20px;
-  --panel: rgba(30, 30, 50, 0.85);
-  --panel-2: rgba(25, 25, 45, 0.9);
-  --panel-menu: rgba(20, 20, 35, 0.95);
+  /* 液态玻璃主题 - 暗色（深灰） */
+  --bg: #1a1a2e;
+  --bg-gradient: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  --glass-bg: rgba(30, 35, 50, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --glass-blur: 16px;
+  --panel: rgba(35, 40, 55, 0.95);
+  --panel-2: rgba(30, 35, 50, 0.95);
+  --panel-menu: rgba(25, 30, 45, 0.98);
   --text: #e2e8f0;
   --text-secondary: #a0aec0;
   --muted: #718096;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.12);
-  --accent: #9f7aea;
-  --accent-light: rgba(159, 122, 234, 0.15);
-  --accent-gradient: linear-gradient(135deg, #9f7aea 0%, #667eea 100%);
+  --line: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.1);
+  --accent: #63b3ed;
+  --accent-light: rgba(99, 179, 237, 0.15);
+  --accent-gradient: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
   --green: #68d391;
   --amber: #ecc94b;
   --red: #fc8181;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 [v-cloak] { display: none !important; }
