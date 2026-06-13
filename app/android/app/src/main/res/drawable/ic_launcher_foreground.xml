@@ -4,15 +4,17 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  <!-- 简单的S字母 - 用简单矩形 -->
-  <!-- 上横条 -->
-  <rect x="28" y="22" width="44" height="14" fill="#FFFFFF"/>
-  <!-- 上左竖条 -->
-  <rect x="28" y="22" width="14" height="24" fill="#FFFFFF"/>
-  <!-- 中间横条 -->
-  <rect x="28" y="40" width="44" height="14" fill="#FFFFFF"/>
-  <!-- 下右竖条 -->
-  <rect x="58" y="50" width="14" height="24" fill="#FFFFFF"/>
-  <!-- 下横条 -->
-  <rect x="28" y="68" width="44" height="14" fill="#FFFFFF"/>
+
+    <!-- 白色 S（路径矢量） -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M70,25
+                          C55,10 30,18 30,35
+                          C30,50 45,52 55,55
+                          C65,58 75,62 75,75
+                          C75,92 55,98 40,85"
+        android:strokeWidth="10"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
 </vector>
