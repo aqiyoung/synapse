@@ -55,61 +55,108 @@ class _MineScreenState extends State<MineScreen> {
     return Container(
       color: colorScheme.surface,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top + 8, 8, 16),
+        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 24, 16, 24),
         children: [
           // 液态玻璃 Header
           GlassContainer(
-            margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            borderRadius: BorderRadius.circular(20),
+            margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+            borderRadius: BorderRadius.circular(24),
             blur: 24,
             tintOpacity: 0.45,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
             child: Column(
               children: [
-                Text(
-                  'Synapse',
-                  style: TextStyle(
-                    fontFamily: 'MiSans',
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                    letterSpacing: 1.2,
-                  ),
+                // Logo + 标题
+                Row(
+                  children: [
+                    // Logo
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.primary.withOpacity(0.7),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          'S',
+                          style: TextStyle(
+                            fontFamily: 'MiSans',
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // 标题和版本
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Synapse',
+                            style: TextStyle(
+                              fontFamily: 'MiSans',
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'v$_version',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 20),
                 // Slogan
                 Text(
                   '记录思考，连接知识',
                   style: TextStyle(
-                    fontSize: 15,
-                    color: colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 14,
+                    color: colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   '让每一个想法都有归处',
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // 版本号
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'v$_version',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    color: colorScheme.onSurface.withOpacity(0.4),
                   ),
                 ),
               ],
