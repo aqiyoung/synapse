@@ -4,25 +4,8 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  <!-- 简单的S字母 - 用矩形条组成 -->
-  <!-- 上横条 -->
+  <!-- 真正的S字母 -->
   <path
       android:fillColor="#FFFFFF"
-      android:pathData="M28,24 L72,24 L72,36 L28,36 Z"/>
-  <!-- 上左竖条 -->
-  <path
-      android:fillColor="#FFFFFF"
-      android:pathData="M28,24 L40,24 L40,52 L28,52 Z"/>
-  <!-- 中间横条 -->
-  <path
-      android:fillColor="#FFFFFF"
-      android:pathData="M28,46 L72,46 L72,58 L28,58 Z"/>
-  <!-- 下右竖条 -->
-  <path
-      android:fillColor="#FFFFFF"
-      android:pathData="M60,46 L72,46 L72,76 L60,76 Z"/>
-  <!-- 下横条 -->
-  <path
-      android:fillColor="#FFFFFF"
-      android:pathData="M28,68 L72,68 L72,80 L28,80 Z"/>
+      android:pathData="M70,22 C44,18 18,32 18,48 C18,62 36,70 52,70 C68,70 80,80 80,94 C80,108 58,114 36,110 L36,94 C48,96 60,90 60,80 C60,70 48,64 38,64 C28,64 22,58 22,48 C22,38 34,30 50,30 L70,30 Z"/>
 </vector>
