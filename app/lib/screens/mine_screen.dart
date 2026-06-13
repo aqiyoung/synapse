@@ -225,86 +225,9 @@ class _MineScreenState extends State<MineScreen> {
                   label: '数据存储',
                   value: '本地优先，隐私可控',
                 ),
-                _buildInfoRow(
-                  colorScheme,
-                  icon: Icons.link_rounded,
-                  label: '开源地址',
-                  value: 'github.com/aqiyoung/synapse',
-                ),
+                // GitHub 仓库链接 - 带猫猫头像
+                _buildGitHubRow(colorScheme),
               ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          // GitHub 仓库链接
-          Material(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(16),
-            child: InkWell(
-              onTap: () async {
-                final uri = Uri.parse('https://github.com/aqiyoung/synapse');
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    // GitHub Octocat 图标
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          '🐱',
-                          style: TextStyle(fontSize: 22),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'GitHub 开源',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'github.com/aqiyoung/synapse',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: colorScheme.onSurface.withOpacity(0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.open_in_new_rounded,
-                      size: 18,
-                      color: colorScheme.primary,
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -402,6 +325,66 @@ class _MineScreenState extends State<MineScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGitHubRow(ColorScheme colorScheme) {
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.parse('https://github.com/aqiyoung/synapse');
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            // GitHub Octocat 图标
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text('🐱', style: TextStyle(fontSize: 18)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'GitHub 开源',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'github.com/aqiyoung/synapse',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.open_in_new_rounded,
+              size: 16,
+              color: colorScheme.primary,
+            ),
+          ],
+        ),
       ),
     );
   }
