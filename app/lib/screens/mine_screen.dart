@@ -71,13 +71,15 @@ class _MineScreenState extends State<MineScreen> {
                 Row(
                   children: [
                     // Logo - 使用提供的图标
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        'assets/icons/logo.png',
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        image: DecorationImage(
+                          image: AssetImage('assets/icons/logo.png'),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
