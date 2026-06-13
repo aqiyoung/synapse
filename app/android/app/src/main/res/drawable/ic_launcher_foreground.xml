@@ -4,8 +4,15 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  <!-- 真正的S字母 -->
-  <path
-      android:fillColor="#FFFFFF"
-      android:pathData="M70,22 C44,18 18,32 18,48 C18,62 36,70 52,70 C68,70 80,80 80,94 C80,108 58,114 36,110 L36,94 C48,96 60,90 60,80 C60,70 48,64 38,64 C28,64 22,58 22,48 C22,38 34,30 50,30 L70,30 Z"/>
+  <!-- 简单的S字母 - 用简单矩形 -->
+  <!-- 上横条 -->
+  <rect x="28" y="22" width="44" height="14" fill="#FFFFFF"/>
+  <!-- 上左竖条 -->
+  <rect x="28" y="22" width="14" height="24" fill="#FFFFFF"/>
+  <!-- 中间横条 -->
+  <rect x="28" y="40" width="44" height="14" fill="#FFFFFF"/>
+  <!-- 下右竖条 -->
+  <rect x="58" y="50" width="14" height="24" fill="#FFFFFF"/>
+  <!-- 下横条 -->
+  <rect x="28" y="68" width="44" height="14" fill="#FFFFFF"/>
 </vector>
