@@ -1,61 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  老板 6/13 拍: Synapse APP 图标改用 logo.svg 风格
-  前景: 蓝色节点网络 (跟 logo.svg 完全一致)
-  颜色: #4299e1 (蓝色 400)
-  中心节点 + 4 角节点 + 4 小装饰点 + 装饰圈
--->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  <!-- 装饰圈 (外圈, 跟 logo.svg r=42 等比缩放 108/120) -->
-  <path
-      android:strokeColor="#E2E8F0"
-      android:strokeWidth="1"
-      android:fillColor="#00000000"
-      android:pathData="M54,16 C74.9,16 92,33.1 92,54 C92,74.9 74.9,92 54,92 C33.1,92 16,74.9 16,54 C16,33.1 33.1,16 54,16 Z"/>
-  <!-- 装饰圈 (内圈, r=32) -->
-  <path
-      android:strokeColor="#E2E8F0"
-      android:strokeWidth="0.5"
-      android:fillColor="#00000000"
-      android:pathData="M54,22 C69.5,22 82,34.5 82,54 C82,73.5 69.5,86 54,86 C38.5,86 26,73.5 26,54 C26,34.5 38.5,22 54,22 Z"/>
+  <!-- 优雅的S字母 - 流畅曲线 + 知识节点装饰 -->
 
-  <!-- 中心主节点 (cx=54, cy=52, r=9, 内白 r=4.5) -->
+  <!-- 装饰圈 (外圈) -->
   <path
-      android:fillColor="#4299E1"
-      android:pathData="M54,43 C58.97,43 63,47.03 63,52 C63,56.97 58.97,61 54,61 C49.03,61 45,56.97 45,52 C45,47.03 49.03,43 54,43 Z"/>
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="1.5"
+      android:fillColor="#00000000"
+      android:pathData="M54,14 C76.1,14 94,31.9 94,54 C94,76.1 76.1,94 54,94 C31.9,94 14,76.1 14,54 C14,31.9 31.9,14 54,14 Z"/>
+
+  <!-- 装饰圈 (内圈) -->
+  <path
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="0.75"
+      android:fillColor="#00000000"
+      android:pathData="M54,20 C70.6,20 84,33.4 84,50 C84,66.6 70.6,80 54,80 C37.4,80 24,66.6 24,50 C24,33.4 37.4,20 54,20 Z"/>
+
+  <!-- 优雅的S字母 -->
   <path
       android:fillColor="#FFFFFF"
-      android:pathData="M54,47.5 C56.485,47.5 58.5,49.515 58.5,52 C58.5,54.485 56.485,56.5 54,56.5 C51.515,56.5 49.5,54.485 49.5,52 C49.5,49.515 51.515,47.5 54,47.5 Z"/>
+      android:pathData="M68,26 C44,22 22,34 22,48 C22,60 36,66 48,66 C60,66 72,74 72,86 C72,98 56,104 40,100 L40,88 C48,90 56,86 56,80 C56,74 48,70 40,70 C32,70 26,66 26,58 C26,50 34,44 44,44 L68,44 L68,26 Z"/>
 
-  <!-- 4 角节点 (37,37), (71,37), (37,71), (71,71) -->
-  <path
-      android:fillColor="#4299E1"
-      android:pathData="M37,32 C40.31,32 43,34.69 43,38 C43,41.31 40.31,44 37,44 C33.69,44 31,41.31 31,38 C31,34.69 33.69,32 37,32 Z"/>
-  <path
-      android:fillColor="#4299E1"
-      android:pathData="M71,32 C74.31,32 77,34.69 77,38 C77,41.31 74.31,44 71,44 C67.69,44 65,41.31 65,38 C65,34.69 67.69,32 71,32 Z"/>
-  <path
-      android:fillColor="#4299E1"
-      android:pathData="M37,66 C40.31,66 43,68.69 43,72 C43,75.31 40.31,78 37,78 C33.69,78 31,75.31 31,72 C31,68.69 33.69,66 37,66 Z"/>
-  <path
-      android:fillColor="#4299E1"
-      android:pathData="M71,66 C74.31,66 77,68.69 77,72 C77,75.31 74.31,78 71,78 C67.69,78 65,75.31 65,72 C65,68.69 67.69,66 71,66 Z"/>
+  <!-- 知识节点装饰 (左上) -->
+  <circle cx="26" cy="48" r="4" fill="#4299E1"/>
 
-  <!-- 4 个小装饰点 (32,52), (76,52), (54,29), (54,75) -->
-  <path
-      android:fillColor="#4299E1"
-      android:pathData="M32,49.5 C33.66,49.5 35,50.84 35,52.5 C35,54.16 33.66,55.5 32,55.5 C30.34,55.5 29,54.16 29,52.5 C29,50.84 30.34,49.5 32,49.5 Z"/>
-  <path
-      android:fillColor="#4299E1"
-      android:pathData="M76,49.5 C77.66,49.5 79,50.84 79,52.5 C79,54.16 77.66,55.5 76,55.5 C74.34,55.5 73,54.16 73,52.5 C73,50.84 74.34,49.5 76,49.5 Z"/>
-  <path
-      android:fillColor="#4299E1"
-      android:pathData="M54,29 C55.66,29 57,30.34 57,32 C57,33.66 55.66,35 54,35 C52.34,35 51,33.66 51,32 C51,30.34 52.34,29 54,29 Z"/>
-  <path
-      android:fillColor="#4299E1"
-      android:pathData="M54,73 C55.66,73 57,74.34 57,76 C57,77.66 55.66,79 54,79 C52.34,79 51,77.66 51,76 C51,74.34 52.34,73 54,73 Z"/>
+  <!-- 知识节点装饰 (右下) -->
+  <circle cx="72" cy="86" r="4" fill="#4299E1"/>
+
+  <!-- 中心节点 -->
+  <circle cx="54" cy="66" r="5" fill="#4299E1"/>
 </vector>
