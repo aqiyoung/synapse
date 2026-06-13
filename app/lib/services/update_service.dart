@@ -98,12 +98,19 @@ class UpdateService {
     final lBetaNum = lBetaMatch != null ? int.parse(lBetaMatch.group(1)!) : null;
     final cBetaNum = cBetaMatch != null ? int.parse(cBetaMatch.group(1)!) : null;
 
+    // 同类型版本比较（都是beta或都是stable）
     if (lBetaNum != null && cBetaNum != null) {
       return lBetaNum > cBetaNum;
-    } else if (lBetaNum != null && cBetaNum == null) {
+    }
+
+    // 当前是beta，latest是stable -> 不提示更新（beta用户不想降级到stable）
+    if (lBetaNum == null && cBetaNum != null) {
       return false;
-    } else if (lBetaNum == null && cBetaNum != null) {
-      return true;
+    }
+
+    // 当前是stable，latest是beta -> 不提示更新（stable用户不想升级到beta）
+    if (lBetaNum != null && cBetaNum == null) {
+      return false;
     }
 
     return false;
@@ -229,6 +236,13 @@ class UpdateService {
       debugPrint('Update check failed: $e');
     }
     _notifyListeners();
+  }
+
+  /// 获取GitHub下载链接
+  String getGitHubDownloadUrl() {
+    final version = _cachedUpdate?.latestVersion ?? '';
+    if (version.isEmpty) return 'https://github.com/aqiyoung/synapse/releases';
+    return 'https://github.com/aqiyoung/synapse/releases/tag/v$version';
   }
 
   /// 下载更新并安装

@@ -375,7 +375,15 @@ class _MineScreenState extends State<MineScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('取消', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+            child: Text('稍后', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              final url = UpdateService().getGitHubDownloadUrl();
+              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            },
+            child: const Text('GitHub下载'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -387,7 +395,7 @@ class _MineScreenState extends State<MineScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('更新'),
+            child: const Text('直接更新'),
           ),
         ],
       ),
