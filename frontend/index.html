@@ -1002,32 +1002,46 @@ a:hover { color: var(--text); }
   .cl-resize { display: none; }
 
   .mobile-menu-btn { display: flex; }
-  .note-view { padding: 16px 12px 50px; max-width: 100%; overflow-x: hidden; }
-  .note-view .doc-title { font-size: 18px; word-break: break-word; }
-  .note-view .doc-meta { flex-wrap: wrap; }
+  /* 手机端优化 */
+  .note-view { padding: 20px 16px 60px; max-width: 100%; overflow-x: hidden; }
+  .note-view .doc-title { font-size: 20px; word-break: break-word; line-height: 1.4; }
+  .note-view .doc-meta { flex-wrap: wrap; gap: 6px; }
   .toc { display: none; }
-  .md { font-size: 13px; word-break: break-word; overflow-wrap: anywhere; }
+  .md { font-size: 14px; word-break: break-word; overflow-wrap: anywhere; line-height: 1.8; }
   .md table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .md pre { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .md pre code { font-size: 11px; white-space: pre; }
-  .md img { max-width: 100%; height: auto; }
-  .relations-panel { overflow-x: hidden; }
-  .relations-item { white-space: normal; word-break: break-word; }
-  .filter-bar { flex-wrap: wrap; gap: 6px; }
-  .filter-bar select { flex: 1; min-width: 80px; }
-  .filter-bar input { width: 100%; order: 3; }
-  .filter-bar .count { order: 4; width: 100%; text-align: right; }
+  .md pre { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 12px; border-radius: 8px; }
+  .md pre code { font-size: 12px; white-space: pre; }
+  .md img { max-width: 100%; height: auto; border-radius: 8px; }
+  .md p { margin: 12px 0; }
+  .md h1, .md h2, .md h3 { margin-top: 20px; margin-bottom: 10px; }
+  .relations-panel { overflow-x: hidden; margin-top: 24px; }
+  .relations-item { white-space: normal; word-break: break-word; padding: 8px 12px; margin-bottom: 4px; background: var(--panel-2); border-radius: 8px; }
+  .filter-bar { flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
+  .filter-bar select { flex: 1; min-width: 100px; padding: 10px; font-size: 14px; }
+  .filter-bar input { width: 100%; order: 3; padding: 10px; font-size: 14px; }
+  .filter-bar .count { order: 4; width: 100%; text-align: right; font-size: 13px; }
   .dash thead { display: none; }
   .dash, .dash tbody, .dash tr, .dash td { display: block; width: 100%; }
-  .dash tr { margin-bottom: 8px; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--panel); }
-  .dash td { padding: 2px 0; border: none; }
-  .dash .note-title { font-size: 14px; max-width: 100%; }
-  .dash .note-snippet { max-width: 100%; white-space: nowrap; }
-  .dash .note-date { font-size: 10px; }
-  .cl-stats { padding: 8px; }
-  .stat-n { font-size: 14px; }
-  .cl-tags { max-height: 80px; }
-  .content { padding-bottom: 24px; }
+  .dash tr { margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--panel); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .dash td { padding: 3px 0; border: none; }
+  .dash .note-title { font-size: 16px; max-width: 100%; font-weight: 600; }
+  .dash .note-snippet { max-width: 100%; white-space: nowrap; font-size: 13px; color: var(--muted); }
+  .dash .note-date { font-size: 12px; color: var(--muted); }
+  .cl-stats { padding: 12px; gap: 16px; }
+  .stat-n { font-size: 18px; }
+  .stat-l { font-size: 11px; }
+  .cl-tags { max-height: 100px; padding: 8px 12px; }
+  .cl-tag { padding: 6px 12px; font-size: 12px; }
+  .content { padding-bottom: 40px; }
+  .cl-head { padding: 16px; }
+  .cl-head h1 { font-size: 20px; }
+  .cl-search { padding: 12px 16px; }
+  .cl-search input { padding: 12px 16px 12px 40px; font-size: 14px; background-position: 14px center; }
+  .nav-sidebar { width: 100%; flex-direction: row; height: 60px; padding: 0 12px; justify-content: space-around; border-right: none; border-top: 1px solid var(--glass-border); }
+  .nav-sidebar .nav-spacer { display: none; }
+  .nav-item { width: 48px; height: 48px; }
+  .nav-logo { display: none; }
+  .mobile-menu-btn { display: none !important; }
 }
 /* ── Brand header subtitle ── */
 .cl-head-sub {
@@ -1078,6 +1092,11 @@ a:hover { color: var(--text); }
       </svg>
       <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </div>
+    <div class="nav-item" @click="refreshCache" title="刷新缓存">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
       </svg>
     </div>
   </div>
@@ -1758,18 +1777,68 @@ createApp({
 
     const loadError = ref('');
 
-    async function loadNotes() {
+    // 缓存相关
+    const CACHE_KEY = 'synapse_notes_cache';
+    const CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
+
+    function loadCachedNotes() {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_TTL) {
+            notes.value = data;
+            return true;
+          }
+        }
+      } catch (e) {
+        console.warn('读取缓存失败:', e);
+      }
+      return false;
+    }
+
+    function saveCachedNotes(data) {
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.warn('保存缓存失败:', e);
+      }
+    }
+
+    function clearCache() {
+      try {
+        localStorage.removeItem(CACHE_KEY);
+      } catch (e) {}
+    }
+
+    async function loadNotes(forceRefresh = false) {
       loadError.value = '';
+
+      // 先尝试加载缓存
+      if (!forceRefresh && loadCachedNotes()) {
+        console.log('📦 从缓存加载笔记');
+        // 后台静默刷新
+        setTimeout(() => loadNotes(true), 100);
+        return;
+      }
+
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const data = await fetchJSON(API + '/notes?limit=200');
           notes.value = data.notes || [];
+          saveCachedNotes(notes.value);
           return;
         } catch(e) {
           console.error('加载笔记失败 (attempt ' + (attempt+1) + '):', e);
           if (attempt === 1) {
-            notes.value = [];
-            loadError.value = '加载失败，点击重试';
+            // 网络失败时尝试使用缓存
+            if (!loadCachedNotes()) {
+              notes.value = [];
+              loadError.value = '加载失败，点击重试';
+            }
           }
         }
       }
@@ -1933,6 +2002,15 @@ createApp({
         document.documentElement.setAttribute('data-theme', 'dark');
       } else {
         document.documentElement.removeAttribute('data-theme');
+      }
+    }
+
+    async function refreshCache() {
+      clearCache();
+      await loadNotes(true);
+      if (curNote.value) {
+        const note = notes.value.find(n => n.id === curNote.value.id);
+        if (note) openNote(note);
       }
     }
 
@@ -2398,7 +2476,7 @@ createApp({
       sortedTags, getTagFontSize, filterByTag,
       switchView, runLint, fixIssue, getFixLabel,
       openNote, openRelation, toggleTag, doSearch, setSort,
-      toggleTheme, scrollToHeading, renderMd, strip, fmt,
+      toggleTheme, refreshCache, scrollToHeading, renderMd, strip, fmt,
       chatMessages, chatInput, chatLoading, chatMessagesRef, sendChat, renderChatMd, openNoteById,
     };
   }
