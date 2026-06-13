@@ -6,6 +6,7 @@ import '../services/update_service.dart';
 import '../services/notification_service.dart';
 import 'notifications_screen.dart';
 import '../models/app_theme.dart';
+import '../widgets/glass_container.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -36,8 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _updateChannel = 'stable';
   bool _notificationsEnabled = true;
   int _unreadCount = 0;
-
-  // 管理员密码已改为服务端校验，不再硬编码在客户端
 
   bool get _isDark => widget.isDark;
 
@@ -145,7 +144,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('取消', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+            child: Text('稍后', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              final url = UpdateService().getGitHubDownloadUrl();
+              // 打开GitHub链接
+            },
+            child: const Text('GitHub下载'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -157,7 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('更新'),
+            child: const Text('直接更新'),
           ),
         ],
       ),
@@ -166,11 +173,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildUpdateSection(ColorScheme colorScheme) {
     final updateService = UpdateService();
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return GlassContainer(
+      borderRadius: BorderRadius.circular(16),
+      blur: 20,
+      tintOpacity: 0.3,
+      padding: const EdgeInsets.all(8),
       child: Column(
         children: [
           FutureBuilder<PackageInfo>(
@@ -178,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, snapshot) {
               final version = snapshot.data?.version ?? '...';
               return ListTile(
-                leading: Icon(Icons.info_outline, color: colorScheme.onSurface.withOpacity(0.5), size: 20),
+                leading: Icon(Icons.info_outline, color: colorScheme.primary, size: 20),
                 title: const Text('当前版本'),
                 trailing: Text('v$version', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6), fontSize: 14)),
               );
@@ -430,213 +437,459 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
+      extendBody: true,
       appBar: AppBar(
         title: const Text('设置'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         children: [
           // ── 外观 ──
-          Text(
-            '外观',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ListTile(
-            leading: Icon(
-              _isDark ? Icons.dark_mode : Icons.light_mode,
-              color: colorScheme.primary,
-            ),
-            title: const Text('深色模式'),
-            subtitle: Text(_isDark ? '当前：深色' : '当前：浅色'),
-            trailing: Switch(
-              value: _isDark,
-              onChanged: (_) => widget.onToggleTheme(),
-              activeColor: colorScheme.primary,
-            ),
-            contentPadding: EdgeInsets.zero,
-            onTap: widget.onToggleTheme,
-          ),
-          const SizedBox(height: 24),
-          Divider(color: colorScheme.outline.withOpacity(0.1)),
-          const SizedBox(height: 16),
-          // ── 主题风格 ──
-          Text(
-            '主题风格',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildThemeGrid(colorScheme),
-          const SizedBox(height: 24),
-          Divider(color: colorScheme.outline.withOpacity(0.1)),
-          const SizedBox(height: 16),
-          // ── 通知设置 ──
-          Text(
-            '通知',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SwitchListTile(
-            title: const Text('推送通知'),
-            subtitle: const Text('接收系统通知和更新提醒'),
-            value: _notificationsEnabled,
-            onChanged: (v) async {
-              await NotificationService.setEnabled(v);
-              setState(() => _notificationsEnabled = v);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('通知中心'),
-            trailing: _unreadCount > 0
-                ? Badge(label: Text('$_unreadCount'))
-                : null,
-            onTap: () async {
-              await Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(themeIndex: widget.themeIndex)));
-              _loadNotificationState();
-            },
-          ),
-          const SizedBox(height: 24),
-          Divider(color: colorScheme.outline.withOpacity(0.1)),
-          const SizedBox(height: 16),
-          // ── 更新通道 ──
-          Text(
-            '更新通道',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-              borderRadius: BorderRadius.circular(8),
-            ),
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RadioListTile<String>(
-                  title: const Text('稳定版'),
-                  subtitle: Text(
-                    '推荐，经过充分测试',
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+                Text(
+                  '外观',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
                   ),
-                  value: 'stable',
-                  groupValue: _updateChannel,
-                  onChanged: (v) => _setUpdateChannel(v!),
-                  activeColor: colorScheme.primary,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
-                Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
-                RadioListTile<String>(
-                  title: const Text('测试版'),
-                  subtitle: Text(
-                    '抢先体验新功能，可能不稳定',
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5)),
-                  ),
-                  value: 'beta',
-                  groupValue: _updateChannel,
-                  onChanged: (v) => _setUpdateChannel(v!),
-                  activeColor: colorScheme.primary,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                const SizedBox(height: 16),
+                // 深色模式开关
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        _isDark ? Icons.dark_mode : Icons.light_mode,
+                        color: colorScheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '深色模式',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            _isDark ? '当前：深色模式' : '当前：浅色模式',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _isDark,
+                      onChanged: (_) => widget.onToggleTheme(),
+                      activeColor: colorScheme.primary,
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          Divider(color: colorScheme.outline.withOpacity(0.1)),
-          const SizedBox(height: 16),
-          // ── 检查更新 ──
-          Text(
-            '应用更新',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildUpdateSection(colorScheme),
-          const SizedBox(height: 24),
-          Divider(color: colorScheme.outline.withOpacity(0.1)),
-          const SizedBox(height: 16),
-          // ── 服务器配置 ──
-          Text(
-            '服务器',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _serverController,
-            decoration: InputDecoration(
-              hintText: 'https://your-server.com',
-              labelText: '服务器地址',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saveServer,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+
+          // ── 主题风格 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '主题风格',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              child: Text(_saved ? '已保存 ✓' : '保存'),
+                const SizedBox(height: 16),
+                _buildThemeGrid(colorScheme),
+              ],
             ),
           ),
+
+          // ── 通知设置 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '通知',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: colorScheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '推送通知',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            '接收系统通知和更新提醒',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _notificationsEnabled,
+                      onChanged: (v) async {
+                        await NotificationService.setEnabled(v);
+                        setState(() => _notificationsEnabled = v);
+                      },
+                      activeColor: colorScheme.primary,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(themeIndex: widget.themeIndex)));
+                    _loadNotificationState();
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.notifications_active,
+                            color: colorScheme.primary,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            '通知中心',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        if (_unreadCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '$_unreadCount',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.chevron_right,
+                          color: colorScheme.onSurface.withOpacity(0.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── 更新通道 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '更新通道',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildChannelOption(
+                        colorScheme,
+                        title: '稳定版',
+                        subtitle: '推荐，经过充分测试',
+                        value: 'stable',
+                        icon: Icons.shield_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildChannelOption(
+                        colorScheme,
+                        title: '测试版',
+                        subtitle: '抢先体验新功能',
+                        value: 'beta',
+                        icon: Icons.science_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // ── 检查更新 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '应用更新',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildUpdateSection(colorScheme),
+              ],
+            ),
+          ),
+
+          // ── 服务器配置 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '服务器',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _serverController,
+                  decoration: InputDecoration(
+                    hintText: 'https://your-server.com',
+                    labelText: '服务器地址',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saveServer,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(_saved ? '已保存 ✓' : '保存'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // 管理员区域（隐藏，点击三次版本号显示）
           if (_showAdminLogin) ...[
-            const SizedBox(height: 24),
-            Divider(color: colorScheme.outline.withOpacity(0.1)),
-            const SizedBox(height: 16),
-            if (_isLoggedIn)
-              ListTile(
-                leading: Icon(Icons.admin_panel_settings, color: colorScheme.primary),
-                title: const Text('管理员'),
-                subtitle: const Text('已登录 · 可删除笔记'),
-                trailing: TextButton(
-                  onPressed: _logout,
-                  child: const Text('退出'),
-                ),
-                contentPadding: EdgeInsets.zero,
-              )
-            else
-              ListTile(
-                leading: Icon(Icons.lock_outline, color: colorScheme.onSurface.withOpacity(0.5)),
-                title: const Text('管理员登录'),
-                subtitle: const Text('登录后可删除笔记'),
-                onTap: _showLoginDialog,
-                contentPadding: EdgeInsets.zero,
+            GlassContainer(
+              margin: const EdgeInsets.only(bottom: 16),
+              borderRadius: BorderRadius.circular(20),
+              blur: 24,
+              tintOpacity: 0.4,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '管理员',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_isLoggedIn)
+                    ListTile(
+                      leading: Icon(Icons.admin_panel_settings, color: colorScheme.primary),
+                      title: const Text('管理员'),
+                      subtitle: const Text('已登录 · 可删除笔记'),
+                      trailing: TextButton(
+                        onPressed: _logout,
+                        child: const Text('退出'),
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                    )
+                  else
+                    ListTile(
+                      leading: Icon(Icons.lock_outline, color: colorScheme.onSurface.withOpacity(0.5)),
+                      title: const Text('管理员登录'),
+                      subtitle: const Text('登录后可删除笔记'),
+                      onTap: _showLoginDialog,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                ],
               ),
+            ),
           ],
+
+          const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  Widget _buildChannelOption(
+    ColorScheme colorScheme, {
+    required String title,
+    required String subtitle,
+    required String value,
+    required IconData icon,
+  }) {
+    final selected = _updateChannel == value;
+    return GestureDetector(
+      onTap: () => _setUpdateChannel(value),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primary.withOpacity(0.15)
+              : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: selected
+              ? Border.all(color: colorScheme.primary, width: 2)
+              : Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: selected ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.5),
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? colorScheme.primary : colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 10,
+                color: colorScheme.onSurface.withOpacity(0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
