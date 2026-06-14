@@ -439,7 +439,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      extendBody: true,
       appBar: AppBar(
         title: const Text('设置'),
         backgroundColor: Colors.transparent,

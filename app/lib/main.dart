@@ -92,6 +92,8 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
       _themeMode =
           _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
+    // MaterialApp 重建后系统 UI 会被重置, 用 postFrameCallback 确保在 rebuild 之后生效
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateStatusBar());
     _updateStatusBar();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDark', _themeMode == ThemeMode.dark);
