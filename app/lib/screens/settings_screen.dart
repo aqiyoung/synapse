@@ -455,6 +455,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // 每次构建时更新状态栏
+    _updateStatusBar();
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       extendBody: true,
