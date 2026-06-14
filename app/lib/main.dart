@@ -11,11 +11,7 @@ void main() async {
 
   // Edge-to-edge: content extends behind status bar
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    statusBarBrightness: Brightness.light,
-  ));
+  // 状态栏样式会在主题变化时动态更新
 
   // Load saved server URL (default to localhost for development)
   final prefs = await SharedPreferences.getInstance();
