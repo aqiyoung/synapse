@@ -58,7 +58,12 @@ app/android/app/*.jks
 # Environment
 .env
 .env.*
+# 例外：.env.example 是模板，允许入库
+!.env.example
 
 # Temporary files
 *.tmp
 *.log
+
+# Generated icon assets (regenerate via scripts)
+app/assets/icons/*.png

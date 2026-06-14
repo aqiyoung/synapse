@@ -11,7 +11,9 @@ import 'settings_screen.dart';
 import 'mine_screen.dart';
 import 'chat_screen.dart';
 import '../widgets/tag_chip.dart';
+import '../widgets/glass_container.dart';
 import '../services/update_service.dart';
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -146,6 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
+      extendBody: true,  // 让 body 延伸到 bottomNav 后面，液态玻璃才有东西可模糊
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -160,12 +164,21 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-        backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.primary.withOpacity(0.12),
-        destinations: [
+      bottomNavigationBar: GlassContainer(
+        margin: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+        borderRadius: BorderRadius.circular(24),
+        blur: 24,
+        tintOpacity: 0.4,
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          indicatorColor: colorScheme.primary.withOpacity(0.18),
+          height: 64,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: [
           NavigationDestination(
             icon: Icon(Icons.library_books_outlined,
                 color: colorScheme.onSurface.withOpacity(0.6)),
@@ -185,349 +198,238 @@ class _HomeScreenState extends State<HomeScreen> {
             label: _isChinese ? 'AI' : 'AI',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline,
-                color: colorScheme.onSurface.withOpacity(0.6)),
+            icon: FutureBuilder<int>(
+              future: NotificationService.getUnreadCount(),
+              builder: (ctx, snap) {
+                final count = snap.data ?? 0;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(Icons.person_outline,
+                        color: colorScheme.onSurface.withOpacity(0.6)),
+                    if (count > 0)
+                      Positioned(
+                        right: -6,
+                        top: -3,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                              color: Colors.red, shape: BoxShape.circle),
+                          constraints: const BoxConstraints(
+                              minWidth: 14, minHeight: 14),
+                          child: Text('$count',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 8),
+                              textAlign: TextAlign.center),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
             selectedIcon: Icon(Icons.person, color: colorScheme.primary),
             label: _isChinese ? '我的' : 'Mine',
           ),
         ],
+        ),
       ),
       floatingActionButton: null,
     );
   }
 
   Widget _buildNoteList(ColorScheme colorScheme) {
-    return Container(
-      color: colorScheme.surface,
-      child: Column(
-        children: [
-          // Header (padding includes status bar height)
-          Container(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 12),
-            color: colorScheme.surface,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Synapse',
-                      style: TextStyle(
-                        fontFamily: 'MiSans',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${_notes.length} 篇',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Search
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    _searchDebounce?.cancel();
-                    _searchDebounce = Timer(
-                      const Duration(milliseconds: 300),
-                      () => _onSearch(value),
-                    );
-                  },
-                  onSubmitted: (value) {
-                    _searchDebounce?.cancel();
-                    _onSearch(value);
-                  },
-                  decoration: InputDecoration(
-                    hintText: '搜索笔记...',
-                    hintStyle: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.4),
-                    ),
-                    prefixIcon: Icon(Icons.search,
-                        color: colorScheme.onSurface.withOpacity(0.4)),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.clear,
-                                color: colorScheme.onSurface.withOpacity(0.4)),
-                            onPressed: () {
-                              _searchController.clear();
-                              _onSearch('');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colorScheme.primary),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-                // Search history
-                if (_searchHistory.isNotEmpty && _searchQuery.isEmpty) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: _searchHistory.map((item) {
-                      return GestureDetector(
-                        onTap: () {
-                          _searchController.text = item;
-                          _onSearch(item);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.outline.withOpacity(0.15),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.history, size: 14, color: colorScheme.onSurface.withOpacity(0.4)),
-                              const SizedBox(width: 4),
-                              Text(
-                                item,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+    return Stack(
+      children: [
+        // 底层：渐变背景，让玻璃透出颜色
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primary.withOpacity(0.10),
+                  colorScheme.primary.withOpacity(0.03),
+                  colorScheme.surface,
                 ],
-              ],
-            ),
-          ),
-          // Tags
-          if (_tags.isNotEmpty)
-            Container(
-              height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: colorScheme.surface,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: TagChip(
-                      label: '全部',
-                      selected: _selectedTag.isEmpty,
-                      count: _notes.length,
-                      onTap: () => _onTagSelected(''),
-                    ),
-                  ),
-                  ..._tags.take(5).map((tag) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: TagChip(
-                          label: tag.name,
-                          selected: _selectedTag == tag.name,
-                          count: tag.noteCount,
-                          onTap: () => _onTagSelected(tag.name),
-                        ),
-                      )),
-                ],
+                stops: const [0.0, 0.3, 0.7],
               ),
             ),
-          Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
-          // Update banner
-          if (UpdateService().hasUpdate)
-            _buildUpdateBanner(colorScheme),
-          // Note list
-          Expanded(
-            child: _loading
-                ? Center(
-                    child: CircularProgressIndicator(color: colorScheme.primary))
-                : _notes.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withOpacity(0.4),
-                              ),
-                            ),
-                            if (!ApiService.isConfigured) ...[
-                              const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => SettingsScreen(
-                                      onToggleTheme: widget.onToggleTheme,
-                                      isDark: widget.isDark,
-                                      themeIndex: widget.themeIndex,
-                                      onThemeChanged: widget.onThemeChanged,
-                                    ),
-                                  ),
-                                ).then((_) => _loadData()),
-                                child: const Text('前往设置'),
-                              ),
-                            ],
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadData,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: _notes.length,
-                          itemBuilder: (context, index) =>
-                              _buildNoteItem(_notes[index], colorScheme),
-                        ),
-                      ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUpdateBanner(ColorScheme colorScheme) {
-    final update = UpdateService();
-    final info = update.cached!;
-
-    return GestureDetector(
-      onTap: () => _showUpdateDialog(colorScheme),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              colorScheme.primary.withOpacity(0.1),
-              colorScheme.primary.withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: colorScheme.primary.withOpacity(0.2),
-            width: 1,
           ),
         ),
-        child: Row(
+        Column(
           children: [
-            Icon(Icons.system_update, size: 20, color: colorScheme.primary),
-            const SizedBox(width: 10),
-            Expanded(
+            // 液态玻璃 Header（包含 title + search + tags + update banner）
+            GlassContainer(
+              margin: EdgeInsets.fromLTRB(8,
+                  MediaQuery.of(context).padding.top + 8, 8, 8),
+              borderRadius: BorderRadius.circular(20),
+              blur: 24,
+              tintOpacity: 0.45,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '新版本 v${info.latestVersion} 可用',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        info.releaseNotes!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  // Title row
+                  Row(
+                    children: [
+                      Text(
+                        'Synapse',
+                        style: TextStyle(
+                          fontFamily: 'MiSans',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_notes.length} 篇',
                         style: TextStyle(
                           fontSize: 12,
                           color: colorScheme.onSurface.withOpacity(0.5),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // 搜索框
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      _searchDebounce?.cancel();
+                      _searchDebounce = Timer(
+                        const Duration(milliseconds: 500),
+                        () => _onSearch(value),
+                      );
+                    },
+                    onSubmitted: (value) {
+                      _searchDebounce?.cancel();
+                      _onSearch(value);
+                    },
+                    decoration: InputDecoration(
+                      hintText: '搜索笔记...',
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                      prefixIcon: Icon(Icons.search,
+                          color: colorScheme.onSurface.withOpacity(0.4)),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear,
+                                  color: colorScheme.onSurface.withOpacity(0.4)),
+                              onPressed: () {
+                                _searchController.clear();
+                                _onSearch('');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: colorScheme.surface.withOpacity(0.6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                            color: colorScheme.outline.withOpacity(0.2)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                            color: colorScheme.outline.withOpacity(0.2)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: colorScheme.primary),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                  // 标签栏（过滤日期和无意义标签，按热度排序，随机显示5个热门标签）
+                  if (_tags.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: SizedBox(
+                        height: 36,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: TagChip(
+                                label: '全部',
+                                selected: _selectedTag.isEmpty,
+                                count: _notes.length,
+                                onTap: () => _onTagSelected(''),
+                              ),
+                            ),
+                            ..._getPopularTags().map((tag) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: TagChip(
+                                    label: tag.name,
+                                    selected: _selectedTag == tag.name,
+                                    count: tag.noteCount,
+                                    onTap: () => _onTagSelected(tag.name),
+                                  ),
+                                )),
+                          ],
+                        ),
+                      ),
                     ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 14, color: colorScheme.primary),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showUpdateDialog(ColorScheme colorScheme) {
-    final info = UpdateService().cached!;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.system_update, color: colorScheme.primary, size: 24),
-            const SizedBox(width: 8),
-            Text('v${info.latestVersion}', style: const TextStyle(fontSize: 18)),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty) ...[
-                Text(
-                  '更新内容',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  info.releaseNotes!,
-                  style: TextStyle(fontSize: 14, height: 1.6, color: colorScheme.onSurface),
-                ),
-              ] else
-                Text(
-                  '发现新版本，是否前往下载？',
-                  style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('取消', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              UpdateService().downloadUpdate();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            // 笔记列表
+            Expanded(
+              child: _loading
+                  ? Center(
+                      child:
+                          CircularProgressIndicator(color: colorScheme.primary))
+                  : _notes.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
+                                style: TextStyle(
+                                  color: colorScheme.onSurface.withOpacity(0.4),
+                                ),
+                              ),
+                              if (!ApiService.isConfigured) ...[
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SettingsScreen(
+                                        onToggleTheme: widget.onToggleTheme,
+                                        isDark: widget.isDark,
+                                        themeIndex: widget.themeIndex,
+                                        onThemeChanged:
+                                            widget.onThemeChanged,
+                                      ),
+                                    ),
+                                  ).then((_) => _loadData()),
+                                  child: const Text('前往设置'),
+                                ),
+                              ],
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            cacheExtent: 600,
+                            itemCount: _notes.length,
+                            itemBuilder: (context, index) =>
+                                _buildNoteItem(_notes[index], colorScheme),
+                          ),
+                        ),
             ),
-            child: const Text('更新'),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -733,5 +635,36 @@ class _HomeScreenState extends State<HomeScreen> {
     if (diff.inDays < 1) return '${diff.inHours}小时前';
     if (diff.inDays < 30) return '${diff.inDays}天前';
     return '${dateTime.month}月${dateTime.day}日';
+  }
+
+  /// 获取热门标签（过滤日期和无意义标签，按热度排序，随机选择5个）
+  List<Tag> _getPopularTags() {
+    // 过滤掉日期格式和无意义标签
+    final filteredTags = _tags.where((tag) {
+      final name = tag.name.trim();
+
+      // 过滤日期格式：2026、2026-04、2026-05 等
+      if (RegExp(r'^\d{4}(-\d{2})?$').hasMatch(name)) return false;
+
+      // 过滤无意义标签（太短或明显无意义）
+      if (name.length <= 1) return false;
+      if (['了什么', '的工', '的工作', '入十几', '入十几万', '什么', '现在', '需要', '全天'].contains(name)) return false;
+
+      // 过滤note_count为0的标签
+      if (tag.noteCount <= 0) return false;
+
+      return true;
+    }).toList();
+
+    // 按热度排序（note_count降序）
+    filteredTags.sort((a, b) => b.noteCount.compareTo(a.noteCount));
+
+    // 取前20个热门标签，然后随机选择5个
+    final topTags = filteredTags.take(20).toList();
+    if (topTags.length <= 5) return topTags;
+
+    // 随机选择5个（使用固定的种子，保证同一会话内顺序一致）
+    topTags.shuffle();
+    return topTags.take(5).toList();
   }
 }

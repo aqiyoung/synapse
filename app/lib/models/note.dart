@@ -9,6 +9,7 @@ class Note {
   final DateTime? sourceCreatedAt;
   final DateTime? updatedAt;
   final bool isPinned;
+  final int? folderId;
 
   Note({
     required this.id,
@@ -21,6 +22,7 @@ class Note {
     this.sourceCreatedAt,
     this.updatedAt,
     this.isPinned = false,
+    this.folderId,
   });
 
   factory Note.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class Note {
           ? DateTime.tryParse(json['updated_at'])
           : null,
       isPinned: json['is_pinned'] ?? false,
+      folderId: json['folder_id'],
     );
   }
 
@@ -55,6 +58,7 @@ class Note {
     DateTime? sourceCreatedAt,
     DateTime? updatedAt,
     bool? isPinned,
+    int? folderId,
   }) {
     return Note(
       id: id ?? this.id,
@@ -67,6 +71,7 @@ class Note {
       sourceCreatedAt: sourceCreatedAt ?? this.sourceCreatedAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isPinned: isPinned ?? this.isPinned,
+      folderId: folderId ?? this.folderId,
     );
   }
 }

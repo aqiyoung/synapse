@@ -4,6 +4,7 @@ import hmac
 import logging
 import os
 import re
+import time
 import uuid
 import zipfile
 import io
@@ -12,21 +13,28 @@ from typing import List, Optional
 
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, Response, JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-from models import Tag, note_tags, Note
+from models import Tag, note_tags, Note, Folder, ReadingStats, Notification, TagFolderRule
 from crud import (
     get_db, create_note, get_note, get_note_by_slug, list_notes,
     update_note, delete_note, list_tags, get_or_create_tag,
     restore_note, permanent_delete_note, list_deleted_notes,
+    create_folder, list_folders, update_folder, delete_folder, get_folder_notes,
+    record_read, get_reading_stats, get_overall_stats,
+    create_notification, list_notifications, mark_read, mark_all_read,
 )
 from config import API_TOKEN, ADMIN_PASSWORD
 
-app = FastAPI(title="知识库 API", version="1.1.0")
+app = FastAPI(title="知识库 API", version="1.2.0")
+
+# GZip 中间件：响应 ≥ 500B 才压缩，避免小的错误响应被额外压缩反而变大
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # CORS - 从环境变量读取允许的源，默认只允许本地和自己的域名
 _cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost,http://127.0.0.1,https://wiki.threel.site").split(",")
@@ -89,7 +97,13 @@ def _fts_search(db: Session, query_text: str, limit: int = 20, title_only: bool 
 
     try:
         rows = db.execute(fts_sql, {"q": match_expr, "limit": limit}).fetchall()
-        return [r[0] for r in rows]
+        fts_results = [r[0] for r in rows]
+        # 如果FTS5返回结果，使用FTS5结果
+        if fts_results:
+            return fts_results
+        # FTS5返回空时，回退到LIKE搜索（支持中文分词）
+        _, notes_list = list_notes(db, keyword=query_text, limit=limit, title_only=title_only)
+        return [n.id for n in notes_list]
     except Exception:
         # FTS5 失败时回退到 LIKE
         _, notes_list = list_notes(db, keyword=query_text, limit=limit, title_only=title_only)
@@ -97,29 +111,29 @@ def _fts_search(db: Session, query_text: str, limit: int = 20, title_only: bool 
 
 
 def _find_orphan_notes(db: Session, notes: list) -> list:
-    """找出孤立笔记：无 outgoing wikilink、无 incoming 引用、无共享标签"""
-    all_titles = {n.title for n in notes}
+    """找出孤立笔记：无 outgoing wikilink、无 incoming 引用、无共享标签
 
-    # 收集所有被引用的标题
+    优化：每条笔记只跑一次 regex，同时构建 referenced 集合。
+    """
     referenced = set()
     for n in notes:
         if n.content:
             for m in re.finditer(r'\[\[([^\]]+)\]\]', n.content):
                 referenced.add(m.group(1))
 
-    # 构建标签→笔记映射，共享标签的笔记互相关联
+    # 共享标签判定
     tag_note_map: dict[str, set] = {}
     for n in notes:
         for t in (n.tags or []):
             tag_note_map.setdefault(t.name, set()).add(n.id)
     shared_tag_notes = set()
-    for tag_name, note_ids in tag_note_map.items():
+    for _tag, note_ids in tag_note_map.items():
         if len(note_ids) > 1:
             shared_tag_notes.update(note_ids)
 
     orphans = []
     for n in notes:
-        has_outgoing = n.content and re.search(r'\[\[([^\]]+)\]\]', n.content)
+        has_outgoing = bool(n.content and re.search(r'\[\[([^\]]+)\]\]', n.content))
         has_incoming = n.title in referenced
         has_shared_tag = n.id in shared_tag_notes
         if not has_outgoing and not has_incoming and not has_shared_tag:
@@ -129,6 +143,12 @@ def _find_orphan_notes(db: Session, notes: list) -> list:
 
 # 公开接口不需要认证的路径
 _PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/check", "/api/update/download", "/api/admin/verify"}
+
+# {title: id} 全表映射缓存，30 秒 TTL。graph/relations 复用。
+_TITLE_MAP_CACHE: tuple[dict, float] | None = None
+
+# 标签列表 60 秒 TTL 缓存
+_TAGS_CACHE: tuple[list, float] | None = None
 
 
 @app.middleware("http")
@@ -172,6 +192,19 @@ class SmartIngestRequest(BaseModel):
     note_id: int
 
 
+def _build_title_map(db: Session) -> dict:
+    """构建 {title: id} 映射，供 graph/relations 复用。
+    使用 30 秒 TTL 缓存，避免每次请求全表扫。"""
+    global _TITLE_MAP_CACHE
+    now = time.monotonic()
+    if _TITLE_MAP_CACHE and now - _TITLE_MAP_CACHE[1] < 30:
+        return _TITLE_MAP_CACHE[0]
+    rows = db.query(Note.id, Note.title).filter(Note.deleted_at.is_(None)).all()
+    title_map = {row.title: row.id for row in rows}
+    _TITLE_MAP_CACHE = (title_map, now)
+    return title_map
+
+
 # ===== 笔记 API =====
 
 @app.get("/api/notes")
@@ -180,13 +213,18 @@ def api_list_notes(
     limit: int = Query(50, ge=1, le=200),
     tag: Optional[str] = None,
     keyword: Optional[str] = None,
+    fields: Optional[str] = Query(None, description="逗号分隔的字段名子集，如 'summary,id,title,tags'"),
     db: Session = Depends(get_db),
 ):
-    """列出笔记"""
+    """列出笔记（fields 参数允许只取必要字段，节省 90%+ 响应体积）"""
     total, notes = list_notes(db, skip=skip, limit=limit, tag=tag, keyword=keyword)
+    items = [n.to_dict() for n in notes]
+    if fields:
+        wanted = {f.strip() for f in fields.split(",") if f.strip()}
+        items = [{k: v for k, v in n.items() if k in wanted} for n in items]
     return {
         "total": total,
-        "notes": [n.to_dict() for n in notes],
+        "notes": items,
     }
 
 
@@ -233,6 +271,7 @@ async def api_create_note(data: NoteCreate, db: Session = Depends(get_db)):
     note = create_note(db, title=data.title, content=data.content, tag_names=data.tags, source_created_at=src)
     if data.content and len(data.content) > 50:
         asyncio.create_task(_auto_analyze_note(note.id))
+    _invalidate_tags_cache()
     return note.to_dict()
 
 
@@ -249,6 +288,7 @@ async def api_update_note(note_id: int, data: NoteUpdate, db: Session = Depends(
         raise HTTPException(status_code=404, detail="笔记不存在")
     if data.content and len(data.content) > 50:
         asyncio.create_task(_auto_analyze_note(note_id))
+    _invalidate_tags_cache()
     return note.to_dict()
 
 
@@ -297,9 +337,20 @@ def api_permanent_delete_note(note_id: int, db: Session = Depends(get_db)):
 
 @app.get("/api/tags")
 def api_list_tags(db: Session = Depends(get_db)):
-    """列出所有标签"""
+    """列出所有标签（60 秒 TTL 缓存）"""
+    global _TAGS_CACHE
+    now = time.monotonic()
+    if _TAGS_CACHE and now - _TAGS_CACHE[1] < 60:
+        return _TAGS_CACHE[0]
     tags = list_tags(db)
-    return [t.to_dict() for t in tags]
+    result = [t.to_dict() for t in tags]
+    _TAGS_CACHE = (result, now)
+    return result
+
+
+def _invalidate_tags_cache():
+    global _TAGS_CACHE
+    _TAGS_CACHE = None
 
 
 # ===== 搜索 API =====
@@ -586,6 +637,144 @@ def admin_verify(req: AdminVerifyRequest):
     raise HTTPException(401, "密码错误")
 
 
+# ===== 阅读统计 API =====
+
+@app.get("/api/stats")
+def api_stats(db: Session = Depends(get_db)):
+    """全局阅读统计"""
+    return get_overall_stats(db)
+
+@app.get("/api/stats/note/{note_id}")
+def api_note_stats(note_id: int, db: Session = Depends(get_db)):
+    """单篇笔记阅读统计"""
+    stat = get_reading_stats(db, note_id)
+    if not stat:
+        return {"read_count": 0, "total_read_time": 0, "last_read_at": None, "first_read_at": None}
+    return {
+        "read_count": stat.read_count,
+        "total_read_time": stat.total_read_time,
+        "last_read_at": stat.last_read_at.isoformat() if stat.last_read_at else None,
+        "first_read_at": stat.first_read_at.isoformat() if stat.first_read_at else None,
+    }
+
+@app.post("/api/stats/note/{note_id}/read")
+def api_record_read(note_id: int, db: Session = Depends(get_db)):
+    """记录一次阅读"""
+    note = get_note(db, note_id)
+    if not note:
+        raise HTTPException(404, "笔记不存在")
+    record_read(db, note_id)
+    return {"ok": True}
+
+
+# ===== 分类文件夹 API =====
+
+class FolderCreate(BaseModel):
+    name: str
+    icon: str = "folder"
+    color: str = "#c96442"
+    parent_id: Optional[int] = None
+
+class FolderUpdate(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    parent_id: Optional[int] = None
+    sort_order: Optional[int] = None
+
+@app.get("/api/folders")
+def api_list_folders(db: Session = Depends(get_db)):
+    """列出所有分类"""
+    folders = list_folders(db)
+    return [f.to_dict() for f in folders]
+
+@app.post("/api/folders")
+def api_create_folder(data: FolderCreate, db: Session = Depends(get_db)):
+    """创建分类"""
+    folder = create_folder(db, name=data.name, icon=data.icon, color=data.color, parent_id=data.parent_id)
+    return folder.to_dict()
+
+@app.put("/api/folders/{folder_id}")
+def api_update_folder(folder_id: int, data: FolderUpdate, db: Session = Depends(get_db)):
+    """更新分类"""
+    kwargs = {k: v for k, v in data.dict().items() if v is not None}
+    folder = update_folder(db, folder_id, **kwargs)
+    if not folder:
+        raise HTTPException(404, "分类不存在")
+    return folder.to_dict()
+
+@app.delete("/api/folders/{folder_id}")
+def api_delete_folder(folder_id: int, db: Session = Depends(get_db)):
+    """删除分类"""
+    folder = delete_folder(db, folder_id)
+    if not folder:
+        raise HTTPException(404, "分类不存在")
+    return {"ok": True, "deleted": folder.name}
+
+@app.get("/api/folders/{folder_id}/notes")
+def api_folder_notes(
+    folder_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """获取分类下的笔记"""
+    total, notes = get_folder_notes(db, folder_id, skip=skip, limit=limit)
+    return {"total": total, "notes": [n.to_dict() for n in notes]}
+
+@app.put("/api/notes/{note_id}/folder")
+def api_set_note_folder(note_id: int, folder_id: Optional[int] = None, db: Session = Depends(get_db)):
+    """设置笔记分类"""
+    note = get_note(db, note_id)
+    if not note:
+        raise HTTPException(404, "笔记不存在")
+    note.folder_id = folder_id
+    db.commit()
+    db.refresh(note)
+    return {"ok": True, "folder_id": folder_id}
+
+
+# ===== 通知 API =====
+
+@app.get("/api/notifications")
+def api_list_notifications(
+    limit: int = Query(50, ge=1, le=200),
+    unread_only: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    """获取通知列表"""
+    notifs = list_notifications(db, limit=limit, unread_only=unread_only)
+    return [n.to_dict() for n in notifs]
+
+@app.get("/api/notifications/unread-count")
+def api_unread_count(db: Session = Depends(get_db)):
+    """未读通知数"""
+    count = db.query(Notification).filter(Notification.is_read == False).count()
+    return {"count": count}
+
+@app.post("/api/notifications/{notif_id}/read")
+def api_mark_read(notif_id: int, db: Session = Depends(get_db)):
+    """标记已读"""
+    mark_read(db, notif_id)
+    return {"ok": True}
+
+@app.post("/api/notifications/read-all")
+def api_mark_all_read(db: Session = Depends(get_db)):
+    """全部已读"""
+    mark_all_read(db)
+    return {"ok": True}
+
+@app.delete("/api/notifications/{notif_id}")
+def api_delete_notification(notif_id: int, db: Session = Depends(get_db)):
+    """删除通知"""
+    notif = db.query(Notification).filter(Notification.id == notif_id).first()
+    if not notif:
+        raise HTTPException(404, "通知不存在")
+    db.delete(notif)
+    db.commit()
+    return {"ok": True}
+
+
 # ===== AI API =====
 
 @app.post("/api/ai/auto-tag")
@@ -604,10 +793,8 @@ def api_note_relations(note_id: int, db: Session = Depends(get_db)):
     if not note:
         raise HTTPException(status_code=404, detail="笔记不存在")
 
-    # 获取所有笔记用于标题匹配
-    total, all_notes = list_notes(db, limit=10000)
-    title_to_id = {n.title: n.id for n in all_notes}
-    id_to_note = {n.id: n for n in all_notes}
+    # 使用 30 秒缓存的 title 映射，避免每次请求全表扫
+    title_to_id = _build_title_map(db)
 
     # outgoing: 从本文内容中提取 [[wikilink]]
     outgoing = []
@@ -618,13 +805,16 @@ def api_note_relations(note_id: int, db: Session = Depends(get_db)):
             if target_id and target_id != note_id:
                 outgoing.append({"id": target_id, "title": target_title})
 
-    # incoming: 扫描所有笔记，找包含 [[本文标题]] 的
-    incoming = []
-    for n in all_notes:
-        if n.id == note_id or not n.content:
-            continue
-        if re.search(rf'\[\[{re.escape(note.title)}\]\]', n.content):
-            incoming.append({"id": n.id, "title": n.title})
+    # incoming: 用 SQL LIKE 查包含 [[本文标题]] 的笔记（O(log N)）
+    # 转义 LIKE 通配符
+    escaped = note.title.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+    pattern = f"%[[{escaped}]]%"
+    rows = (
+        db.query(Note.id, Note.title)
+        .filter(Note.deleted_at.is_(None), Note.id != note_id, Note.content.like(pattern))
+        .all()
+    )
+    incoming = [{"id": r.id, "title": r.title} for r in rows]
 
     return {
         "note_id": note_id,
@@ -637,11 +827,16 @@ def api_note_relations(note_id: int, db: Session = Depends(get_db)):
 @app.get("/api/graph")
 def api_graph(db: Session = Depends(get_db)):
     """返回知识图谱数据（节点 + 边）"""
-    total, notes = list_notes(db, limit=10000)
-    # 构建标题 → id 映射
-    title_map = {}
-    for n in notes:
-        title_map[n.title] = n.id
+    from sqlalchemy.orm import selectinload
+
+    # 一次性拉取所有 id/title（O(N)）
+    notes = (
+        db.query(Note)
+        .options(selectinload(Note.tags))
+        .filter(Note.deleted_at.is_(None))
+        .all()
+    )
+    title_map = {n.title: n.id for n in notes}
 
     nodes = []
     for n in notes:
@@ -704,6 +899,7 @@ def api_update_tag(tag_id: int, data: TagUpdate, db: Session = Depends(get_db)):
     
     db.commit()
     db.refresh(tag)
+    _invalidate_tags_cache()
     return tag.to_dict()
 
 @app.delete("/api/tags/{tag_id}")
@@ -720,6 +916,7 @@ def api_delete_tag(tag_id: int, db: Session = Depends(get_db)):
     
     db.delete(tag)
     db.commit()
+    _invalidate_tags_cache()
     return {"ok": True, "deleted": tag.name}
 
 
@@ -783,8 +980,9 @@ def _algo_analyze(title: str, content: str) -> tuple[list[str], str]:
 _auto_analyze_locks: dict[int, asyncio.Lock] = {}
 
 async def _auto_analyze_note(note_id: int):
-    """后台自动分析笔记：关键词标签 + 首段摘要（加锁防并发）"""
+    """后台自动分析笔记：关键词标签 + 首段摘要 + AI关联分析（加锁防并发）"""
     import asyncio
+    import re as _re
     lock = _auto_analyze_locks.setdefault(note_id, asyncio.Lock())
     async with lock:
         try:
@@ -807,11 +1005,30 @@ async def _auto_analyze_note(note_id: int):
                             db.add(tag)
                         note.tags.append(tag)
 
+                    # 自动归类：根据标签匹配分类
+                    rules = db.query(TagFolderRule).order_by(TagFolderRule.priority.desc()).all()
+                    for rule in rules:
+                        for tag_name in tags:
+                            if rule.tag_name.lower() in tag_name.lower() or tag_name.lower() in rule.tag_name.lower():
+                                folder = db.query(Folder).filter(Folder.id == rule.folder_id).first()
+                                if folder:
+                                    note.folder_id = folder.id
+                                    logger.info(f"Auto-categorized note {note_id} to folder '{folder.name}' via tag '{tag_name}'")
+                                    break
+
                 if summary:
                     note.summary = summary
 
                 db.commit()
                 logger.info(f"Auto-analyzed note {note_id}: tags={tags}, summary={summary[:30]}...")
+
+                # AI自动关联分析
+                if note.content and len(note.content) > 100:
+                    try:
+                        await _auto_link_note(note_id, db)
+                    except Exception as e:
+                        logger.warning(f"AI auto-link failed for note {note_id}: {e}")
+
             finally:
                 db.close()
         except Exception as e:
@@ -819,6 +1036,69 @@ async def _auto_analyze_note(note_id: int):
         finally:
             # 清理锁
             _auto_analyze_locks.pop(note_id, None)
+
+
+async def _auto_link_note(note_id: int, db: Session):
+    """AI自动关联：分析笔记内容，添加wikilink"""
+    import re as _re
+
+    note = db.query(Note).filter(Note.id == note_id).first()
+    if not note or not note.content:
+        return
+
+    # 获取所有笔记标题
+    all_notes = db.query(Note.id, Note.title).filter(Note.deleted_at.is_(None), Note.id != note_id).all()
+    if not all_notes:
+        return
+
+    # 检查是否已有足够的关联
+    existing_links = _re.findall(r'\[\[([^\]]+)\]\]', note.content)
+    if len(existing_links) >= 3:
+        return  # 已有足够关联
+
+    # 构建笔记索引
+    note_index = "\n".join([f"- {n.title}" for n in all_notes[:100]])
+
+    # AI分析
+    prompt = f"""分析以下笔记内容，找出最相关的 1-3 篇笔记标题。
+
+## 当前笔记
+标题：{note.title}
+内容：{note.content[:500]}
+
+## 可选笔记列表
+{note_index}
+
+只返回最相关的笔记标题，每行一个。如果没有相关的，返回空。"""
+
+    try:
+        result = llm.complete(prompt, system="你是知识管理助手，分析笔记内容找出关联。")
+        if not result:
+            return
+
+        # 解析AI返回的标题
+        suggested_titles = [line.strip().lstrip('- ').strip() for line in result.strip().split('\n') if line.strip()]
+
+        # 验证标题是否存在
+        valid_titles = []
+        for title in suggested_titles:
+            for n in all_notes:
+                if n.title == title and title not in existing_links:
+                    valid_titles.append(title)
+                    break
+
+        if not valid_titles:
+            return
+
+        # 在笔记末尾添加关联链接
+        links_to_add = '\n\n' + '\n'.join([f'[[{t}]]' for t in valid_titles[:2]])
+        note.content = note.content.rstrip() + links_to_add
+        note.updated_at = datetime.now(tz=timezone(timedelta(hours=8)))
+        db.commit()
+
+        logger.info(f"AI auto-linked note {note_id} to: {valid_titles}")
+    except Exception as e:
+        logger.warning(f"AI auto-link error for note {note_id}: {e}")
 
 
 @app.post("/api/ai/smart-ingest")
@@ -1415,6 +1695,24 @@ class ChatRequest(BaseModel):
     limit: int = 5  # 检索笔记数量
 
 
+def _smart_search(db: Session, query: str, limit: int = 5) -> list[int]:
+    """智能搜索：优先使用向量搜索，回退到FTS搜索"""
+    from vector_search import vector_search, get_index_stats
+
+    # 检查是否有向量索引
+    stats = get_index_stats(db)
+    if stats["total_notes"] > 0:
+        # 使用向量搜索
+        ids = vector_search(db, query, limit=limit)
+        if ids:
+            logger.info(f"向量搜索成功: {len(ids)} 个结果")
+            return ids
+
+    # 回退到FTS搜索
+    logger.info("回退到FTS搜索")
+    return _fts_search(db, query, limit=limit)
+
+
 @app.post("/api/ai/chat")
 async def api_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
     """RAG 对话：检索知识库 + LLM 生成回答"""
@@ -1422,7 +1720,7 @@ async def api_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
     if not is_enabled():
         raise HTTPException(status_code=503, detail="AI 未配置，请设置 LLM_API_KEY 环境变量")
 
-    ids = _fts_search(db, req.question, limit=req.limit)
+    ids = _smart_search(db, req.question, limit=req.limit)
     if not ids:
         return {"answer": "知识库中没有找到相关内容。", "references": []}
 
@@ -1457,7 +1755,7 @@ async def api_ai_chat_stream(req: ChatRequest, db: Session = Depends(get_db)):
     if not is_enabled():
         raise HTTPException(status_code=503, detail="AI 未配置")
 
-    ids = _fts_search(db, req.question, limit=req.limit)
+    ids = _smart_search(db, req.question, limit=req.limit)
     if not ids:
         async def empty():
             yield "data: 知识库中没有找到相关内容。\n\n"
@@ -1496,3 +1794,116 @@ async def api_ai_chat_stream(req: ChatRequest, db: Session = Depends(get_db)):
 
     from fastapi.responses import StreamingResponse
     return StreamingResponse(stream_with_refs(), media_type="text/event-stream")
+
+
+@app.post("/api/ai/build-index")
+async def api_build_vector_index(db: Session = Depends(get_db)):
+    """构建向量索引"""
+    from vector_search import build_index, get_index_stats
+
+    # 获取所有未删除的笔记
+    notes = db.query(Note).filter(Note.deleted_at.is_(None)).all()
+    notes_data = [(n.id, n.title, n.content) for n in notes]
+
+    # 构建索引
+    indexed = build_index(db, notes_data, batch_size=5)
+
+    # 获取统计
+    stats = get_index_stats(db)
+
+    return {
+        "success": True,
+        "indexed": indexed,
+        "total": len(notes_data),
+        "stats": stats
+    }
+
+
+@app.get("/api/ai/index-stats")
+async def api_get_index_stats(db: Session = Depends(get_db)):
+    """获取向量索引统计信息"""
+    from vector_search import get_index_stats
+    stats = get_index_stats(db)
+    return stats
+
+
+# ===== 标签→分类映射规则管理 =====
+
+class TagFolderRuleCreate(BaseModel):
+    tag_name: str
+    folder_id: int
+    priority: int = 0
+
+class TagFolderRuleUpdate(BaseModel):
+    tag_name: Optional[str] = None
+    folder_id: Optional[int] = None
+    priority: Optional[int] = None
+
+@app.get("/api/tag-folder-rules")
+def api_list_tag_folder_rules(db: Session = Depends(get_db)):
+    """获取所有标签→分类映射规则"""
+    rules = db.query(TagFolderRule).order_by(TagFolderRule.priority.desc()).all()
+    return [{"id": r.id, "tag_name": r.tag_name, "folder_id": r.folder_id, "folder_name": r.folder.name if r.folder else None, "priority": r.priority} for r in rules]
+
+@app.post("/api/tag-folder-rules")
+def api_create_tag_folder_rule(req: TagFolderRuleCreate, db: Session = Depends(get_db)):
+    """创建标签→分类映射规则"""
+    folder = db.query(Folder).filter(Folder.id == req.folder_id).first()
+    if not folder:
+        raise HTTPException(404, "分类不存在")
+    rule = TagFolderRule(tag_name=req.tag_name, folder_id=req.folder_id, priority=req.priority)
+    db.add(rule)
+    db.commit()
+    db.refresh(rule)
+    return {"id": rule.id, "tag_name": rule.tag_name, "folder_id": rule.folder_id, "priority": rule.priority}
+
+@app.put("/api/tag-folder-rules/{rule_id}")
+def api_update_tag_folder_rule(rule_id: int, req: TagFolderRuleUpdate, db: Session = Depends(get_db)):
+    """更新标签→分类映射规则"""
+    rule = db.query(TagFolderRule).filter(TagFolderRule.id == rule_id).first()
+    if not rule:
+        raise HTTPException(404, "规则不存在")
+    if req.tag_name is not None:
+        rule.tag_name = req.tag_name
+    if req.folder_id is not None:
+        rule.folder_id = req.folder_id
+    if req.priority is not None:
+        rule.priority = req.priority
+    db.commit()
+    return {"ok": True}
+
+@app.delete("/api/tag-folder-rules/{rule_id}")
+def api_delete_tag_folder_rule(rule_id: int, db: Session = Depends(get_db)):
+    """删除标签→分类映射规则"""
+    rule = db.query(TagFolderRule).filter(TagFolderRule.id == rule_id).first()
+    if not rule:
+        raise HTTPException(404, "规则不存在")
+    db.delete(rule)
+    db.commit()
+    return {"ok": True}
+
+@app.post("/api/auto-categorize")
+def api_auto_categorize(db: Session = Depends(get_db)):
+    """手动触发：对所有未分类笔记执行自动归类"""
+    rules = db.query(TagFolderRule).order_by(TagFolderRule.priority.desc()).all()
+    if not rules:
+        return {"message": "没有配置映射规则", "updated": 0}
+    notes = db.query(Note).filter(Note.folder_id.is_(None), Note.deleted_at.is_(None)).all()
+    updated = 0
+    for note in notes:
+        tag_names = [t.name for t in note.tags]
+        for rule in rules:
+            matched = False
+            for tag_name in tag_names:
+                if rule.tag_name.lower() in tag_name.lower() or tag_name.lower() in rule.tag_name.lower():
+                    matched = True
+                    break
+            if matched:
+                folder = db.query(Folder).filter(Folder.id == rule.folder_id).first()
+                if folder:
+                    note.folder_id = folder.id
+                    updated += 1
+                    break
+    db.commit()
+    return {"message": f"已自动归类 {updated} 篇笔记", "updated": updated}
+

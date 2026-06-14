@@ -4,25 +4,13 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!--
-      Auto-awesome style icon for app launcher
-      Large star in center, two smaller stars diagonally
-    -->
 
-    <!-- Large center star (4-pointed) -->
+    <!-- 白色 S - 流畅曲线 -->
     <path
-        android:pathData="M54,30 L60,48 L78,54 L60,60 L54,78 L48,60 L30,54 L48,48 Z"
-        android:fillColor="#FFFFFF"/>
-
-    <!-- Small top-right star -->
-    <path
-        android:pathData="M72,24 L76,36 L88,40 L76,44 L72,56 L68,44 L56,40 L68,36 Z"
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.8"/>
-
-    <!-- Small bottom-left star -->
-    <path
-        android:pathData="M36,68 L40,80 L52,84 L40,88 L36,100 L32,88 L20,84 L32,80 Z"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.8"/>
+        android:pathData="M72,22
+                          C58,14 32,20 28,38
+                          C24,56 40,62 52,66
+                          C64,70 76,78 76,92
+                          C76,108 54,114 36,106"/>
 </vector>

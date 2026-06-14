@@ -26,6 +26,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     super.initState();
     _checkAdmin();
     _loadNote();
+    _loadRelations();
   }
 
   Future<void> _checkAdmin() async {
@@ -35,14 +36,25 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     });
   }
 
+  Future<void> _loadRelations() async {
+    try {
+      final relations = await ApiService.getRelations(widget.noteId);
+      if (!mounted) return;
+      setState(() {
+        _relations = relations;
+      });
+    } catch (_) {
+      // 关联加载失败不阻塞主流程
+    }
+  }
+
+
   Future<void> _loadNote() async {
     setState(() => _loading = true);
     try {
-      final note = await ApiService.getNote(widget.noteId);
-      final relations = await ApiService.getRelations(widget.noteId);
+      final note = await ApiService.getNoteFull(widget.noteId);
       setState(() {
         _note = note;
-        _relations = relations;
         _loading = false;
       });
     } catch (e) {
@@ -66,77 +78,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       '${_note!.title}\n$_noteUrl',
       subject: _note!.title,
     );
-  }
-
-  void _showLinkDialog() async {
-    // 先获取所有笔记列表
-    try {
-      final allNotes = await ApiService.getNotes();
-      if (!mounted) return;
-
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => _LinkNoteSheet(
-          notes: allNotes,
-          currentNoteId: widget.noteId,
-          onLink: (targetNote) => _linkToNote(targetNote),
-        ),
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('加载笔记列表失败: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _linkToNote(Note targetNote) async {
-    if (_note == null) return;
-
-    final linkText = '[[${targetNote.title}]]';
-    final newContent = '${_note!.content}\n\n$linkText';
-
-    try {
-      final success = await ApiService.updateNote(
-        widget.noteId,
-        content: newContent,
-      );
-
-      if (success && mounted) {
-        setState(() {
-          _note = Note(
-            id: _note!.id,
-            slug: _note!.slug,
-            title: _note!.title,
-            content: newContent,
-            summary: _note!.summary,
-            tags: _note!.tags,
-            createdAt: _note!.createdAt,
-            sourceCreatedAt: _note!.sourceCreatedAt,
-            updatedAt: _note!.updatedAt,
-          );
-        });
-
-        // 刷新关联数据
-        final relations = await ApiService.getRelations(widget.noteId);
-        if (mounted) {
-          setState(() => _relations = relations);
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('已关联到「${targetNote.title}」')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('关联失败: $e')),
-        );
-      }
-    }
   }
 
   void _showDeleteDialog() {
@@ -168,18 +109,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     try {
       final isPinned = await ApiService.togglePin(widget.noteId);
       setState(() {
-        _note = Note(
-          id: _note!.id,
-          slug: _note!.slug,
-          title: _note!.title,
-          content: _note!.content,
-          summary: _note!.summary,
-          tags: _note!.tags,
-          createdAt: _note!.createdAt,
-          sourceCreatedAt: _note!.sourceCreatedAt,
-          updatedAt: _note!.updatedAt,
-          isPinned: isPinned,
-        );
+        _note = _note!.copyWith(isPinned: isPinned);
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,11 +172,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
               onPressed: _note != null ? _togglePin : null,
               tooltip: _note?.isPinned == true ? '取消置顶' : '置顶',
-            ),
-            IconButton(
-              icon: const Icon(Icons.link),
-              onPressed: _note != null ? _showLinkDialog : null,
-              tooltip: '关联到...',
             ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
@@ -349,98 +274,146 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           const SizedBox(height: 24),
           // Content - split into markdown segments and code blocks
           _buildMixedContent(colorScheme),
-          // Relations
-          if (_relations != null &&
-              (_relations!.outgoing.isNotEmpty ||
-                  _relations!.incoming.isNotEmpty)) ...[
+          // 关联笔记（恢复 776e360 删除的模块）
+          if (_hasRelations()) ...[
             const SizedBox(height: 32),
-            Divider(color: colorScheme.outline.withOpacity(0.1)),
-            const SizedBox(height: 16),
-            if (_relations!.outgoing.isNotEmpty) ...[
-              Row(
-                children: [
-                  Text(
-                    '↗ 引用',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.5),
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_relations!.outgoing.length}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _relations!.outgoing.map((r) => _buildRelationChip(
-                  r['title'] ?? '',
-                  colorScheme,
-                  onTap: () => _navigateToNote(r['id']),
-                )).toList(),
-              ),
-            ],
-            if (_relations!.incoming.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(
-                    '↙ 被引用',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.5),
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_relations!.incoming.length}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _relations!.incoming.map((r) => _buildRelationChip(
-                  r['title'] ?? '',
-                  colorScheme,
-                  isIncoming: true,
-                  onTap: () => _navigateToNote(r['id']),
-                )).toList(),
-              ),
-            ],
+            _buildRelationsSection(colorScheme),
           ],
           const SizedBox(height: 80),
         ],
+      ),
+    );
+  }
+
+  bool _hasRelations() {
+    if (_relations == null) return false;
+    return _relations!.outgoing.isNotEmpty || _relations!.incoming.isNotEmpty;
+  }
+
+  Widget _buildRelationsSection(ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.link, size: 18, color: colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              '关联笔记',
+              style: TextStyle(
+                fontFamily: 'MiSans',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_relations!.outgoing.isNotEmpty) ...[
+          _buildRelationGroup(
+            label: '本文引用',
+            icon: Icons.arrow_outward,
+            notes: _relations!.outgoing,
+            colorScheme: colorScheme,
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (_relations!.incoming.isNotEmpty)
+          _buildRelationGroup(
+            label: '被引用',
+            icon: Icons.subdirectory_arrow_right,
+            notes: _relations!.incoming,
+            colorScheme: colorScheme,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRelationGroup({
+    required String label,
+    required IconData icon,
+    required List<Map<String, dynamic>> notes,
+    required ColorScheme colorScheme,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+              const SizedBox(width: 4),
+              Text(
+                '$label · ${notes.length}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...notes.map((n) => _buildRelationTile(n, colorScheme)),
+      ],
+    );
+  }
+
+  Widget _buildRelationTile(Map<String, dynamic> note, ColorScheme colorScheme) {
+    final id = note['id'] as int?;
+    final title = (note['title'] as String?) ?? '未命名';
+    if (id == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NoteDetailScreen(noteId: id),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.08),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.article_outlined,
+                size: 16,
+                color: colorScheme.primary.withOpacity(0.7),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurface,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: colorScheme.onSurface.withOpacity(0.3),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -644,264 +617,8 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
-  Widget _buildRelationChip(
-    String title,
-    ColorScheme colorScheme, {
-    bool isIncoming = false,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isIncoming ? Icons.arrow_back : Icons.arrow_forward,
-              size: 14,
-              color: colorScheme.primary,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: colorScheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _navigateToNote(int? noteId) {
-    if (noteId == null) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => NoteDetailScreen(noteId: noteId),
-      ),
-    );
-  }
-
   String _formatDate(DateTime date) {
     return '${date.month}月${date.day}日 ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
 
-class _LinkNoteSheet extends StatefulWidget {
-  final List<Note> notes;
-  final int currentNoteId;
-  final Function(Note) onLink;
-
-  const _LinkNoteSheet({
-    required this.notes,
-    required this.currentNoteId,
-    required this.onLink,
-  });
-
-  @override
-  State<_LinkNoteSheet> createState() => _LinkNoteSheetState();
-}
-
-class _LinkNoteSheetState extends State<_LinkNoteSheet> {
-  final TextEditingController _searchController = TextEditingController();
-  List<Note> _filteredNotes = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _filteredNotes = widget.notes
-        .where((n) => n.id != widget.currentNoteId)
-        .toList();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _filterNotes(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filteredNotes = widget.notes
-            .where((n) => n.id != widget.currentNoteId)
-            .toList();
-      } else {
-        _filteredNotes = widget.notes
-            .where((n) =>
-                n.id != widget.currentNoteId &&
-                (n.title.toLowerCase().contains(query.toLowerCase()) ||
-                 n.summary.toLowerCase().contains(query.toLowerCase())))
-            .toList();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // 拖拽指示器
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: colorScheme.outline.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // 标题
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.link, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '关联笔记',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                  color: colorScheme.onSurface.withOpacity(0.5),
-                ),
-              ],
-            ),
-          ),
-          // 搜索框
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _filterNotes,
-              decoration: InputDecoration(
-                hintText: '搜索笔记...',
-                hintStyle: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.4),
-                ),
-                prefixIcon: Icon(Icons.search,
-                    color: colorScheme.onSurface.withOpacity(0.4)),
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // 笔记列表
-          Expanded(
-            child: _filteredNotes.isEmpty
-                ? Center(
-                    child: Text(
-                      '没有可关联的笔记',
-                      style: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.4),
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _filteredNotes.length,
-                    itemBuilder: (context, index) {
-                      final note = _filteredNotes[index];
-                      return InkWell(
-                        onTap: () {
-                          Navigator.pop(context);
-                          widget.onLink(note);
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          margin: const EdgeInsets.only(bottom: 4),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      note.title,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (note.summary.isNotEmpty)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 2),
-                                        child: Text(
-                                          note.summary,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.5),
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.arrow_forward_ios,
-                                size: 14,
-                                color:
-                                    colorScheme.onSurface.withOpacity(0.3),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          SizedBox(height: bottomPadding),
-        ],
-      ),
-    );
-  }
-}

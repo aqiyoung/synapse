@@ -17,18 +17,22 @@ class ApiService {
     _token = token;
   }
 
-  static Map<String, String> get _headers => {
+  static Map<String, String> get headers => {
         'Content-Type': 'application/json',
         if (_token.isNotEmpty) 'Authorization': 'Bearer $_token',
       };
 
   // 获取笔记列表
-  static Future<List<Note>> getNotes({String? tag, String? search}) async {
-    var url = '$baseUrl/notes?limit=200';
+  // summary: 列表只展示元数据，content 不需要 → 节省 ~80% 响应体积
+  static const String _listFields = 'id,slug,title,summary,tags,created_at,source_created_at,updated_at,is_pinned,folder_id';
+
+  static Future<List<Note>> getNotes({String? tag, String? search, int limit = 200}) async {
+    // 限制 200 是后端 list_notes 允许的最大值（api.py le=200）；超过需后端加 cursor 分页
+    var url = '$baseUrl/notes?limit=$limit&fields=${Uri.encodeQueryComponent(_listFields)}';
     if (tag != null && tag.isNotEmpty) url += '&tag=${Uri.encodeQueryComponent(tag)}';
     if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeQueryComponent(search)}';
 
-    final response = await http.get(Uri.parse(url), headers: _headers);
+    final response = await http.get(Uri.parse(url), headers: headers);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final notes = (data['notes'] as List)
@@ -39,14 +43,21 @@ class ApiService {
     throw Exception('获取笔记失败');
   }
 
-  // 获取单个笔记
-  static Future<Note> getNote(int id) async {
+  // 获取笔记详情（需要完整 content）
+  static Future<Note> getNoteFull(int id) async {
     final response =
-        await http.get(Uri.parse('$baseUrl/notes/$id'), headers: _headers);
+        await http.get(Uri.parse('$baseUrl/notes/$id'), headers: headers);
     if (response.statusCode == 200) {
       return Note.fromJson(json.decode(response.body));
     }
     throw Exception('获取笔记详情失败');
+  }
+
+  // 缓存失效
+  static Future<void> invalidateTags() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tagsKey);
+    await prefs.remove(_tagsTsKey);
   }
 
   // 更新笔记
@@ -58,17 +69,22 @@ class ApiService {
 
     final response = await http.put(
       Uri.parse('$baseUrl/notes/$id'),
-      headers: _headers,
+      headers: headers,
       body: json.encode(body),
     );
-    return response.statusCode == 200;
+    if (response.statusCode == 200) {
+      // tags 参数变化会改标签表，使缓存过期
+      if (tags != null) await invalidateTags();
+      return true;
+    }
+    return false;
   }
 
   // 切换置顶状态
   static Future<bool> togglePin(int noteId) async {
     final response = await http.patch(
       Uri.parse('$baseUrl/notes/$noteId/pin'),
-      headers: _headers,
+      headers: headers,
     );
     if (response.statusCode == 200) {
       return json.decode(response.body)['is_pinned'] ?? false;
@@ -80,7 +96,7 @@ class ApiService {
   static Future<Relations> getRelations(int id) async {
     final response = await http.get(
       Uri.parse('$baseUrl/notes/$id/relations'),
-      headers: _headers,
+      headers: headers,
     );
     if (response.statusCode == 200) {
       return Relations.fromJson(json.decode(response.body));
@@ -89,12 +105,37 @@ class ApiService {
   }
 
   // 获取所有标签
-  static Future<List<Tag>> getTags() async {
+  // 性能优化：SharedPreferences 缓存 5 分钟，避免频繁请求不变的标签列表
+  static const _tagsKey = 'cached_tags';
+  static const _tagsTsKey = 'cached_tags_ts';
+  static const _tagsTtlMs = 5 * 60 * 1000;
+
+  static Future<List<Tag>> getTags({bool force = false}) async {
+    if (!force) {
+      final prefs = await SharedPreferences.getInstance();
+      final ts = prefs.getInt(_tagsTsKey) ?? 0;
+      final raw = prefs.getString(_tagsKey);
+      if (raw != null && raw.isNotEmpty &&
+          DateTime.now().millisecondsSinceEpoch - ts < _tagsTtlMs) {
+        try {
+          final list = json.decode(raw) as List;
+          return list.map((t) => Tag.fromJson(t)).toList();
+        } catch (_) {
+          // 缓存解析失败，刷新
+        }
+      }
+    }
+
     final response =
-        await http.get(Uri.parse('$baseUrl/tags'), headers: _headers);
+        await http.get(Uri.parse('$baseUrl/tags'), headers: headers);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return (data as List).map((t) => Tag.fromJson(t)).toList();
+      final tags = (data as List).map((t) => Tag.fromJson(t)).toList();
+      // 写入缓存
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_tagsKey, json.encode(data));
+      await prefs.setInt(_tagsTsKey, DateTime.now().millisecondsSinceEpoch);
+      return tags;
     }
     return [];
   }
@@ -107,7 +148,7 @@ class ApiService {
   // 获取图谱数据
   static Future<Map<String, dynamic>> getGraph() async {
     final response =
-        await http.get(Uri.parse('$baseUrl/graph'), headers: _headers);
+        await http.get(Uri.parse('$baseUrl/graph'), headers: headers);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -118,7 +159,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getLint() async {
     final response = await http.post(
       Uri.parse('$baseUrl/ai/lint'),
-      headers: _headers,
+      headers: headers,
     );
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -130,7 +171,7 @@ class ApiService {
   static Future<bool> deleteNote(int id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/notes/$id'),
-      headers: _headers,
+      headers: headers,
     );
     return response.statusCode == 200;
   }
@@ -141,7 +182,7 @@ class ApiService {
   static Future<Map<String, dynamic>> fixBrokenLinks() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/broken-links'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -154,7 +195,7 @@ class ApiService {
   static Future<Map<String, dynamic>> fixOrphans() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/orphans'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -167,7 +208,7 @@ class ApiService {
   static Future<Map<String, dynamic>> analyzeGraph() async {
     final response = await http.post(
       Uri.parse('$baseUrl/graph/analyze'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -196,7 +237,7 @@ class ApiService {
   static Future<Map<String, dynamic>> fixNoTags() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/no-tags'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -209,7 +250,7 @@ class ApiService {
   static Future<Map<String, dynamic>> linkOrphans() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/link-orphans'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({}),
     );
     if (response.statusCode == 200) {
@@ -223,7 +264,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin/verify'),
-        headers: _headers,
+        headers: headers,
         body: json.encode({'password': password}),
       );
       if (response.statusCode == 200) {
@@ -239,7 +280,7 @@ class ApiService {
   static Future<Map<String, dynamic>> chat(String question, {int limit = 5}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/ai/chat'),
-      headers: _headers,
+      headers: headers,
       body: json.encode({'question': question, 'limit': limit}),
     );
     if (response.statusCode == 200) {

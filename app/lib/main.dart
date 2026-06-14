@@ -11,11 +11,7 @@ void main() async {
 
   // Edge-to-edge: content extends behind status bar
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    statusBarBrightness: Brightness.light,
-  ));
+  // 状态栏样式会在主题变化时动态更新
 
   // Load saved server URL (default to localhost for development)
   final prefs = await SharedPreferences.getInstance();
@@ -28,6 +24,18 @@ void main() async {
   runApp(const KnowledgeBaseApp());
 }
 
+class _StatusBarObserver extends NavigatorObserver {
+  final VoidCallback onRouteChanged;
+  _StatusBarObserver(this.onRouteChanged);
+
+  @override
+  void didPush(Route route, Route? previousRoute) => onRouteChanged();
+  @override
+  void didPop(Route route, Route? previousRoute) => onRouteChanged();
+  @override
+  void didReplace({Route? newRoute, Route? oldRoute}) => onRouteChanged();
+}
+
 class KnowledgeBaseApp extends StatefulWidget {
   const KnowledgeBaseApp({super.key});
 
@@ -38,6 +46,7 @@ class KnowledgeBaseApp extends StatefulWidget {
 class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
   ThemeMode _themeMode = ThemeMode.light;
   int _themeIndex = 0;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -83,6 +92,8 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
       _themeMode =
           _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
+    // MaterialApp 重建后系统 UI 会被重置, 用 postFrameCallback 确保在 rebuild 之后生效
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateStatusBar());
     _updateStatusBar();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDark', _themeMode == ThemeMode.dark);
@@ -101,6 +112,8 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
     final appTheme = AppTheme.presets[_themeIndex];
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
+      navigatorObservers: [_StatusBarObserver(_updateStatusBar)],
       title: 'Synapse',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,

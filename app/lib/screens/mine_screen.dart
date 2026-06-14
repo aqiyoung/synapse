@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/update_service.dart';
 import 'settings_screen.dart';
 import 'lint_screen.dart';
+import '../widgets/glass_container.dart';
 
 class MineScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -54,87 +56,111 @@ class _MineScreenState extends State<MineScreen> {
     return Container(
       color: colorScheme.surface,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 16),
+        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 40, 16, 24),
         children: [
-          // 头部 - 版本信息（无边框）
-          Column(
-            children: [
-              // Logo
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.7),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+          // 液态玻璃 Header
+          GlassContainer(
+            margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+            borderRadius: BorderRadius.circular(24),
+            blur: 24,
+            tintOpacity: 0.45,
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              children: [
+                // Logo + 标题
+                Row(
+                  children: [
+                    // Logo - 使用提供的图标
+                    SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: Image.asset(
+                        'assets/icons/logo.png',
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Logo load error: $error');
+                          return Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFc96442),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'S',
+                                style: TextStyle(
+                                  fontFamily: 'MiSans',
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // 标题和版本
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Synapse',
+                            style: TextStyle(
+                              fontFamily: 'MiSans',
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'v$_version',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.psychology,
-                  size: 36,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Synapse',
-                style: TextStyle(
-                  fontFamily: 'MiSans',
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Slogan
-              Text(
-                '记录思考，连接知识',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '让每一个想法都有归处',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSurface.withOpacity(0.5),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // 版本号
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'v$_version',
+                const SizedBox(height: 20),
+                // Slogan
+                Text(
+                  '记录思考，连接知识',
                   style: TextStyle(
-                    fontSize: 11,
-                    color: colorScheme.primary,
+                    fontSize: 14,
+                    color: colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  '让每一个想法都有归处',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.4),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -150,26 +176,6 @@ class _MineScreenState extends State<MineScreen> {
                     context,
                     MaterialPageRoute(builder: (_) => const LintScreen()),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickAction(
-                  colorScheme,
-                  icon: Icons.system_update_outlined,
-                  label: '检查更新',
-                  onTap: () async {
-                    await UpdateService().check();
-                    if (!mounted) return;
-                    setState(() {});
-                    if (UpdateService().hasUpdate) {
-                      _showUpdateDialog(colorScheme);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已是最新版本')),
-                      );
-                    }
-                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -242,11 +248,18 @@ class _MineScreenState extends State<MineScreen> {
                   label: '数据存储',
                   value: '本地优先，隐私可控',
                 ),
+                // GitHub 仓库链接
                 _buildInfoRow(
                   colorScheme,
-                  icon: Icons.link_rounded,
+                  icon: Icons.code_rounded,
                   label: '开源地址',
                   value: 'github.com/aqiyoung/synapse',
+                  onTap: () async {
+                    final uri = Uri.parse('https://github.com/aqiyoung/synapse');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
                 ),
               ],
             ),
@@ -307,45 +320,59 @@ class _MineScreenState extends State<MineScreen> {
     required IconData icon,
     required String label,
     required String value,
+    VoidCallback? onTap,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 16, color: colorScheme.primary),
             ),
-            child: Icon(icon, size: 16, color: colorScheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withOpacity(0.8),
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            if (onTap != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Icon(
+                  Icons.open_in_new_rounded,
+                  size: 14,
+                  color: colorScheme.primary.withOpacity(0.6),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -393,7 +420,15 @@ class _MineScreenState extends State<MineScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('取消', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+            child: Text('稍后', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              final url = UpdateService().getGitHubDownloadUrl();
+              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            },
+            child: const Text('GitHub下载'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -405,7 +440,7 @@ class _MineScreenState extends State<MineScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('更新'),
+            child: const Text('直接更新'),
           ),
         ],
       ),

@@ -1,6 +1,6 @@
 """数据模型"""
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Table, ForeignKey, Index
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship, declarative_base, backref
 from datetime import datetime, timezone, timedelta
 
 Base = declarative_base()
@@ -29,9 +29,11 @@ class Note(Base):
                         onupdate=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
     deleted_at = Column(DateTime, nullable=True, default=None)
     is_pinned = Column(Boolean, default=False, nullable=False, index=True)
+    folder_id = Column(Integer, ForeignKey("folders.id"), nullable=True)
 
     # 关联
     tags = relationship("Tag", secondary=note_tags, back_populates="notes")
+    folder = relationship("Folder", back_populates="notes")
 
     def to_dict(self):
         return {
@@ -45,6 +47,7 @@ class Note(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else "",
             "deleted_at": self.deleted_at.isoformat() if self.deleted_at else "",
             "is_pinned": self.is_pinned,
+            "folder_id": self.folder_id,
             "tags": [t.name for t in self.tags],
         }
 
@@ -80,3 +83,75 @@ class Tag(Base):
         """高效获取笔记数，不加载整个集合"""
         from sqlalchemy import func
         return db.query(func.count(note_tags.c.note_id)).filter(note_tags.c.tag_id == self.id).scalar() or 0
+
+
+class Folder(Base):
+    __tablename__ = "folders"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    icon = Column(String(50), default="folder")
+    color = Column(String(7), default="#c96442")
+    parent_id = Column(Integer, ForeignKey("folders.id"), nullable=True)
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
+    updated_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
+    notes = relationship("Note", back_populates="folder")
+    children = relationship("Folder", backref=backref("parent", remote_side=[id]))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "icon": self.icon,
+            "color": self.color,
+            "parent_id": self.parent_id,
+            "sort_order": self.sort_order,
+            "note_count": len(self.notes) if self.notes else 0,
+            "created_at": self.created_at.isoformat() if self.created_at else "",
+        }
+
+
+class ReadingStats(Base):
+    __tablename__ = "reading_stats"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    note_id = Column(Integer, ForeignKey("notes.id"), nullable=False)
+    read_count = Column(Integer, default=0)
+    total_read_time = Column(Integer, default=0)
+    last_read_at = Column(DateTime, nullable=True)
+    first_read_at = Column(DateTime, nullable=True)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(200), nullable=False)
+    body = Column(String(500), default="")
+    type = Column(String(20), default="system")
+    is_read = Column(Boolean, default=False)
+    action_url = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "body": self.body,
+            "type": self.type,
+            "is_read": self.is_read,
+            "action_url": self.action_url,
+            "created_at": self.created_at.isoformat() if self.created_at else "",
+        }
+
+
+class TagFolderRule(Base):
+    """标签→分类自动映射规则"""
+    __tablename__ = "tag_folder_rules"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tag_name = Column(String(100), nullable=False, index=True)
+    folder_id = Column(Integer, ForeignKey("folders.id"), nullable=False)
+    priority = Column(Integer, default=0)
+    created_at = Column(DateTime, default=lambda: datetime.now(tz=timezone(timedelta(hours=8))))
+
+    folder = relationship("Folder")
+

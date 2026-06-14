@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Synapse · AI 知识管理</title>
-<link rel="icon" type="image/svg+xml" href="/logo-mini.svg">
+<link rel="icon" type="image/png" href="/logo.png">
 <style>
 @font-face {
   font-family: 'MiSans';
@@ -36,42 +36,63 @@
 }
 :root {
   color-scheme: light;
-  --bg: #f5f4ed;
-  --panel: #ffffff;
-  --panel-2: #f0eee6;
-  --panel-menu: #faf9f5;
-  --text: #141413;
-  --muted: #5e5d59;
-  --line: #e8e6dc;
-  --line-strong: #d8d3c5;
-  --accent: #c96442;
-  --accent-light: rgba(201, 100, 66, 0.08);
-  --green: #3a9e1e;
-  --amber: #9a6800;
-  --red: #c0392b;
-  --radius: 8px;
-  --shadow: 0 0 0 1px rgba(0,0,0,0.06);
+  /* 液态玻璃主题 - 亮色（柔和蓝灰） */
+  --bg: #f5f7fa;
+  --bg-gradient: linear-gradient(180deg, #f5f7fa 0%, #e8ecf1 100%);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(200, 210, 220, 0.5);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --glass-blur: 12px;
+  --panel: rgba(255, 255, 255, 0.95);
+  --panel-2: rgba(245, 247, 250, 0.95);
+  --panel-menu: rgba(250, 250, 252, 0.98);
+  --text: #1a202c;
+  --text-secondary: #4a5568;
+  --muted: #a0aec0;
+  --line: rgba(200, 210, 220, 0.4);
+  --line-strong: rgba(160, 174, 192, 0.5);
+  --accent: #4299e1;
+  --accent-light: rgba(66, 153, 225, 0.1);
+  --accent-gradient: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  --green: #48bb78;
+  --amber: #d69e2e;
+  --red: #e53e3e;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
   --font: 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
   --font-serif: 'MiSans', Georgia, 'Times New Roman', 'Noto Serif SC', serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #141413;
-  --panel: #1c1c1a;
-  --panel-2: #252523;
-  --panel-menu: #1a1a18;
-  --text: #e4e6e0;
-  --muted: #87867f;
-  --line: #2a2a28;
-  --line-strong: #3a3a38;
-  --accent: #d4785a;
-  --accent-light: rgba(212, 120, 90, 0.12);
-  --green: #4aad2e;
-  --amber: #b88400;
-  --red: #d44a3a;
-  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  /* 液态玻璃主题 - 暗色（深灰） */
+  --bg: #1a1a2e;
+  --bg-gradient: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  --glass-bg: rgba(30, 35, 50, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --glass-blur: 16px;
+  --panel: rgba(35, 40, 55, 0.95);
+  --panel-2: rgba(30, 35, 50, 0.95);
+  --panel-menu: rgba(25, 30, 45, 0.98);
+  --text: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --muted: #718096;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.1);
+  --accent: #63b3ed;
+  --accent-light: rgba(99, 179, 237, 0.15);
+  --accent-gradient: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
+  --green: #68d391;
+  --amber: #ecc94b;
+  --red: #fc8181;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 [v-cloak] { display: none !important; }
@@ -83,11 +104,13 @@ body {
   font-family: var(--font);
   font-size: 15px;
   font-weight: 400;
-  background: var(--bg);
+  background: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
+  min-height: 100vh;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -96,30 +119,33 @@ a:hover { color: var(--text); }
 /* ── App shell: three-panel ── */
 .app { display: flex; height: 100vh; height: 100dvh; overflow: hidden; width: 100%; max-width: 100vw; }
 
-/* ── Left nav sidebar (64px) ── */
+/* ── Left nav sidebar (液态玻璃) ── */
 .nav-sidebar {
-  width: 64px;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
+  width: 72px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 0;
-  gap: 2px;
+  padding: 16px 0;
+  gap: 4px;
   flex-shrink: 0;
   z-index: 60;
+  box-shadow: var(--glass-shadow);
 }
 
 .nav-item {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--muted);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--transition);
   position: relative;
   background: transparent;
   border: none;
@@ -129,11 +155,13 @@ a:hover { color: var(--text); }
 .nav-item:hover {
   background: var(--accent-light);
   color: var(--accent);
+  transform: scale(1.05);
 }
 
 .nav-item.active {
-  background: var(--accent-light);
-  color: var(--accent);
+  background: var(--accent-gradient);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .nav-logo {
@@ -167,19 +195,238 @@ a:hover { color: var(--text); }
 
 .nav-spacer { flex: 1; }
 
-/* ── Middle content list (320px) ── */
+/* ── Tags view (液态玻璃重设计) ── */
+.tags-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(180deg, var(--glass-bg) 0%, var(--panel) 100%);
+  overflow: hidden;
+}
+.tags-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 20px 24px 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tags-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  transition: var(--transition);
+}
+.tags-back-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateX(-2px);
+}
+.tags-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tags-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.tags-count {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+}
+.tags-search {
+  flex: 1;
+  min-width: 160px;
+  max-width: 280px;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--muted);
+}
+.tags-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.tags-grid-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  -webkit-overflow-scrolling: touch;
+}
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.tag-card {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.tag-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+  border-color: var(--tag-color, var(--accent));
+}
+.tag-card.active {
+  border-color: var(--tag-color, var(--accent));
+  box-shadow: 0 4px 18px rgba(0,0,0,0.10), 0 0 0 2px var(--tag-color, var(--accent));
+}
+.tag-card-bar {
+  width: 4px;
+  background: var(--tag-color, var(--accent));
+  flex-shrink: 0;
+}
+.tag-card-body {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.tag-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+.tag-card-count {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--muted);
+}
+.tag-card-num {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--tag-color, var(--accent));
+  font-variant-numeric: tabular-nums;
+}
+.tag-card-unit {
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+.tags-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+}
+.tags-empty-icon {
+  font-size: 48px;
+  opacity: 0.3;
+  margin-bottom: 12px;
+}
+
+/* ── App footer (桌面端主 KB 视图) ── */
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 20px 16px 12px;
+  margin-top: 24px;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+  border-top: 1px solid var(--glass-border);
+  text-align: center;
+}
+.app-footer a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: var(--transition);
+}
+.app-footer a:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+.app-footer-divider {
+  opacity: 0.4;
+}
+.app-footer-tags {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+/* 手机端隐藏页脚 */
+@media (max-width: 768px) {
+  .app-footer { display: none !important; }
+}
+/* 液态玻璃响应式 */
+@media (max-width: 768px) {
+  .tags-header { padding: 14px 16px 12px; gap: 10px; }
+  .tags-title h2 { font-size: 16px; }
+  .tags-search { max-width: none; width: 100%; }
+  .tags-grid-wrap { padding: 14px; }
+  .tags-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+}
+
+/* ── Middle content list (液态玻璃) ── */
 .content-list {
-  width: 320px;
-  min-width: 280px;
-  max-width: 500px;
-  background: var(--bg);
-  border-right: 1px solid var(--line);
+  width: 340px;
+  min-width: 300px;
+  max-width: 520px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   z-index: 50;
-  transition: transform .2s ease;
+  transition: var(--transition);
   position: relative;
+  box-shadow: var(--glass-shadow);
 }
 
 .cl-resize {
@@ -200,36 +447,48 @@ a:hover { color: var(--text); }
   padding: 20px 20px 16px;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .cl-head h1 {
-  font-family: var(--font-serif);
-  font-size: 16px;
-  font-weight: 500;
+  font-family: var(--font);
+  font-size: 18px;
+  font-weight: 600;
   color: var(--text);
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.cl-search { padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.cl-search { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
 .cl-search input {
   width: 100%;
-  text-align: center;
-  padding: 8px 10px 8px 32px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--bg);
+  text-align: left;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   outline: none;
-  transition: border-color .15s ease;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23899180' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l.098.115 3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+  transition: var(--transition);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23899180' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l.098.115 3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: 10px center;
+  background-position: 12px center;
+  box-shadow: var(--shadow);
 }
 .cl-search input::placeholder { color: var(--muted); }
-.cl-search input:focus { border-color: var(--text); }
+.cl-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light), var(--shadow);
+}
 
 .cl-stats {
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--line);
   display: flex;
   justify-content: space-around;
@@ -253,23 +512,32 @@ a:hover { color: var(--text); }
 .cl-tag {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  border: 1px solid var(--accent-light);
-  border-radius: 4px;
+  padding: 4px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   font-size: 11px;
   color: var(--accent);
   cursor: pointer;
-  transition: all 0.15s ease;
-  background: var(--accent-light);
+  transition: var(--transition);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-family: inherit;
   line-height: 1;
   letter-spacing: 0.3px;
 }
-.cl-tag:hover { border-color: var(--accent); background: var(--accent); color: #fff; }
-.cl-tag.on {
+.cl-tag:hover {
   border-color: var(--accent);
+  background: var(--accent-gradient);
   color: #fff;
-  background: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+.cl-tag.on {
+  border-color: transparent;
+  color: #fff;
+  background: var(--accent-gradient);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .cl-list { flex: 1; overflow-y: auto; padding: 4px 8px; }
@@ -312,8 +580,14 @@ a:hover { color: var(--text); }
   opacity: .5;
 }
 
-/* ── Right preview pane ── */
-.preview-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+/* ── Right preview pane (液态玻璃) ── */
+.preview-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+}
 
 /* ── Content ── */
 .content { flex: 1; overflow-y: auto; overflow-x: hidden; }
@@ -445,9 +719,16 @@ a:hover { color: var(--text); }
   color: var(--muted);
 }
 
-/* ── Note view ── */
+/* ── Note view (液态玻璃) ── */
 .note-view {
-  padding: 40px 56px 100px;
+  padding: 40px 56px 40px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius-lg);
+  margin: 16px;
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--glass-border);
 }
 .note-view .doc-title {
   font-family: var(--font-serif);
@@ -501,7 +782,7 @@ a:hover { color: var(--text); }
 .code-block:hover .copy-btn { opacity: 1; }
 .md pre { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; margin: 0; }
 .md pre code { background: none; padding: 12px 14px; font-size: 12px; line-height: 1.6; white-space: pre; display: block; color: var(--text); }
-.md blockquote { border-left: 2px solid var(--accent); padding: 10px 16px; color: var(--muted); margin: 16px 0; background: var(--accent-light); border-radius: 0 var(--radius) var(--radius) 0; }
+.md blockquote { border-left: 2px solid var(--accent); padding: 12px 16px; color: var(--muted); margin: 16px 0; background: var(--accent-light); border-radius: 0 var(--radius) var(--radius) 0; }
 .md table { width: 100%; border-collapse: collapse; margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-size: 12px; }
 .md th { background: var(--panel); font-weight: 600; text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); color: var(--text); font-size: 11px; }
 .md td { padding: 7px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -917,11 +1198,21 @@ a:hover { color: var(--text); }
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .nav-sidebar {
-    position: fixed; left: 0; top: 0; bottom: 0;
-    transform: translateX(-100%);
-    z-index: 70;
+    position: fixed; right: 20px; bottom: 72px;
+    width: 44px; max-width: 44px;
+    height: auto; max-height: 70vh;
+    transform-origin: bottom right;
+    transform: scale(0.6) translateY(20px); opacity: 0; pointer-events: none;
+    z-index: 79;  /* 略低于按钮 (80), 这样点按钮不会被浮窗拦截 */
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+    background: var(--panel);
+    padding: 4px 0;
+    align-items: center;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
   }
-  .nav-sidebar.show { transform: translateX(0); }
+  .nav-sidebar.show { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
 
   .content-list {
     width: 100% !important;
@@ -937,32 +1228,47 @@ a:hover { color: var(--text); }
   .cl-resize { display: none; }
 
   .mobile-menu-btn { display: flex; }
-  .note-view { padding: 16px 12px 50px; max-width: 100%; overflow-x: hidden; }
-  .note-view .doc-title { font-size: 18px; word-break: break-word; }
-  .note-view .doc-meta { flex-wrap: wrap; }
+  /* 手机端优化 */
+  .note-view { padding: 20px 16px 60px; max-width: 100%; overflow-x: hidden; }
+  .note-view .doc-title { font-size: 20px; word-break: break-word; line-height: 1.4; }
+  .note-view .doc-meta { flex-wrap: wrap; gap: 6px; }
   .toc { display: none; }
-  .md { font-size: 13px; word-break: break-word; overflow-wrap: anywhere; }
+  .md { font-size: 14px; word-break: break-word; overflow-wrap: anywhere; line-height: 1.8; }
   .md table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .md pre { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .md pre code { font-size: 11px; white-space: pre; }
-  .md img { max-width: 100%; height: auto; }
-  .relations-panel { overflow-x: hidden; }
-  .relations-item { white-space: normal; word-break: break-word; }
-  .filter-bar { flex-wrap: wrap; gap: 6px; }
-  .filter-bar select { flex: 1; min-width: 80px; }
-  .filter-bar input { width: 100%; order: 3; }
-  .filter-bar .count { order: 4; width: 100%; text-align: right; }
+  .md pre { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 12px; border-radius: 8px; }
+  .md pre code { font-size: 12px; white-space: pre; }
+  .md img { max-width: 100%; height: auto; border-radius: 8px; }
+  .md p { margin: 12px 0; }
+  .md h1, .md h2, .md h3 { margin-top: 20px; margin-bottom: 10px; }
+  .relations-panel { overflow-x: hidden; margin-top: 24px; }
+  .relations-item { white-space: normal; word-break: break-word; padding: 8px 12px; margin-bottom: 4px; background: var(--panel-2); border-radius: 8px; }
+  .filter-bar { flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
+  .filter-bar select { flex: 1; min-width: 100px; padding: 10px; font-size: 14px; }
+  .filter-bar input { width: 100%; order: 3; padding: 10px; font-size: 14px; }
+  .filter-bar .count { order: 4; width: 100%; text-align: right; font-size: 13px; }
   .dash thead { display: none; }
   .dash, .dash tbody, .dash tr, .dash td { display: block; width: 100%; }
-  .dash tr { margin-bottom: 8px; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--panel); }
-  .dash td { padding: 2px 0; border: none; }
-  .dash .note-title { font-size: 14px; max-width: 100%; }
-  .dash .note-snippet { max-width: 100%; white-space: nowrap; }
-  .dash .note-date { font-size: 10px; }
-  .cl-stats { padding: 8px; }
-  .stat-n { font-size: 14px; }
-  .cl-tags { max-height: 80px; }
-  .content { padding-bottom: 24px; }
+  .dash tr { margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--panel); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .dash td { padding: 3px 0; border: none; }
+  .dash .note-title { font-size: 16px; max-width: 100%; font-weight: 600; }
+  .dash .note-snippet { max-width: 100%; white-space: nowrap; font-size: 13px; color: var(--muted); }
+  .dash .note-date { font-size: 12px; color: var(--muted); }
+  .cl-stats { padding: 12px; gap: 16px; }
+  .stat-n { font-size: 18px; }
+  .stat-l { font-size: 11px; }
+  .cl-tags { max-height: 100px; padding: 8px 12px; }
+  .cl-tag { padding: 6px 12px; font-size: 12px; }
+  .content { padding-bottom: 40px; }
+  .cl-head { padding: 16px; }
+  .cl-head h1 { font-size: 20px; }
+  .cl-search { padding: 12px 16px; }
+  .cl-search input { padding: 12px 16px 12px 40px; font-size: 14px; background-position: 14px center; }
+  .nav-sidebar { width: 44px; max-width: 44px; max-height: 70vh; flex-direction: column; height: auto; padding: 4px 0; justify-content: flex-start; align-items: center; border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
+  .nav-sidebar .nav-spacer { display: block; }
+  .nav-item { width: 36px; height: 36px; }
+  .nav-logo { display: flex !important; }
+  .nav-sidebar-divider, .nav-sidebar .nav-item.theme-toggle, .nav-sidebar .nav-item.refresh-cache { display: none !important; }  /* 老板 6/13 拍: 手机端去掉主题切换 + 刷新缓存 */
+  .mobile-menu-btn { display: flex !important; }  /* 老板 6/13 拍: 修复手机端三杠不显示 bug */
 }
 /* ── Brand header subtitle ── */
 .cl-head-sub {
@@ -986,7 +1292,7 @@ a:hover { color: var(--text); }
   <!-- Left: Nav Sidebar (64px) -->
   <div class="nav-sidebar" :class="{ show: showNav }">
     <div class="nav-item nav-logo" :class="{ active: activeView === 'kb' }" @click="switchView('kb')" title="知识库">
-      <img src="/logo-mini.svg" width="36" height="36" alt="Synapse" />
+      <img src="/logo.png" width="36" height="36" alt="Synapse" />
     </div>
     <div class="nav-spacer"></div>
     <div class="nav-item" :class="{ active: activeView === 'graph' }" @click="switchView('graph')" title="知识图谱">
@@ -1006,13 +1312,18 @@ a:hover { color: var(--text); }
       </svg>
     </div>
 
-    <div style="width:24px;height:1px;background:var(--line);margin:4px 0;"></div>
-    <div class="nav-item" @click="toggleTheme" :title="isDark ? '亮色模式' : '暗色模式'">
+    <div style="width:24px;height:1px;background:var(--line);margin:4px 0;" class="nav-sidebar-divider"></div>
+    <div class="nav-item theme-toggle" @click="toggleTheme" :title="isDark ? '亮色模式' : '暗色模式'">
       <svg v-if="!isDark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
       <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </div>
+    <div class="nav-item refresh-cache" @click="refreshCache" title="刷新缓存">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
       </svg>
     </div>
   </div>
@@ -1113,28 +1424,42 @@ a:hover { color: var(--text); }
     </div>
 
     <!-- Tags view -->
-    <div class="content" v-if="activeView === 'tags' && !loading" style="position:relative;overflow:hidden;height:100%;display:flex;flex-direction:column;">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--panel);flex-shrink:0;">
-        <button @click="switchView('kb')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--radius);border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font:inherit;font-size:11px;min-height:28px;line-height:1;">
+    <div class="content tags-view" v-if="activeView === 'tags' && !loading">
+      <div class="tags-header">
+        <button class="tags-back-btn" @click="switchView('kb')" title="返回">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          返回
+          <span>返回</span>
         </button>
-        <span style="font-size:11px;color:var(--muted);">{{ tags.length }} 个标签</span>
+        <div class="tags-title">
+          <h2>标签</h2>
+          <span class="tags-count">{{ tags.length }} 个 · {{ notes.length }} 篇笔记</span>
+        </div>
+        <div class="tags-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" v-model="tagSearchQ" placeholder="搜索标签..." />
+        </div>
       </div>
-      <div style="flex:1;padding:24px;overflow-y:auto;">
-        <div style="max-width:800px;margin:0 auto;">
-          <div class="tag-cloud" style="display:flex;flex-wrap:nowrap;gap:12px;padding:20px 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;">
-            <div v-for="t in sortedTags" :key="t.name"
-              class="tag-cloud-item"
-              :style="{ fontSize: getTagFontSize(t.count) + 'px', borderColor: curTag === t.name ? '#fff' : (t.color || 'var(--accent)'), background: curTag === t.name ? (t.color || 'var(--accent)') : 'var(--accent-light)', color: curTag === t.name ? '#fff' : (t.color || 'var(--accent)') }"
-              @click="filterByTag(t.name)">
-              <span class="tag-name">{{ t.name }}</span>
-              <span class="tag-count">{{ t.count }}</span>
+      <div class="tags-grid-wrap">
+        <div class="tags-grid" v-if="filteredTagsList.length">
+          <div v-for="t in filteredTagsList" :key="t.name"
+            class="tag-card"
+            :class="{ active: curTag === t.name }"
+            :style="{ '--tag-color': t.color || 'var(--accent)' }"
+            @click="filterByTag(t.name)">
+            <div class="tag-card-bar"></div>
+            <div class="tag-card-body">
+              <div class="tag-card-name">{{ t.name }}</div>
+              <div class="tag-card-count">
+                <span class="tag-card-num">{{ t.count }}</span>
+                <span class="tag-card-unit">篇笔记</span>
+              </div>
             </div>
           </div>
-          <div v-if="curTag" style="margin-top:16px;text-align:center;">
-            <span style="font-size:12px;color:var(--muted);">已筛选：{{ curTag }} · {{ filteredNotes.length }} 篇笔记</span>
-          </div>
+        </div>
+        <div v-else class="tags-empty">
+          <div class="tags-empty-icon">🏷️</div>
+          <div v-if="tagSearchQ">未找到 "{{ tagSearchQ }}" 相关标签</div>
+          <div v-else>还没有标签</div>
         </div>
       </div>
     </div>
@@ -1245,6 +1570,13 @@ a:hover { color: var(--text); }
         <div class="txt">没有匹配的笔记</div>
         <div class="hnt">试试调整搜索条件或标签过滤</div>
       </div>
+      <footer class="app-footer">
+        <span>Synapse v2.2.44 · AI 驱动的个人知识管理</span>
+        <span class="app-footer-divider">·</span>
+        <span>© 2026 <a href="https://threel.site" target="_blank" rel="noopener">三页札记</a></span>
+        <span class="app-footer-divider">·</span>
+        <span class="app-footer-tags">{{ notes.length }} 篇 · {{ tags.length }} 个标签</span>
+      </footer>
     </div>
 
     <!-- Note view -->
@@ -1255,10 +1587,6 @@ a:hover { color: var(--text); }
           返回
         </button>
         <div style="flex:1;"></div>
-        <button @click="showLinkDialog=true" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--radius);border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font:inherit;font-size:11px;min-height:28px;line-height:1;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          关联到...
-        </button>
       </div>
       <div style="display:flex">
         <div class="note-view" style="flex:1">
@@ -1305,43 +1633,13 @@ a:hover { color: var(--text); }
     </div>
   </div>
 
-  <!-- Link dialog -->
-  <div v-if="showLinkDialog" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);" @click.self="showLinkDialog=false">
-    <div style="background:var(--panel);border-radius:12px;width:90%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        <span style="font-size:15px;font-weight:600;color:var(--text);">关联笔记</span>
-        <div style="flex:1;"></div>
-        <button @click="showLinkDialog=false" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div style="padding:12px 20px;border-bottom:1px solid var(--line);">
-        <input type="text" v-model="linkSearchQ" placeholder="搜索笔记..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--text);font:inherit;font-size:13px;outline:none;" @input="filterLinkNotes">
-      </div>
-      <div style="flex:1;overflow-y:auto;padding:8px;">
-        <div v-for="n in linkableNotes" :key="n.id"
-          @click="linkToNote(n)"
-          style="padding:10px 14px;border-radius:var(--radius);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;"
-          @mouseenter="$event.target.style.background='var(--accent-light)'"
-          @mouseleave="$event.target.style.background='transparent'">
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;">{{ n.title || '无标题' }}</div>
-            <div style="font-size:11px;color:var(--muted);">{{ strip(n.content).substring(0, 60) }}</div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div v-if="!linkableNotes.length" style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px;">
-          {{ linkSearchQ ? '没有匹配的笔记' : '没有可关联的笔记' }}
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Floating menu button (mobile) -->
-  <button class="mobile-menu-btn" v-show="!showNav && activeView !== 'graph'" @click="showNav = !showNav">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <button class="mobile-menu-btn" @click="showNav = !showNav" :title="showNav ? '收起菜单' : '打开菜单'">
+    <svg v-if="!showNav" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+    <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   </button>
 </div>
@@ -1492,6 +1790,12 @@ createApp({
     const tags = ref([]);
     const curNote = ref(null);
     const curTag = ref('');
+    const tagSearchQ = ref('');  // 老板 6/13 拍: tags 页面加搜索框
+    const filteredTagsList = computed(() => {
+      const q = tagSearchQ.value.trim().toLowerCase();
+      if (!q) return sortedTags.value;
+      return sortedTags.value.filter(t => t.name.toLowerCase().includes(q));
+    });
     const searchQ = ref('');
     const filterQ = ref('');
     const sortKey = ref('source_created_at');
@@ -1510,20 +1814,6 @@ createApp({
     const contentList = ref(null);
     const fixing = ref('');
     const pruneResult = ref('');
-
-    // 关联对话框
-    const showLinkDialog = ref(false);
-    const linkSearchQ = ref('');
-    const linkableNotes = computed(() => {
-      if (!curNote.value) return [];
-      const q = linkSearchQ.value.trim().toLowerCase();
-      return notes.value.filter(n => {
-        if (n.id === curNote.value.id) return false;
-        if (!q) return true;
-        return (n.title || '').toLowerCase().includes(q) ||
-               (n.content || '').toLowerCase().includes(q);
-      });
-    });
 
     // AI 对话
     const chatMessages = ref([]);
@@ -1744,18 +2034,68 @@ createApp({
 
     const loadError = ref('');
 
-    async function loadNotes() {
+    // 缓存相关
+    const CACHE_KEY = 'synapse_notes_cache';
+    const CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
+
+    function loadCachedNotes() {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_TTL) {
+            notes.value = data;
+            return true;
+          }
+        }
+      } catch (e) {
+        console.warn('读取缓存失败:', e);
+      }
+      return false;
+    }
+
+    function saveCachedNotes(data) {
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.warn('保存缓存失败:', e);
+      }
+    }
+
+    function clearCache() {
+      try {
+        localStorage.removeItem(CACHE_KEY);
+      } catch (e) {}
+    }
+
+    async function loadNotes(forceRefresh = false) {
       loadError.value = '';
+
+      // 先尝试加载缓存
+      if (!forceRefresh && loadCachedNotes()) {
+        console.log('📦 从缓存加载笔记');
+        // 后台静默刷新
+        setTimeout(() => loadNotes(true), 100);
+        return;
+      }
+
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const data = await fetchJSON(API + '/notes?limit=200');
           notes.value = data.notes || [];
+          saveCachedNotes(notes.value);
           return;
         } catch(e) {
           console.error('加载笔记失败 (attempt ' + (attempt+1) + '):', e);
           if (attempt === 1) {
-            notes.value = [];
-            loadError.value = '加载失败，点击重试';
+            // 网络失败时尝试使用缓存
+            if (!loadCachedNotes()) {
+              notes.value = [];
+              loadError.value = '加载失败，点击重试';
+            }
           }
         }
       }
@@ -1851,44 +2191,8 @@ createApp({
       showNav.value = false;
     }
 
-    async function linkToNote(targetNote) {
-      if (!curNote.value) return;
-      const linkText = '[[' + targetNote.title + ']]';
-
-      // 在内容末尾添加链接
-      const newContent = curNote.value.content + '\n\n' + linkText;
-
-      try {
-        const resp = await fetch(API + '/notes/' + curNote.value.id, {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ content: newContent })
-        });
-
-        if (resp.ok) {
-          // 更新本地数据
-          curNote.value.content = newContent;
-          showLinkDialog.value = false;
-          linkSearchQ.value = '';
-
-          // 刷新关联数据
-          relationsData.value = await fetchJSON(API + '/notes/' + curNote.value.id + '/relations');
-
-          // 显示成功提示
-          const btn = document.createElement('div');
-          btn.textContent = '已关联到 ' + targetNote.title;
-          btn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px;z-index:200;animation:fadeInUp 0.3s ease;';
-          document.body.appendChild(btn);
-          setTimeout(() => btn.remove(), 2000);
-        }
-      } catch(e) {
-        console.error('关联失败:', e);
-      }
-    }
-
     async function openNote(n) {
       try {
-        relationsData.value = null;
         tocItems.value = [];
         activeView.value = 'kb';
         showNav.value = false;
@@ -1955,6 +2259,15 @@ createApp({
         document.documentElement.setAttribute('data-theme', 'dark');
       } else {
         document.documentElement.removeAttribute('data-theme');
+      }
+    }
+
+    async function refreshCache() {
+      clearCache();
+      await loadNotes(true);
+      if (curNote.value) {
+        const note = notes.value.find(n => n.id === curNote.value.id);
+        if (note) openNote(note);
       }
     }
 
@@ -2413,15 +2726,15 @@ createApp({
     return {
       showNav, mobileShowList, contentList, startResize,
       notes, tags, curNote, curTag, searchQ, filterQ,
+      tagSearchQ, filteredTagsList,  // 老板 6/13 拍: tags 搜索 + computed 列表
       sortKey, sortDir, isDark, loading, relationsData, tocItems, tocActive,
       totalEdges, activeView, filteredNotes, snippetLength, graphNodes, graphEdges, graphUsedTags, getTagColor,
       lintData, lintLoading, lintBadge, loadError,
       fixing, pruneResult, pruneGraph,
-      showLinkDialog, linkSearchQ, linkableNotes, linkToNote,
       sortedTags, getTagFontSize, filterByTag,
       switchView, runLint, fixIssue, getFixLabel,
       openNote, openRelation, toggleTag, doSearch, setSort,
-      toggleTheme, scrollToHeading, renderMd, strip, fmt,
+      toggleTheme, refreshCache, scrollToHeading, renderMd, strip, fmt,
       chatMessages, chatInput, chatLoading, chatMessagesRef, sendChat, renderChatMd, openNoteById,
     };
   }

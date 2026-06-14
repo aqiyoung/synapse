@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import 'note_detail_screen.dart';
+import '../widgets/glass_container.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -384,67 +385,71 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
-        title: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    colorScheme.primary,
-                    colorScheme.primary.withOpacity(0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.auto_awesome_rounded,
-                  size: 20, color: Colors.white),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('AI 知识助手',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    )),
-                Text('基于你的知识库',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.outline,
-                      fontSize: 11,
-                    )),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.history_rounded,
-                color: colorScheme.onSurface.withOpacity(0.7)),
-            onPressed: _showHistory,
-            tooltip: '对话历史',
-          ),
-          if (_messages.isNotEmpty)
-            IconButton(
-              icon: Icon(Icons.add_comment_outlined,
-                  color: colorScheme.onSurface.withOpacity(0.7)),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                setState(() => _messages.clear());
-              },
-              tooltip: '新对话',
-            ),
-        ],
-      ),
       body: Column(
         children: [
+          // 液态玻璃 Header
+          GlassContainer(
+            margin: EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top + 8, 8, 8),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.45,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.primary,
+                        colorScheme.primary.withOpacity(0.7),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded,
+                      size: 20, color: Colors.white),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('AI 知识助手',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          )),
+                      Text('基于你的知识库',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.outline,
+                            fontSize: 11,
+                          )),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.history_rounded,
+                      color: colorScheme.onSurface.withOpacity(0.7)),
+                  onPressed: _showHistory,
+                  tooltip: '对话历史',
+                ),
+                if (_messages.isNotEmpty)
+                  IconButton(
+                    icon: Icon(Icons.add_comment_outlined,
+                        color: colorScheme.onSurface.withOpacity(0.7)),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      setState(() => _messages.clear());
+                    },
+                    tooltip: '新对话',
+                  ),
+              ],
+            ),
+          ),
           // Messages
           Expanded(
             child: _messages.isEmpty
@@ -477,79 +482,53 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          const SizedBox(height: 60),
-          // Logo
+          const SizedBox(height: 40),
+          // Logo - 更简洁的设计
           Container(
-            width: 80,
-            height: 80,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              color: colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.auto_awesome_rounded,
-                size: 40, color: Colors.white),
+            child: Icon(Icons.auto_awesome_rounded,
+                size: 32, color: colorScheme.primary),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Text(
-            '你好，我是知识助手',
-            style: theme.textTheme.headlineSmall?.copyWith(
+            '知识助手',
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '基于你的知识库笔记，回答问题、\n梳理知识、发现关联',
+            '基于你的知识库，智能回答问题',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
-              height: 1.6,
             ),
           ),
-          const SizedBox(height: 40),
-          // 快捷问题
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '试试问我',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: colorScheme.outline,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 32),
+          // 快捷问题 - 更紧凑的布局
           ...List.generate(_quickQuestions.length, (i) {
             final q = _quickQuestions[i];
             return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Material(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(14),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () => _send(presetQuery: q['query']),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                        horizontal: 16, vertical: 12),
                     child: Row(
                       children: [
-                        Text(q['icon']!, style: const TextStyle(fontSize: 20)),
-                        const SizedBox(width: 14),
+                        Text(q['icon']!, style: const TextStyle(fontSize: 18)),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             q['label']!,
@@ -558,8 +537,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
-                        Icon(Icons.arrow_forward_rounded,
-                            size: 18, color: colorScheme.outline),
+                        Icon(Icons.arrow_forward_ios_rounded,
+                            size: 14, color: colorScheme.outline.withOpacity(0.5)),
                       ],
                     ),
                   ),
@@ -567,7 +546,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               ),
             );
           }),
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -784,25 +763,26 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   Widget _buildInputBar(ColorScheme colorScheme, ThemeData theme) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-          16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+          12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: colorScheme.outlineVariant.withOpacity(0.3),
-            width: 1,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.outline.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
-        ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: Container(
-              constraints: const BoxConstraints(maxHeight: 120),
+              constraints: const BoxConstraints(maxHeight: 100),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(24),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: TextField(
                 controller: _controller,
@@ -811,12 +791,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 decoration: InputDecoration(
                   hintText: '问我关于知识库的问题...',
                   hintStyle: TextStyle(
-                    color: colorScheme.onSurface.withOpacity(0.35),
+                    color: colorScheme.onSurface.withOpacity(0.4),
                     fontSize: 14,
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 12),
+                      horizontal: 16, vertical: 10),
                 ),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   height: 1.4,
@@ -826,10 +806,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               gradient: _isLoading || _controller.text.trim().isEmpty
                   ? null
@@ -844,7 +824,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               color: _isLoading || _controller.text.trim().isEmpty
                   ? colorScheme.surfaceContainerHighest
                   : null,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: IconButton(
               onPressed: _isLoading ? null : () => _send(),
@@ -853,7 +833,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 color: _isLoading || _controller.text.trim().isEmpty
                     ? colorScheme.onSurface.withOpacity(0.3)
                     : Colors.white,
-                size: 22,
+                size: 20,
               ),
             ),
           ),
