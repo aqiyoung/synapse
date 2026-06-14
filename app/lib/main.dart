@@ -24,6 +24,18 @@ void main() async {
   runApp(const KnowledgeBaseApp());
 }
 
+class _StatusBarObserver extends NavigatorObserver {
+  final VoidCallback onRouteChanged;
+  _StatusBarObserver(this.onRouteChanged);
+
+  @override
+  void didPush(Route route, Route? previousRoute) => onRouteChanged();
+  @override
+  void didPop(Route route, Route? previousRoute) => onRouteChanged();
+  @override
+  void didReplace({Route? newRoute, Route? oldRoute}) => onRouteChanged();
+}
+
 class KnowledgeBaseApp extends StatefulWidget {
   const KnowledgeBaseApp({super.key});
 
@@ -34,6 +46,7 @@ class KnowledgeBaseApp extends StatefulWidget {
 class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
   ThemeMode _themeMode = ThemeMode.light;
   int _themeIndex = 0;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -96,10 +109,9 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
   Widget build(BuildContext context) {
     final appTheme = AppTheme.presets[_themeIndex];
 
-    // 每次构建时更新状态栏（页面切换时会重建）
-    _updateStatusBar();
-
     return MaterialApp(
+      navigatorKey: _navigatorKey,
+      navigatorObservers: [_StatusBarObserver(_updateStatusBar)],
       title: 'Synapse',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
