@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
@@ -49,24 +48,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadVersion();
     _loadUpdateChannel();
     _loadNotificationState();
-    _updateStatusBar();
-  }
-
-  void _updateStatusBar() {
-    final isDark = widget.isDark;
-    SystemChrome.setSystemUIOverlayStyle(
-      isDark
-          ? const SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              statusBarIconBrightness: Brightness.light,
-              statusBarBrightness: Brightness.dark,
-            )
-          : const SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              statusBarIconBrightness: Brightness.dark,
-              statusBarBrightness: Brightness.light,
-            ),
-    );
   }
 
   Future<void> _loadVersion() async {
@@ -455,9 +436,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // 更新状态栏样式
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChrome.setSystemUIOverlayStyle(
+        Theme.of(context).brightness == Brightness.dark
+            ? const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.light,
+                statusBarBrightness: Brightness.dark,
+              )
+            : const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
+              ),
+      );
+    });
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      extendBody: true,
       appBar: AppBar(
         title: const Text('设置'),
         backgroundColor: Colors.transparent,
