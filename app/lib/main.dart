@@ -31,29 +31,15 @@ class KnowledgeBaseApp extends StatefulWidget {
   State<KnowledgeBaseApp> createState() => _KnowledgeBaseAppState();
 }
 
-class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> with WidgetsBindingObserver {
+class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
   ThemeMode _themeMode = ThemeMode.light;
   int _themeIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _loadThemeMode();
     _loadThemeIndex();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _updateStatusBar();
-    }
   }
 
   Future<void> _loadThemeMode() async {
@@ -109,6 +95,9 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> with WidgetsBinding
   @override
   Widget build(BuildContext context) {
     final appTheme = AppTheme.presets[_themeIndex];
+
+    // 每次构建时更新状态栏（页面切换时会重建）
+    _updateStatusBar();
 
     return MaterialApp(
       title: 'Synapse',
