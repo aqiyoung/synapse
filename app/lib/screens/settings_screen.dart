@@ -53,7 +53,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _updateStatusBar() {
-    final isDark = widget.isDark;
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
     SystemChrome.setSystemUIOverlayStyle(
       isDark
           ? const SystemUiOverlayStyle(
