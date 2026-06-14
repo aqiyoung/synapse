@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
 import '../services/update_service.dart';
@@ -49,6 +50,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadVersion();
     _loadUpdateChannel();
     _loadNotificationState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _updateStatusBar();
   }
 
@@ -170,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               Navigator.pop(ctx);
               final url = UpdateService().getGitHubDownloadUrl();
-              // 打开GitHub链接
+              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
             },
             child: const Text('GitHub下载'),
           ),
