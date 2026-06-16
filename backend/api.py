@@ -11,10 +11,10 @@ import io
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, Response, JSONResponse
+from fastapi.responses import FileResponse, Response, JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -30,6 +30,9 @@ from crud import (
     create_notification, list_notifications, mark_read, mark_all_read,
 )
 from config import API_TOKEN, ADMIN_PASSWORD
+
+import llm  # noqa: E402
+from config import LLM_MODEL
 
 app = FastAPI(title="知识库 API", version="1.2.0")
 
@@ -142,7 +145,7 @@ def _find_orphan_notes(db: Session, notes: list) -> list:
 
 
 # 公开接口不需要认证的路径
-_PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/check", "/api/update/download", "/api/admin/verify"}
+_PUBLIC_PATHS = {"/api/health", "/api/stats", "/api/update/check", "/api/update/download", "/api/admin/verify", "/api/ai/status", "/api/ai/summarize"}
 
 # {title: id} 全表映射缓存，30 秒 TTL。graph/relations 复用。
 _TITLE_MAP_CACHE: tuple[dict, float] | None = None
@@ -157,7 +160,7 @@ async def auth_middleware(request, call_next):
     if not API_TOKEN:
         return await call_next(request)
     # 公开接口放行
-    if request.url.path in _PUBLIC_PATHS:
+    if request.url.path in _PUBLIC_PATHS or any(request.url.path.startswith(p + "/") or request.url.path == p for p in _PUBLIC_PATHS):
         return await call_next(request)
     # 其他接口需要认证
     auth = request.headers.get("authorization", "")
@@ -1907,3 +1910,72 @@ def api_auto_categorize(db: Session = Depends(get_db)):
     db.commit()
     return {"message": f"已自动归类 {updated} 篇笔记", "updated": updated}
 
+
+
+# ===== AI 摘要 API =====
+
+@app.get("/api/ai/status")
+def api_ai_status():
+    """AI 功能状态：LLM 是否配置 + App 端开关（来自 X-AI-Enabled header）"""
+    return {
+        "llm_enabled": llm.is_enabled(),
+        "model": LLM_MODEL if llm.is_enabled() else "",
+    }
+
+
+@app.post("/api/ai/summarize/{note_id}")
+def api_ai_summarize(
+    note_id: int,
+    x_ai_enabled: Optional[str] = Header(None, alias="X-AI-Enabled"),
+    db: Session = Depends(get_db),
+):
+    """流式 AI 摘要笔记内容 (SSE)
+
+    客户端 App 设置里 AI 开关关时, 不发 X-AI-Enabled header 或发 'false' → 403
+    开关开时, 发 'true' → 返回 SSE 流
+    """
+    # App 端开关检查
+    if x_ai_enabled is None or x_ai_enabled.lower() != "true":
+        raise HTTPException(
+            status_code=403,
+            detail="AI 功能未开启，请先在 App 设置里打开 AI 开关",
+        )
+
+    # LLM 配置检查
+    if not llm.is_enabled():
+        raise HTTPException(
+            status_code=503,
+            detail="AI 服务未配置，请联系管理员设置 LLM_API_KEY",
+        )
+
+    # 笔记存在性
+    note = db.query(Note).filter(Note.id == note_id, Note.deleted_at.is_(None)).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="笔记不存在")
+
+    # 准备 prompt
+    content = note.content or ""
+    if len(content) > 8000:
+        content = content[:8000] + "..."
+    title = note.title or "无标题"
+
+    system = (
+        "你是一个知识管理助手，专门为用户的个人知识库生成结构化摘要。"
+        "请用 3-5 句话总结笔记的核心观点，关键概念用粗体标记。"
+        "不要添加 '这篇笔记'、'文章' 等废话，直接给摘要。"
+    )
+    prompt = (
+        f"笔记标题：{title}\n\n"
+        f"笔记内容：\n{content}\n\n"
+        "请生成结构化摘要："
+    )
+
+    def stream():
+        try:
+            for chunk in llm.chat_complete_stream(prompt, system=system):
+                yield chunk
+        except Exception as e:
+            logger.error(f"AI summarize stream error: {e}")
+            yield "data: [ERROR] 流式摘要失败\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")

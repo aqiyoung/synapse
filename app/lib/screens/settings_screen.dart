@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
 import '../services/update_service.dart';
 import '../services/notification_service.dart';
+import '../services/ai_service.dart';
 import 'notifications_screen.dart';
 import '../models/app_theme.dart';
 import '../widgets/glass_container.dart';
@@ -39,6 +41,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _updateChannel = 'stable';
   bool _notificationsEnabled = true;
   int _unreadCount = 0;
+  bool _aiEnabled = true;
+  String _aiModel = '';
 
   bool get _isDark => widget.isDark;
 
@@ -50,6 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadVersion();
     _loadUpdateChannel();
     _loadNotificationState();
+    _loadAiState();
   }
 
   Future<void> _loadVersion() async {
@@ -73,6 +78,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _notificationsEnabled = enabled;
         _unreadCount = count;
+      });
+    }
+  }
+
+  Future<void> _loadAiState() async {
+    final enabled = await AiService.isEnabled();
+    // 后台异步查 LLM 状态, 不阻塞 UI
+    unawaited(_refreshAiServerStatus());
+    if (mounted) {
+      setState(() {
+        _aiEnabled = enabled;
+      });
+    }
+  }
+
+  Future<void> _refreshAiServerStatus() async {
+    await AiService.checkServerStatus();
+    if (mounted) {
+      setState(() {
+        _aiModel = AiService.model;
       });
     }
   }
@@ -692,6 +717,112 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── AI 功能 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'AI',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (AiService.llmEnabled)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _aiModel.isNotEmpty ? _aiModel : '已连接',
+                          style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w600),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          '未配置',
+                          style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.auto_awesome,
+                        color: colorScheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '启用 AI 摘要',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            AiService.llmEnabled
+                                ? '笔记详情页可使用 AI 一键摘要'
+                                : '后端未配置 LLM，开启后暂不可用',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _aiEnabled,
+                      onChanged: (v) async {
+                        await AiService.setEnabled(v);
+                        setState(() => _aiEnabled = v);
+                        if (v) {
+                          // 打开时立即查一次 server status
+                          _refreshAiServerStatus();
+                        }
+                      },
+                      activeColor: colorScheme.primary,
+                    ),
+                  ],
                 ),
               ],
             ),

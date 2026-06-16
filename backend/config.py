@@ -2,9 +2,9 @@
 import os
 
 # LLM 配置 — 通过环境变量设置
-LLM_API_KEY = os.environ.get("LLM_API_KEY", os.environ.get("ANTHROPIC_AUTH_TOKEN", ""))
+LLM_API_KEY = os.environ.get("LLM_API_KEY", os.environ.get("ANTHROPIC_AUTH_TOKEN", os.environ.get("ANTHROPIC_API_KEY", "")))
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL", os.environ.get("ANTHROPIC_BASE_URL", "https://api.openai.com/v1"))
-LLM_MODEL = os.environ.get("LLM_MODEL", os.environ.get("ANTHROPIC_MODEL", "gpt-4"))
+LLM_MODEL = os.environ.get("LLM_MODEL", os.environ.get("ANTHROPIC_MODEL", os.environ.get("ANTHROPIC_MODEL_NAME", "claude-sonnet-4-5")))
 LLM_ENABLED = bool(LLM_API_KEY)
 
 # RAG 配置
