@@ -17,6 +17,22 @@ class ApiService {
     _token = token;
   }
 
+  /// 设置首选模型 (持久化到 SharedPreferences, 供下次启动参考)
+  /// 注意: 实际切换模型需要重启 OpenClaw gateway
+  static Future<void> setModel(String model) async {
+    // 通过后端代理尝试 (如果后端有 /api/config/model 端点)
+    try {
+      final r = await http.post(
+        Uri.parse('${baseUrl}/config/model'),
+        headers: {...headers, 'Content-Type': 'application/json'},
+        body: json.encode({'model': model}),
+      );
+      // 200 = 成功, 404 = 后端没配此端点 (可接受)
+      if (r.statusCode == 200) return;
+    } catch (_) {}
+    // 后端没配 /api/config/model — 仅本地持久化, 下次重启后需手动改 openclaw.json
+  }
+
   static Map<String, String> get headers => {
         'Content-Type': 'application/json',
         if (_token.isNotEmpty) 'Authorization': 'Bearer $_token',

@@ -43,6 +43,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _unreadCount = 0;
   bool _aiEnabled = true;
   String _aiModel = '';
+  String _currentModel = '';
+  List<String> _availableModels = [];
 
   bool get _isDark => widget.isDark;
 
@@ -55,6 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadUpdateChannel();
     _loadNotificationState();
     _loadAiState();
+    _loadModelConfig();
   }
 
   Future<void> _loadVersion() async {
@@ -99,6 +102,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _aiModel = AiService.model;
       });
+    }
+  }
+
+  // ── 模型配置 ──
+  static const _modelKey = 'preferred_model';
+
+  Future<void> _loadModelConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_modelKey) ?? '';
+    // 可用模型列表 (与 openclaw.json providers 对应)
+    const models = [
+      'longcat/LongCat-2.0-Preview',
+      'lyclaude/gpt-5.5',
+      'lyclaude/gpt-5.4',
+      'b-ai/gpt-5.4',
+      'xiaomi-mimo-2/mimo-v2.5-pro',
+      'minimax-m3/MiniMax-M3',
+      'kiro/claude-sonnet-4.6',
+      'nvidia/meta/llama-3.3-70b-instruct',
+      'tokenrouter/MiniMax-M3',
+    ];
+    if (mounted) {
+      setState(() {
+        _availableModels = models;
+        _currentModel = saved.isNotEmpty && models.contains(saved) ? saved : 'longcat/LongCat-2.0-Preview';
+      });
+    }
+  }
+
+  Future<void> _setModel(String model) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_modelKey, model);
+    // 同时写入 OpenClaw 配置 (通过后端代理)
+    try {
+      await ApiService.setModel(model);
+    } catch (_) {
+      // 后端可能没配 /api/config/model 端点, 本地 SharedPreferences 已保存
+    }
+    if (mounted) {
+      setState(() => _currentModel = model);
     }
   }
 
@@ -366,6 +409,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('登录'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showModelPicker(BuildContext ctx, ColorScheme cs) {
+    showModalBottomSheet(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: cs.onSurface.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+              child: Row(
+                children: [
+                  Icon(Icons.psychology_outlined, color: cs.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text('选择模型',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: cs.outline.withOpacity(0.1)),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _availableModels.length,
+                itemBuilder: (context, index) {
+                  final m = _availableModels[index];
+                  final selected = m == _currentModel;
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(
+                      selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: selected ? cs.primary : cs.onSurface.withOpacity(0.4),
+                      size: 18,
+                    ),
+                    title: Text(
+                      m,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        color: selected ? cs.primary : cs.onSurface,
+                      ),
+                    ),
+                    trailing: selected
+                        ? Icon(Icons.check, color: cs.primary, size: 16)
+                        : null,
+                    onTap: () {
+                      _setModel(m);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+          ],
+        ),
       ),
     );
   }
@@ -823,6 +938,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       activeColor: colorScheme.primary,
                     ),
                   ],
+                ),
+              ],
+            ),
+          ),
+
+          // ── 模型配置 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '模型配置',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.psychology_outlined,
+                        color: colorScheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AI 模型',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            _currentModel,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: colorScheme.onSurface.withOpacity(0.3)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // 模型选择器 (BottomSheet)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showModelPicker(context, colorScheme),
+                    icon: const Icon(Icons.tune, size: 16),
+                    label: const Text('切换模型'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
                 ),
               ],
             ),
