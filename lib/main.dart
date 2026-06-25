@@ -127,7 +127,7 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
         scaffoldBackgroundColor: appTheme.lightBg,
         textTheme: const TextTheme().apply(fontFamily: 'MiSans'),
         appBarTheme: const AppBarTheme(
-          foregroundColor: const Color(0xFF141413),
+          foregroundColor: Color(0xFF141413),
           elevation: 0,
         ),
       ),
@@ -141,7 +141,7 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
         scaffoldBackgroundColor: appTheme.darkBg,
         textTheme: const TextTheme().apply(fontFamily: 'MiSans'),
         appBarTheme: const AppBarTheme(
-          foregroundColor: const Color(0xFFe4ece0),
+          foregroundColor: Color(0xFFe4ece0),
           elevation: 0,
         ),
       ),
