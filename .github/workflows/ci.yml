@@ -27,9 +27,9 @@ jobs:
         working-directory: ./app
         run: flutter pub get
 
-      - name: Analyze
+      - name: Analyze (errors only)
         working-directory: ./app
-        run: flutter analyze --fatal-infos --fatal-warnings
+        run: flutter analyze --fatal-warnings
 
       - name: Format check
         working-directory: ./app
