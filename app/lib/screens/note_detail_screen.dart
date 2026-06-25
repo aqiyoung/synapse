@@ -127,7 +127,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isPinned ? '已置顶' : '已取消置顶'),
-          duration: const Duration(seconds: 1),
+          duration: Duration(seconds: 1),
         ),
       );
     } catch (e) {
@@ -584,7 +584,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('代码已复制'),
-                        duration: const Duration(seconds: 1),
+                        duration: Duration(seconds: 1),
                       ),
                     );
                   },
@@ -866,7 +866,7 @@ class _AiSummarySheetState extends State<_AiSummarySheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.error_outline, color: Colors.orange, size: 48),
+          const Icon(Icons.error_outline, color: Colors.orange, size: 48),
           const SizedBox(height: 12),
           Text(
             _error!,

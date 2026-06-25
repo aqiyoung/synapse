@@ -37,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showAdminLogin = false;
   bool _isLoggedIn = false;
   int _versionTapCount = 0;
-  String _currentVersion = '';
   String _updateChannel = 'stable';
   bool _notificationsEnabled = true;
   int _unreadCount = 0;
@@ -174,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Icon(Icons.system_update, color: colorScheme.primary, size: 24),
             const SizedBox(width: 8),
-            Text('v${info.latestVersion}', style: TextStyle(fontSize: 18)),
+            Text('v${info.latestVersion}', style: const TextStyle(fontSize: 18)),
           ],
         ),
         content: SingleChildScrollView(
@@ -303,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: updateService.checking
                   ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary))
-                  : Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+                  : const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
               title: Text(
                 updateService.checking ? '检查中...' : '已是最新版本',
                 style: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.7)),
