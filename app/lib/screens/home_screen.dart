@@ -640,12 +640,18 @@ class _HomeScreenState extends State<HomeScreen> {
       if (RegExp(r'^\d{4}(-\d{2})?$').hasMatch(name)) return false;
 
       // 过滤无意义标签（太短或明显无意义）
-      if (name.length <= 1) return false;
+      if (name.length <= 1) {
+        return false;
+      }
       if (['了什么', '的工', '的工作', '入十几', '入十几万', '什么', '现在', '需要', '全天']
-          .contains(name)) return false;
+          .contains(name)) {
+        return false;
+      }
 
       // 过滤note_count为0的标签
-      if (tag.noteCount <= 0) return false;
+      if (tag.noteCount <= 0) {
+        return false;
+      }
 
       return true;
     }).toList();

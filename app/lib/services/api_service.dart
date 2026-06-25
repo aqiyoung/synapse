@@ -48,10 +48,12 @@ class ApiService {
     // 限制 200 是后端 list_notes 允许的最大值（api.py le=200）；超过需后端加 cursor 分页
     var url =
         '$baseUrl/notes?limit=$limit&fields=${Uri.encodeQueryComponent(_listFields)}';
-    if (tag != null && tag.isNotEmpty)
+    if (tag != null && tag.isNotEmpty) {
       url += '&tag=${Uri.encodeQueryComponent(tag)}';
-    if (search != null && search.isNotEmpty)
+    }
+    if (search != null && search.isNotEmpty) {
       url += '&search=${Uri.encodeQueryComponent(search)}';
+    }
 
     final response = await http.get(Uri.parse(url), headers: headers);
     if (response.statusCode == 200) {
