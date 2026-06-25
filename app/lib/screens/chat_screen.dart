@@ -110,11 +110,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ));
       });
     } finally {
-      if (!mounted) return;
       _typingController.stop();
-      setState(() => _isLoading = false);
-      _scrollToBottom();
     }
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    _scrollToBottom();
   }
 
   // ── 历史记录 ──
