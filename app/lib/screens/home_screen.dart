@@ -6,7 +6,6 @@ import '../models/note.dart';
 import '../services/api_service.dart';
 import 'note_detail_screen.dart';
 import 'graph_screen.dart';
-import 'lint_screen.dart';
 import 'settings_screen.dart';
 import 'mine_screen.dart';
 import 'chat_screen.dart';
@@ -611,11 +610,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   await ApiService.togglePin(note.id);
                   _loadData();
                 } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('操作失败: $e')),
-                    );
-                  }
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('操作失败: $e')),
+                  );
                 }
               },
             ),

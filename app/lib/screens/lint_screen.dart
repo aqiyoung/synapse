@@ -197,7 +197,7 @@ class _LintScreenState extends State<LintScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 40),
-                Icon(Icons.check_circle_outline, size: 48, color: Colors.green),
+                const Icon(Icons.check_circle_outline, size: 48, color: Colors.green),
                 const SizedBox(height: 12),
                 Text(
                   '一切正常',

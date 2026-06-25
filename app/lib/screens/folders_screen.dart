@@ -125,7 +125,6 @@ class _FoldersScreenState extends State<FoldersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.presets[widget.themeIndex];
     return Scaffold(
       appBar: AppBar(title: const Text('分类管理')),
       body: _loading
@@ -219,7 +218,6 @@ class _FolderNotesScreenState extends State<FolderNotesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.presets[widget.themeIndex];
     final color = Color(int.parse(widget.folder.color.substring(1), radix: 16) + 0xFF000000);
     return Scaffold(
       appBar: AppBar(
@@ -241,7 +239,7 @@ class _FolderNotesScreenState extends State<FolderNotesScreen> {
                     final n = _notes[i];
                     return ListTile(
                       title: Text(n.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      subtitle: Text(n.summary ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(n.summary, maxLines: 2, overflow: TextOverflow.ellipsis),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () async {
                         await Navigator.push(

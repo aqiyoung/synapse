@@ -77,32 +77,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadNotificationState() async {
     final enabled = await NotificationService.isEnabled();
     final count = await NotificationService.getUnreadCount();
-    if (mounted) {
-      setState(() {
-        _notificationsEnabled = enabled;
-        _unreadCount = count;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _notificationsEnabled = enabled;
+      _unreadCount = count;
+    });
   }
 
   Future<void> _loadAiState() async {
     final enabled = await AiService.isEnabled();
     // 后台异步查 LLM 状态, 不阻塞 UI
     unawaited(_refreshAiServerStatus());
-    if (mounted) {
-      setState(() {
-        _aiEnabled = enabled;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _aiEnabled = enabled;
+    });
   }
 
   Future<void> _refreshAiServerStatus() async {
     await AiService.checkServerStatus();
-    if (mounted) {
-      setState(() {
-        _aiModel = AiService.model;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _aiModel = AiService.model;
+    });
   }
 
   // ── 模型配置 ──
@@ -123,12 +120,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'nvidia/meta/llama-3.3-70b-instruct',
       'tokenrouter/MiniMax-M3',
     ];
-    if (mounted) {
-      setState(() {
-        _availableModels = models;
-        _currentModel = saved.isNotEmpty && models.contains(saved) ? saved : 'longcat/LongCat-2.0-Preview';
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _availableModels = models;
+      _currentModel = saved.isNotEmpty && models.contains(saved) ? saved : 'longcat/LongCat-2.0-Preview';
+    });
   }
 
   Future<void> _setModel(String model) async {
@@ -140,27 +136,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {
       // 后端可能没配 /api/config/model 端点, 本地 SharedPreferences 已保存
     }
-    if (mounted) {
-      setState(() => _currentModel = model);
-    }
+    if (!mounted) return;
+    setState(() => _currentModel = model);
   }
 
   Future<void> _loadUpdateChannel() async {
     await UpdateService().loadChannel();
-    if (mounted) {
-      setState(() {
-        _updateChannel = UpdateService().channel;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _updateChannel = UpdateService().channel;
+    });
   }
 
   Future<void> _setUpdateChannel(String channel) async {
     await UpdateService().setChannel(channel);
-    if (mounted) {
-      setState(() {
-        _updateChannel = channel;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _updateChannel = channel;
+    });
   }
 
   Future<void> _checkUpdate() async {
@@ -367,6 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setString('server', server);
     await ApiService.setServer(server);
 
+    if (!mounted) return;
     setState(() => _saved = true);
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _saved = false);
@@ -487,6 +481,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _login() async {
     final ok = await ApiService.verifyAdmin(_passwordController.text);
+    if (!mounted) return;
     if (ok) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('admin_logged_in', true);
@@ -506,6 +501,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('admin_logged_in', false);
+    if (!mounted) return;
     setState(() => _isLoggedIn = false);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('已退出登录')),

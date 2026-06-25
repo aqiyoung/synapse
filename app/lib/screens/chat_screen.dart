@@ -84,6 +84,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               .toList() ??
           [];
 
+      if (!mounted) return;
       setState(() {
         _messages.add(_ChatMessage(
           role: 'assistant',
@@ -100,6 +101,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             .toList(),
       );
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _messages.add(_ChatMessage(
           role: 'assistant',
@@ -108,6 +110,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ));
       });
     } finally {
+      if (!mounted) return;
       _typingController.stop();
       setState(() => _isLoading = false);
       _scrollToBottom();

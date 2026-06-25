@@ -113,7 +113,7 @@ class AppTheme {
     error: const Color(0xFFB00020),
     onPrimary: Colors.white,
     onSecondary: Colors.white,
-    onSurface: Color(0xFF1C1B1F),
+    onSurface: const Color(0xFF1C1B1F),
     onError: Colors.white,
   );
 }

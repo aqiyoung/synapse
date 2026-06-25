@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -176,7 +175,7 @@ class _GraphWidgetState extends State<_GraphWidget>
   _GraphNode? _hoveredNode;
   Offset _panStart = Offset.zero;
   Offset _lastFocal = Offset.zero;
-  Offset _dragStartScreen = Offset.zero;
+  final Offset _dragStartScreen = Offset.zero;
   Timer? _resumeTimer;
   final _random = Random();
 

@@ -65,7 +65,7 @@ class _MineScreenState extends State<MineScreen> {
             blur: 24,
             tintOpacity: 0.45,
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-            child: Column(
+            const Column(
               children: [
                 // Logo + 标题
                 Row(
@@ -88,8 +88,8 @@ class _MineScreenState extends State<MineScreen> {
                               color: const Color(0xFFc96442),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Center(
-                              child: Text(
+                            const Center(
+                              const Text(
                                 'S',
                                 style: TextStyle(
                                   fontFamily: 'MiSans',
@@ -106,7 +106,7 @@ class _MineScreenState extends State<MineScreen> {
                     const SizedBox(width: 16),
                     // 标题和版本
                     Expanded(
-                      child: Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
@@ -126,7 +126,7 @@ class _MineScreenState extends State<MineScreen> {
                               color: colorScheme.primary.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Text(
+                            const Text(
                               'v$_version',
                               style: TextStyle(
                                 fontSize: 11,
@@ -208,7 +208,7 @@ class _MineScreenState extends State<MineScreen> {
               color: colorScheme.surfaceContainerHighest.withValues(alpha:0.3),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
+            const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -267,7 +267,7 @@ class _MineScreenState extends State<MineScreen> {
           const SizedBox(height: 24),
           // 底部
           Center(
-            child: Text(
+            const Text(
               '用心记录，用知识连接未来',
               style: TextStyle(
                 fontSize: 12,
@@ -294,9 +294,9 @@ class _MineScreenState extends State<MineScreen> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        child: Padding(
+        const Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
+          const Column(
             children: [
               Icon(icon, size: 24, color: colorScheme.primary),
               const SizedBox(height: 8),
@@ -325,9 +325,9 @@ class _MineScreenState extends State<MineScreen> {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Padding(
+      const Padding(
         padding: const EdgeInsets.only(bottom: 14),
-        child: Row(
+        const Row(
           children: [
             Container(
               width: 32,
@@ -336,11 +336,11 @@ class _MineScreenState extends State<MineScreen> {
                 color: colorScheme.primary.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 16, color: colorScheme.primary),
+              const Icon(icon, size: 16, color: colorScheme.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
+              const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -365,7 +365,7 @@ class _MineScreenState extends State<MineScreen> {
             if (onTap != null)
               Padding(
                 padding: const EdgeInsets.only(left: 8),
-                child: Icon(
+                const Icon(
                   Icons.open_in_new_rounded,
                   size: 14,
                   color: colorScheme.primary.withValues(alpha:0.6),
@@ -391,7 +391,7 @@ class _MineScreenState extends State<MineScreen> {
           ],
         ),
         content: SingleChildScrollView(
-          child: Column(
+          const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -420,7 +420,7 @@ class _MineScreenState extends State<MineScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('稍后', style: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.6))),
+            const Text('稍后', style: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.6))),
           ),
           TextButton(
             onPressed: () {

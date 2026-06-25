@@ -120,23 +120,21 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     if (_note == null) return;
     try {
       final isPinned = await ApiService.togglePin(widget.noteId);
+      if (!mounted) return;
       setState(() {
         _note = _note!.copyWith(isPinned: isPinned);
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isPinned ? '已置顶' : '已取消置顶'),
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isPinned ? '已置顶' : '已取消置顶'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('操作失败: $e')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('操作失败: $e')),
+      );
     }
   }
 
@@ -144,7 +142,8 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     Navigator.pop(context); // 关闭对话框
     try {
       final success = await ApiService.deleteNote(widget.noteId);
-      if (success && mounted) {
+      if (!mounted) return;
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('删除成功')),
         );
@@ -155,6 +154,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('删除失败: $e')),
       );
@@ -584,7 +584,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('代码已复制'),
-                        duration: Duration(seconds: 1),
+                        duration: const Duration(seconds: 1),
                       ),
                     );
                   },
