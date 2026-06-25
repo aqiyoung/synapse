@@ -94,8 +94,10 @@ class UpdateService {
 
     final lBetaMatch = RegExp(r'-beta\.(\d+)').firstMatch(l);
     final cBetaMatch = RegExp(r'-beta\.(\d+)').firstMatch(c);
-    final lBetaNum = lBetaMatch != null ? int.parse(lBetaMatch.group(1)!) : null;
-    final cBetaNum = cBetaMatch != null ? int.parse(cBetaMatch.group(1)!) : null;
+    final lBetaNum =
+        lBetaMatch != null ? int.parse(lBetaMatch.group(1)!) : null;
+    final cBetaNum =
+        cBetaMatch != null ? int.parse(cBetaMatch.group(1)!) : null;
 
     // 同类型版本比较（都是beta或都是stable）
     if (lBetaNum != null && cBetaNum != null) {
@@ -156,9 +158,11 @@ class UpdateService {
         try {
           Uri uri;
           if (_channel == 'beta') {
-            uri = Uri.parse('https://api.github.com/repos/aqiyoung/synapse/releases');
+            uri = Uri.parse(
+                'https://api.github.com/repos/aqiyoung/synapse/releases');
           } else {
-            uri = Uri.parse('https://api.github.com/repos/aqiyoung/synapse/releases/latest');
+            uri = Uri.parse(
+                'https://api.github.com/repos/aqiyoung/synapse/releases/latest');
           }
 
           final resp = await http.get(uri, headers: {
@@ -256,7 +260,8 @@ class UpdateService {
 
     try {
       final dir = await getTemporaryDirectory();
-      final filePath = '${dir.path}/synapse-v${_cachedUpdate!.latestVersion}.apk';
+      final filePath =
+          '${dir.path}/synapse-v${_cachedUpdate!.latestVersion}.apk';
       final file = File(filePath);
 
       // 构建下载 URL：优先服务器代理，备选 GitHub 直连
@@ -276,7 +281,8 @@ class UpdateService {
       try {
         final request = http.Request('GET', Uri.parse(downloadUrl));
         request.headers['User-Agent'] = 'Synapse';
-        final response = await client.send(request).timeout(const Duration(seconds: 30));
+        final response =
+            await client.send(request).timeout(const Duration(seconds: 30));
 
         if (response.statusCode != 200) {
           throw Exception('服务器返回 ${response.statusCode}');

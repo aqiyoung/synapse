@@ -107,7 +107,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     setState(() {
       _availableModels = models;
-      _currentModel = saved.isNotEmpty && models.contains(saved) ? saved : 'longcat/LongCat-2.0-Preview';
+      _currentModel = saved.isNotEmpty && models.contains(saved)
+          ? saved
+          : 'longcat/LongCat-2.0-Preview';
     });
   }
 
@@ -158,7 +160,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Icon(Icons.system_update, color: colorScheme.primary, size: 24),
             const SizedBox(width: 8),
-            Text('v${info.latestVersion}', style: const TextStyle(fontSize: 18)),
+            Text('v${info.latestVersion}',
+                style: const TextStyle(fontSize: 18)),
           ],
         ),
         content: SingleChildScrollView(
@@ -166,19 +169,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty) ...[
+              if (info.releaseNotes != null &&
+                  info.releaseNotes!.isNotEmpty) ...[
                 Text(
                   '更新内容',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withValues(alpha:0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   info.releaseNotes!,
-                  style: TextStyle(fontSize: 14, height: 1.6, color: colorScheme.onSurface),
+                  style: TextStyle(
+                      fontSize: 14, height: 1.6, color: colorScheme.onSurface),
                 ),
               ] else
                 Text(
@@ -191,7 +196,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('稍后', style: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.6))),
+            child: Text('稍后',
+                style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6))),
           ),
           TextButton(
             onPressed: () {
@@ -209,7 +216,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('直接更新'),
           ),
@@ -232,14 +240,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, snapshot) {
               final version = snapshot.data?.version ?? '...';
               return ListTile(
-                leading: Icon(Icons.info_outline, color: colorScheme.primary, size: 20),
+                leading: Icon(Icons.info_outline,
+                    color: colorScheme.primary, size: 20),
                 title: const Text('当前版本'),
-                trailing: Text('v$version', style: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.6), fontSize: 14)),
+                trailing: Text('v$version',
+                    style: TextStyle(
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 14)),
                 onTap: _onVersionTap,
               );
             },
           ),
-          Divider(height: 1, color: colorScheme.outline.withValues(alpha:0.1)),
+          Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.1)),
           if (updateService.downloading) ...[
             Padding(
               padding: const EdgeInsets.all(16),
@@ -249,10 +261,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Row(
                     children: [
                       SizedBox(
-                        width: 16, height: 16,
+                        width: 16,
+                        height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          value: updateService.downloadProgress > 0 ? updateService.downloadProgress : null,
+                          value: updateService.downloadProgress > 0
+                              ? updateService.downloadProgress
+                              : null,
                           color: colorScheme.primary,
                         ),
                       ),
@@ -261,7 +276,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         updateService.downloadProgress > 0
                             ? '下载中... ${(updateService.downloadProgress * 100).toInt()}%'
                             : '准备下载...',
-                        style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+                        style: TextStyle(
+                            fontSize: 14, color: colorScheme.onSurface),
                       ),
                     ],
                   ),
@@ -269,7 +285,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
                       value: updateService.downloadProgress,
-                      backgroundColor: colorScheme.outline.withValues(alpha:0.1),
+                      backgroundColor:
+                          colorScheme.outline.withValues(alpha: 0.1),
                       color: colorScheme.primary,
                     ),
                   ],
@@ -278,25 +295,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ] else if (updateService.hasUpdate) ...[
             ListTile(
-              leading: Icon(Icons.download, color: colorScheme.primary, size: 20),
+              leading:
+                  Icon(Icons.download, color: colorScheme.primary, size: 20),
               title: Text('发现新版本 v${updateService.cached!.latestVersion}',
-                style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w500)),
-              trailing: Icon(Icons.chevron_right, color: colorScheme.onSurface.withValues(alpha:0.3)),
+                  style: TextStyle(
+                      color: colorScheme.primary, fontWeight: FontWeight.w500)),
+              trailing: Icon(Icons.chevron_right,
+                  color: colorScheme.onSurface.withValues(alpha: 0.3)),
               onTap: () => _showUpdateDialog(context, colorScheme),
             ),
           ] else ...[
             ListTile(
               leading: updateService.checking
-                  ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary))
-                  : const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: colorScheme.primary))
+                  : const Icon(Icons.check_circle_outline,
+                      color: Colors.green, size: 20),
               title: Text(
                 updateService.checking ? '检查中...' : '已是最新版本',
-                style: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.7)),
+                style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
               trailing: TextButton(
-                onPressed: updateService.checking ? null : () async {
-                  await _checkUpdate();
-                },
+                onPressed: updateService.checking
+                    ? null
+                    : () async {
+                        await _checkUpdate();
+                      },
                 child: const Text('检查更新'),
               ),
             ),
@@ -306,7 +334,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
                 updateService.errorMessage!,
-                style: TextStyle(fontSize: 12, color: Colors.red.withValues(alpha:0.8)),
+                style: TextStyle(
+                    fontSize: 12, color: Colors.red.withValues(alpha: 0.8)),
               ),
             ),
           ],
@@ -406,9 +435,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Container(
               margin: const EdgeInsets.symmetric(vertical: 8),
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color: cs.onSurface.withValues(alpha:0.2),
+                color: cs.onSurface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -419,11 +449,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Icon(Icons.psychology_outlined, color: cs.primary, size: 20),
                   const SizedBox(width: 8),
                   Text('选择模型',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface)),
                 ],
               ),
             ),
-            Divider(height: 1, color: cs.outline.withValues(alpha:0.1)),
+            Divider(height: 1, color: cs.outline.withValues(alpha: 0.1)),
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
@@ -434,15 +467,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   return ListTile(
                     dense: true,
                     leading: Icon(
-                      selected ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: selected ? cs.primary : cs.onSurface.withValues(alpha:0.4),
+                      selected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: selected
+                          ? cs.primary
+                          : cs.onSurface.withValues(alpha: 0.4),
                       size: 18,
                     ),
                     title: Text(
                       m,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.normal,
                         color: selected ? cs.primary : cs.onSurface,
                       ),
                     ),
@@ -508,7 +546,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       itemBuilder: (context, index) {
         final preset = AppTheme.presets[index];
         final selected = index == widget.themeIndex;
-        final displayColor = widget.isDark ? preset.darkPrimary : preset.lightPrimary;
+        final displayColor =
+            widget.isDark ? preset.darkPrimary : preset.lightPrimary;
 
         return GestureDetector(
           onTap: () {
@@ -528,7 +567,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : null,
                   boxShadow: [
                     BoxShadow(
-                      color: displayColor.withValues(alpha:0.3),
+                      color: displayColor.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -546,7 +585,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   color: selected
                       ? colorScheme.onSurface
-                      : colorScheme.onSurface.withValues(alpha:0.6),
+                      : colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -621,7 +660,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha:0.1),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -647,7 +686,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _isDark ? '当前：深色模式' : '当前：浅色模式',
                             style: TextStyle(
                               fontSize: 12,
-                              color: colorScheme.onSurface.withValues(alpha:0.5),
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -713,7 +753,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha:0.1),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -739,7 +779,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             '接收系统通知和更新提醒',
                             style: TextStyle(
                               fontSize: 12,
-                              color: colorScheme.onSurface.withValues(alpha:0.5),
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -758,7 +799,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: () async {
-                    await Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(themeIndex: widget.themeIndex)));
+                    await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => NotificationsScreen(
+                                themeIndex: widget.themeIndex)));
                     _loadNotificationState();
                   },
                   borderRadius: BorderRadius.circular(12),
@@ -770,7 +815,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: colorScheme.primary.withValues(alpha:0.1),
+                            color: colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -792,7 +837,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         if (_unreadCount > 0)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.red,
                               borderRadius: BorderRadius.circular(10),
@@ -809,7 +855,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(width: 8),
                         Icon(
                           Icons.chevron_right,
-                          color: colorScheme.onSurface.withValues(alpha:0.3),
+                          color: colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                       ],
                     ),
@@ -842,26 +888,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(width: 8),
                     if (AiService.llmEnabled)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha:0.15),
+                          color: Colors.green.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           _aiModel.isNotEmpty ? _aiModel : '已连接',
-                          style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600),
                         ),
                       )
                     else
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha:0.15),
+                          color: Colors.orange.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
                           '未配置',
-                          style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                   ],
@@ -873,7 +927,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha:0.1),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -901,7 +955,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 : '后端未配置 LLM，开启后暂不可用',
                             style: TextStyle(
                               fontSize: 12,
-                              color: colorScheme.onSurface.withValues(alpha:0.5),
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -950,7 +1005,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha:0.1),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -976,13 +1031,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _currentModel,
                             style: TextStyle(
                               fontSize: 12,
-                              color: colorScheme.onSurface.withValues(alpha:0.5),
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: colorScheme.onSurface.withValues(alpha:0.3)),
+                    Icon(Icons.chevron_right,
+                        color: colorScheme.onSurface.withValues(alpha: 0.3)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -995,7 +1052,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label: const Text('切换模型'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
@@ -1100,8 +1158,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1146,7 +1204,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 12),
                   if (_isLoggedIn)
                     ListTile(
-                      leading: Icon(Icons.admin_panel_settings, color: colorScheme.primary),
+                      leading: Icon(Icons.admin_panel_settings,
+                          color: colorScheme.primary),
                       title: const Text('管理员'),
                       subtitle: const Text('已登录 · 可删除笔记'),
                       trailing: TextButton(
@@ -1157,7 +1216,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     )
                   else
                     ListTile(
-                      leading: Icon(Icons.lock_outline, color: colorScheme.onSurface.withValues(alpha:0.5)),
+                      leading: Icon(Icons.lock_outline,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5)),
                       title: const Text('管理员登录'),
                       subtitle: const Text('登录后可删除笔记'),
                       onTap: _showLoginDialog,
@@ -1188,18 +1248,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: selected
-              ? colorScheme.primary.withValues(alpha:0.15)
-              : colorScheme.surfaceContainerHighest.withValues(alpha:0.3),
+              ? colorScheme.primary.withValues(alpha: 0.15)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: selected
               ? Border.all(color: colorScheme.primary, width: 2)
-              : Border.all(color: colorScheme.outline.withValues(alpha:0.2)),
+              : Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [
             Icon(
               icon,
-              color: selected ? colorScheme.primary : colorScheme.onSurface.withValues(alpha:0.5),
+              color: selected
+                  ? colorScheme.primary
+                  : colorScheme.onSurface.withValues(alpha: 0.5),
               size: 24,
             ),
             const SizedBox(height: 8),
@@ -1216,7 +1278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 10,
-                color: colorScheme.onSurface.withValues(alpha:0.5),
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               textAlign: TextAlign.center,
             ),

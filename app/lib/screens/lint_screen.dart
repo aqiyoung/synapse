@@ -43,7 +43,8 @@ class _LintScreenState extends State<LintScreen> {
         final msg = e.toString().contains('SocketException')
             ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
             : '加载检查数据失败';
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
@@ -134,7 +135,7 @@ class _LintScreenState extends State<LintScreen> {
                   child: Text(
                     ApiService.isConfigured ? '加载失败' : '请先在设置中配置服务器',
                     style: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha:0.4),
+                      color: colorScheme.onSurface.withValues(alpha: 0.4),
                       decoration: TextDecoration.none,
                     ),
                   ),
@@ -165,17 +166,11 @@ class _LintScreenState extends State<LintScreen> {
                 '${((stats['link_density'] ?? 0) * 100).toInt()}%',
                 Icons.link,
                 colorScheme),
-            _buildStatCard(
-                '孤立笔记',
-                '${stats['orphan_count'] ?? 0}',
-                Icons.warning_amber,
-                colorScheme,
+            _buildStatCard('孤立笔记', '${stats['orphan_count'] ?? 0}',
+                Icons.warning_amber, colorScheme,
                 isWarning: (stats['orphan_count'] ?? 0) > 0),
-            _buildStatCard(
-                '断链',
-                '${stats['broken_link_count'] ?? 0}',
-                Icons.link_off,
-                colorScheme,
+            _buildStatCard('断链', '${stats['broken_link_count'] ?? 0}',
+                Icons.link_off, colorScheme,
                 isError: (stats['broken_link_count'] ?? 0) > 0),
           ],
         ),
@@ -197,13 +192,14 @@ class _LintScreenState extends State<LintScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 40),
-                const Icon(Icons.check_circle_outline, size: 48, color: Colors.green),
+                const Icon(Icons.check_circle_outline,
+                    size: 48, color: Colors.green),
                 const SizedBox(height: 12),
                 Text(
                   '一切正常',
                   style: TextStyle(
                     fontSize: 16,
-                    color: colorScheme.onSurface.withValues(alpha:0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                     decoration: TextDecoration.none,
                   ),
                 ),
@@ -232,7 +228,7 @@ class _LintScreenState extends State<LintScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withValues(alpha:0.1)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,7 +255,7 @@ class _LintScreenState extends State<LintScreen> {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: colorScheme.onSurface.withValues(alpha:0.5),
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
               decoration: TextDecoration.none,
             ),
           ),
@@ -323,7 +319,7 @@ class _LintScreenState extends State<LintScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withValues(alpha:0.1)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,7 +349,7 @@ class _LintScreenState extends State<LintScreen> {
                     '• ${n['title'] ?? ''}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onSurface.withValues(alpha:0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                       decoration: TextDecoration.none,
                     ),
                   ),
@@ -367,7 +363,7 @@ class _LintScreenState extends State<LintScreen> {
                     '• ${l['from']} → ${l['to']}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onSurface.withValues(alpha:0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                       decoration: TextDecoration.none,
                     ),
                   ),
@@ -392,11 +388,13 @@ class _LintScreenState extends State<LintScreen> {
                       : Icon(fixIcon, size: 16),
                   label: Text(
                     isFixing ? '修复中...' : fixLabel,
-                    style: const TextStyle(fontSize: 12, decoration: TextDecoration.none),
+                    style: const TextStyle(
+                        fontSize: 12, decoration: TextDecoration.none),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   ),
                 ),
               ],

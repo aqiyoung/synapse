@@ -14,12 +14,16 @@ class ReadingStats {
   });
 
   factory ReadingStats.fromJson(Map<String, dynamic> json) => ReadingStats(
-    noteId: json['note_id'] ?? 0,
-    readCount: json['read_count'] ?? 0,
-    totalReadTime: json['total_read_time'] ?? 0,
-    lastReadAt: json['last_read_at'] != null ? DateTime.tryParse(json['last_read_at']) : null,
-    firstReadAt: json['first_read_at'] != null ? DateTime.tryParse(json['first_read_at']) : null,
-  );
+        noteId: json['note_id'] ?? 0,
+        readCount: json['read_count'] ?? 0,
+        totalReadTime: json['total_read_time'] ?? 0,
+        lastReadAt: json['last_read_at'] != null
+            ? DateTime.tryParse(json['last_read_at'])
+            : null,
+        firstReadAt: json['first_read_at'] != null
+            ? DateTime.tryParse(json['first_read_at'])
+            : null,
+      );
 }
 
 class OverallStats {
@@ -42,12 +46,12 @@ class OverallStats {
   });
 
   factory OverallStats.fromJson(Map<String, dynamic> json) => OverallStats(
-    totalNotes: json['total_notes'] ?? 0,
-    totalTags: json['total_tags'] ?? 0,
-    totalReads: json['total_reads'] ?? 0,
-    totalReadTime: json['total_read_time'] ?? 0,
-    recentReads: json['recent_reads'] ?? 0,
-    hotNotes: List<Map<String, dynamic>>.from(json['hot_notes'] ?? []),
-    dailyTrend: List<Map<String, dynamic>>.from(json['daily_trend'] ?? []),
-  );
+        totalNotes: json['total_notes'] ?? 0,
+        totalTags: json['total_tags'] ?? 0,
+        totalReads: json['total_reads'] ?? 0,
+        totalReadTime: json['total_read_time'] ?? 0,
+        recentReads: json['recent_reads'] ?? 0,
+        hotNotes: List<Map<String, dynamic>>.from(json['hot_notes'] ?? []),
+        dailyTrend: List<Map<String, dynamic>>.from(json['daily_trend'] ?? []),
+      );
 }

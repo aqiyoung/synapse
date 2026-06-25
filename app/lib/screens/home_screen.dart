@@ -89,13 +89,15 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Text(msg),
           action: SnackBarAction(
             label: '设置',
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => SettingsScreen(
-                  onToggleTheme: widget.onToggleTheme,
-                  isDark: widget.isDark,
-                  themeIndex: widget.themeIndex,
-                  onThemeChanged: widget.onThemeChanged,
-                ))),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => SettingsScreen(
+                          onToggleTheme: widget.onToggleTheme,
+                          isDark: widget.isDark,
+                          themeIndex: widget.themeIndex,
+                          onThemeChanged: widget.onThemeChanged,
+                        ))),
           ),
         ),
       );
@@ -138,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      extendBody: true,  // 让 body 延伸到 bottomNav 后面，液态玻璃才有东西可模糊
+      extendBody: true, // 让 body 延伸到 bottomNav 后面，液态玻璃才有东西可模糊
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -164,62 +166,63 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
-          indicatorColor: colorScheme.primary.withValues(alpha:0.18),
+          indicatorColor: colorScheme.primary.withValues(alpha: 0.18),
           height: 64,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.library_books_outlined,
-                color: colorScheme.onSurface.withValues(alpha:0.6)),
-            selectedIcon: Icon(Icons.library_books, color: colorScheme.primary),
-            label: _isChinese ? '笔记' : 'Notes',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.hub_outlined,
-                color: colorScheme.onSurface.withValues(alpha:0.6)),
-            selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
-            label: _isChinese ? '图谱' : 'Graph',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline,
-                color: colorScheme.onSurface.withValues(alpha:0.6)),
-            selectedIcon: Icon(Icons.chat_bubble, color: colorScheme.primary),
-            label: _isChinese ? 'AI' : 'AI',
-          ),
-          NavigationDestination(
-            icon: FutureBuilder<int>(
-              future: NotificationService.getUnreadCount(),
-              builder: (ctx, snap) {
-                final count = snap.data ?? 0;
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(Icons.person_outline,
-                        color: colorScheme.onSurface.withValues(alpha:0.6)),
-                    if (count > 0)
-                      Positioned(
-                        right: -6,
-                        top: -3,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                              color: Colors.red, shape: BoxShape.circle),
-                          constraints: const BoxConstraints(
-                              minWidth: 14, minHeight: 14),
-                          child: Text('$count',
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 8),
-                              textAlign: TextAlign.center),
-                        ),
-                      ),
-                  ],
-                );
-              },
+            NavigationDestination(
+              icon: Icon(Icons.library_books_outlined,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6)),
+              selectedIcon:
+                  Icon(Icons.library_books, color: colorScheme.primary),
+              label: _isChinese ? '笔记' : 'Notes',
             ),
-            selectedIcon: Icon(Icons.person, color: colorScheme.primary),
-            label: _isChinese ? '我的' : 'Mine',
-          ),
-        ],
+            NavigationDestination(
+              icon: Icon(Icons.hub_outlined,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6)),
+              selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
+              label: _isChinese ? '图谱' : 'Graph',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.chat_bubble_outline,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6)),
+              selectedIcon: Icon(Icons.chat_bubble, color: colorScheme.primary),
+              label: _isChinese ? 'AI' : 'AI',
+            ),
+            NavigationDestination(
+              icon: FutureBuilder<int>(
+                future: NotificationService.getUnreadCount(),
+                builder: (ctx, snap) {
+                  final count = snap.data ?? 0;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(Icons.person_outline,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                      if (count > 0)
+                        Positioned(
+                          right: -6,
+                          top: -3,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                                color: Colors.red, shape: BoxShape.circle),
+                            constraints: const BoxConstraints(
+                                minWidth: 14, minHeight: 14),
+                            child: Text('$count',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 8),
+                                textAlign: TextAlign.center),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              selectedIcon: Icon(Icons.person, color: colorScheme.primary),
+              label: _isChinese ? '我的' : 'Mine',
+            ),
+          ],
         ),
       ),
       floatingActionButton: null,
@@ -237,8 +240,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  colorScheme.primary.withValues(alpha:0.10),
-                  colorScheme.primary.withValues(alpha:0.03),
+                  colorScheme.primary.withValues(alpha: 0.10),
+                  colorScheme.primary.withValues(alpha: 0.03),
                   colorScheme.surface,
                 ],
                 stops: const [0.0, 0.3, 0.7],
@@ -250,8 +253,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // 液态玻璃 Header（包含 title + search + tags + update banner）
             GlassContainer(
-              margin: EdgeInsets.fromLTRB(8,
-                  MediaQuery.of(context).padding.top + 8, 8, 8),
+              margin: EdgeInsets.fromLTRB(
+                  8, MediaQuery.of(context).padding.top + 8, 8, 8),
               borderRadius: BorderRadius.circular(20),
               blur: 24,
               tintOpacity: 0.45,
@@ -276,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         '${_notes.length} 篇',
                         style: TextStyle(
                           fontSize: 12,
-                          color: colorScheme.onSurface.withValues(alpha:0.5),
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                     ],
@@ -299,14 +302,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: InputDecoration(
                       hintText: '搜索笔记...',
                       hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withValues(alpha:0.4),
+                        color: colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                       prefixIcon: Icon(Icons.search,
-                          color: colorScheme.onSurface.withValues(alpha:0.4)),
+                          color: colorScheme.onSurface.withValues(alpha: 0.4)),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
                               icon: Icon(Icons.clear,
-                                  color: colorScheme.onSurface.withValues(alpha:0.4)),
+                                  color: colorScheme.onSurface
+                                      .withValues(alpha: 0.4)),
                               onPressed: () {
                                 _searchController.clear();
                                 _onSearch('');
@@ -314,16 +318,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             )
                           : null,
                       filled: true,
-                      fillColor: colorScheme.surface.withValues(alpha:0.6),
+                      fillColor: colorScheme.surface.withValues(alpha: 0.6),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha:0.2)),
+                            color: colorScheme.outline.withValues(alpha: 0.2)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha:0.2)),
+                            color: colorScheme.outline.withValues(alpha: 0.2)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -381,7 +385,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Text(
                                 ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
                                 style: TextStyle(
-                                  color: colorScheme.onSurface.withValues(alpha:0.4),
+                                  color: colorScheme.onSurface
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                               if (!ApiService.isConfigured) ...[
@@ -394,8 +399,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         onToggleTheme: widget.onToggleTheme,
                                         isDark: widget.isDark,
                                         themeIndex: widget.themeIndex,
-                                        onThemeChanged:
-                                            widget.onThemeChanged,
+                                        onThemeChanged: widget.onThemeChanged,
                                       ),
                                     ),
                                   ).then((_) => _loadData()),
@@ -423,7 +427,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Build highlighted text spans for a string, matching [_searchQuery] keywords.
-  List<TextSpan> _highlightText(String text, TextStyle baseStyle, ColorScheme colorScheme) {
+  List<TextSpan> _highlightText(
+      String text, TextStyle baseStyle, ColorScheme colorScheme) {
     if (_searchQuery.isEmpty || text.isEmpty) {
       return [TextSpan(text: text, style: baseStyle)];
     }
@@ -526,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           note.summary,
                           TextStyle(
                             fontSize: 12,
-                            color: colorScheme.onSurface.withValues(alpha:0.5),
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
                           colorScheme,
                         ),
@@ -536,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       note.summary,
                       style: TextStyle(
                         fontSize: 12,
-                        color: colorScheme.onSurface.withValues(alpha:0.5),
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -547,10 +552,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 if (note.tags.isNotEmpty) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha:0.1),
+                      color: colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -567,7 +572,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   timeAgo,
                   style: TextStyle(
                     fontSize: 11,
-                    color: colorScheme.onSurface.withValues(alpha:0.4),
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -636,7 +641,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // 过滤无意义标签（太短或明显无意义）
       if (name.length <= 1) return false;
-      if (['了什么', '的工', '的工作', '入十几', '入十几万', '什么', '现在', '需要', '全天'].contains(name)) return false;
+      if (['了什么', '的工', '的工作', '入十几', '入十几万', '什么', '现在', '需要', '全天']
+          .contains(name)) return false;
 
       // 过滤note_count为0的标签
       if (tag.noteCount <= 0) return false;

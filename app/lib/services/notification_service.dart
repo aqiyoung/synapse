@@ -22,15 +22,18 @@ class AppNotification {
     required this.createdAt,
   });
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
-    id: json['id'] ?? 0,
-    title: json['title'] ?? '',
-    body: json['body'] ?? '',
-    type: json['type'] ?? 'system',
-    isRead: json['is_read'] ?? false,
-    actionUrl: json['action_url'],
-    createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) ?? DateTime.now() : DateTime.now(),
-  );
+  factory AppNotification.fromJson(Map<String, dynamic> json) =>
+      AppNotification(
+        id: json['id'] ?? 0,
+        title: json['title'] ?? '',
+        body: json['body'] ?? '',
+        type: json['type'] ?? 'system',
+        isRead: json['is_read'] ?? false,
+        actionUrl: json['action_url'],
+        createdAt: json['created_at'] != null
+            ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
+            : DateTime.now(),
+      );
 }
 
 class NotificationService {
@@ -46,18 +49,23 @@ class NotificationService {
     await prefs.setBool(_enabledKey, enabled);
   }
 
-  static Future<List<AppNotification>> getNotifications({bool unreadOnly = false}) async {
+  static Future<List<AppNotification>> getNotifications(
+      {bool unreadOnly = false}) async {
     var url = '${ApiService.baseUrl}/notifications?limit=50';
     if (unreadOnly) url += '&unread_only=true';
     final r = await http.get(Uri.parse(url), headers: ApiService.headers);
     if (r.statusCode == 200) {
-      return (json.decode(r.body) as List).map((e) => AppNotification.fromJson(e)).toList();
+      return (json.decode(r.body) as List)
+          .map((e) => AppNotification.fromJson(e))
+          .toList();
     }
     return [];
   }
 
   static Future<int> getUnreadCount() async {
-    final r = await http.get(Uri.parse('${ApiService.baseUrl}/notifications/unread-count'), headers: ApiService.headers);
+    final r = await http.get(
+        Uri.parse('${ApiService.baseUrl}/notifications/unread-count'),
+        headers: ApiService.headers);
     if (r.statusCode == 200) {
       return json.decode(r.body)['count'] ?? 0;
     }
@@ -65,14 +73,17 @@ class NotificationService {
   }
 
   static Future<void> markRead(int id) async {
-    await http.post(Uri.parse('${ApiService.baseUrl}/notifications/$id/read'), headers: ApiService.headers);
+    await http.post(Uri.parse('${ApiService.baseUrl}/notifications/$id/read'),
+        headers: ApiService.headers);
   }
 
   static Future<void> markAllRead() async {
-    await http.post(Uri.parse('${ApiService.baseUrl}/notifications/read-all'), headers: ApiService.headers);
+    await http.post(Uri.parse('${ApiService.baseUrl}/notifications/read-all'),
+        headers: ApiService.headers);
   }
 
   static Future<void> deleteNotification(int id) async {
-    await http.delete(Uri.parse('${ApiService.baseUrl}/notifications/$id'), headers: ApiService.headers);
+    await http.delete(Uri.parse('${ApiService.baseUrl}/notifications/$id'),
+        headers: ApiService.headers);
   }
 }

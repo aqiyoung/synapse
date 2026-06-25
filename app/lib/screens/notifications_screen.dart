@@ -23,7 +23,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     final list = await NotificationService.getNotifications();
-    setState(() { _notifications = list; _loading = false; });
+    setState(() {
+      _notifications = list;
+      _loading = false;
+    });
   }
 
   @override
@@ -55,21 +58,42 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       return Dismissible(
                         key: Key('notif_${n.id}'),
                         direction: DismissDirection.endToStart,
-                        background: Container(color: Colors.red, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 16), child: const Icon(Icons.delete, color: Colors.white)),
+                        background: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 16),
+                            child:
+                                const Icon(Icons.delete, color: Colors.white)),
                         onDismissed: (_) async {
                           await NotificationService.deleteNotification(n.id);
                           _load();
                         },
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: n.isRead ? Colors.grey : theme.colorScheme.primary,
-                            child: Icon(n.isRead ? Icons.check : Icons.notifications, color: Colors.white),
+                            backgroundColor: n.isRead
+                                ? Colors.grey
+                                : theme.colorScheme.primary,
+                            child: Icon(
+                                n.isRead ? Icons.check : Icons.notifications,
+                                color: Colors.white),
                           ),
-                          title: Text(n.title, style: TextStyle(fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold)),
-                          subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            if (n.body.isNotEmpty) Text(n.body, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            Text('${n.createdAt.month}/${n.createdAt.day} ${n.createdAt.hour}:${n.createdAt.minute.toString().padLeft(2, '0')}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                          ]),
+                          title: Text(n.title,
+                              style: TextStyle(
+                                  fontWeight: n.isRead
+                                      ? FontWeight.normal
+                                      : FontWeight.bold)),
+                          subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (n.body.isNotEmpty)
+                                  Text(n.body,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis),
+                                Text(
+                                    '${n.createdAt.month}/${n.createdAt.day} ${n.createdAt.hour}:${n.createdAt.minute.toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.grey[600])),
+                              ]),
                           onTap: () async {
                             if (!n.isRead) {
                               await NotificationService.markRead(n.id);

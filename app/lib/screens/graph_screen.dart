@@ -60,7 +60,8 @@ class _GraphScreenState extends State<GraphScreen> {
         children: [
           // 液态玻璃 Header
           GlassContainer(
-            margin: EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top + 8, 8, 8),
+            margin: EdgeInsets.fromLTRB(
+                8, MediaQuery.of(context).padding.top + 8, 8, 8),
             borderRadius: BorderRadius.circular(20),
             blur: 24,
             tintOpacity: 0.45,
@@ -81,13 +82,13 @@ class _GraphScreenState extends State<GraphScreen> {
                   '${_nodes.length} 节点 · ${_edges.length} 连接',
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurface.withValues(alpha:0.5),
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ],
             ),
           ),
-          Divider(height: 1, color: colorScheme.outline.withValues(alpha:0.1)),
+          Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.1)),
           Expanded(
             child: _loading
                 ? Center(
@@ -98,15 +99,14 @@ class _GraphScreenState extends State<GraphScreen> {
                         child: Text(
                           ApiService.isConfigured ? '暂无图谱数据' : '请先在设置中配置服务器',
                           style: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha:0.4),
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                         ),
                       )
                     : _GraphWidget(
                         nodes: _nodes,
                         edges: _edges,
-                        isDark: Theme.of(context).brightness ==
-                            Brightness.dark,
+                        isDark: Theme.of(context).brightness == Brightness.dark,
                         onNodeTap: (nodeId) {
                           Navigator.push(
                             context,
@@ -333,10 +333,10 @@ class _GraphWidgetState extends State<_GraphWidget>
   }
 
   _GraphNode? _findNode(Offset screenPos, Size widgetSize) {
-    final gp =
-        (screenPos - Offset(widgetSize.width / 2, widgetSize.height / 2) -
-                _pan) /
-            _scale;
+    final gp = (screenPos -
+            Offset(widgetSize.width / 2, widgetSize.height / 2) -
+            _pan) /
+        _scale;
     for (final n in _graphNodes) {
       final dx = gp.dx - n.x, dy = gp.dy - n.y;
       final hitR = max(n.radius + 8, 15.0);
@@ -359,63 +359,63 @@ class _GraphWidgetState extends State<_GraphWidget>
       return Stack(
         children: [
           GestureDetector(
-        onTap: () {
-          if (_dragNode != null) {
-            widget.onNodeTap(_dragNode!.id);
-            _dragNode = null;
-          }
-        },
-        onTapDown: (details) {
-          _dragNode = _findNode(details.localPosition, widgetSize);
-          if (_dragNode != null) {
-            _hoveredNode = _dragNode;
-          }
-        },
-        onTapCancel: () {
-          _dragNode = null;
-        },
-        onScaleStart: (details) {
-          _resumeTimer?.cancel();
-          _ensureTickerRunning();
-          _lastFocal = details.focalPoint;
-          _panStart = details.focalPoint - _pan;
-        },
-        onScaleUpdate: (details) {
-          setState(() {
-            if (_dragNode != null && details.pointerCount == 1) {
-              final delta = (details.focalPoint - _lastFocal) / _scale;
-              _dragNode!.x += delta.dx;
-              _dragNode!.y += delta.dy;
-              _dragNode!.vx = 0;
-              _dragNode!.vy = 0;
-            } else {
-              _dragNode = null;
-              _pan = details.focalPoint - _panStart;
-              if (details.scale != 1.0) {
-                _scale = (_scale * details.scale).clamp(0.3, 3.0);
+            onTap: () {
+              if (_dragNode != null) {
+                widget.onNodeTap(_dragNode!.id);
+                _dragNode = null;
               }
-            }
-            _lastFocal = details.focalPoint;
-          });
-        },
-        onScaleEnd: (details) {
-          _dragNode = null;
-          _resumeTimer?.cancel();
-          // 立即恢复 ticker，不再延迟
-          _ensureTickerRunning();
-        },
-        child: CustomPaint(
-          size: Size.infinite,
-          painter: _GraphPainter(
-            nodes: _graphNodes,
-            edges: _graphEdges,
-            pan: _pan,
-            scale: _scale,
-            hoveredNode: _hoveredNode,
-            isDark: widget.isDark,
+            },
+            onTapDown: (details) {
+              _dragNode = _findNode(details.localPosition, widgetSize);
+              if (_dragNode != null) {
+                _hoveredNode = _dragNode;
+              }
+            },
+            onTapCancel: () {
+              _dragNode = null;
+            },
+            onScaleStart: (details) {
+              _resumeTimer?.cancel();
+              _ensureTickerRunning();
+              _lastFocal = details.focalPoint;
+              _panStart = details.focalPoint - _pan;
+            },
+            onScaleUpdate: (details) {
+              setState(() {
+                if (_dragNode != null && details.pointerCount == 1) {
+                  final delta = (details.focalPoint - _lastFocal) / _scale;
+                  _dragNode!.x += delta.dx;
+                  _dragNode!.y += delta.dy;
+                  _dragNode!.vx = 0;
+                  _dragNode!.vy = 0;
+                } else {
+                  _dragNode = null;
+                  _pan = details.focalPoint - _panStart;
+                  if (details.scale != 1.0) {
+                    _scale = (_scale * details.scale).clamp(0.3, 3.0);
+                  }
+                }
+                _lastFocal = details.focalPoint;
+              });
+            },
+            onScaleEnd: (details) {
+              _dragNode = null;
+              _resumeTimer?.cancel();
+              // 立即恢复 ticker，不再延迟
+              _ensureTickerRunning();
+            },
+            child: CustomPaint(
+              size: Size.infinite,
+              painter: _GraphPainter(
+                nodes: _graphNodes,
+                edges: _graphEdges,
+                pan: _pan,
+                scale: _scale,
+                hoveredNode: _hoveredNode,
+                isDark: widget.isDark,
+              ),
+            ),
           ),
-        ),
-      ),
           // 标签图例（HTML 层，支持滚动）
           _buildTagLegend(),
         ],
@@ -440,10 +440,13 @@ class _GraphWidgetState extends State<_GraphWidget>
         constraints: const BoxConstraints(maxHeight: 200),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1c1c1a).withValues(alpha:0.95) : Colors.white.withValues(alpha:0.95),
+          color: isDark
+              ? const Color(0xFF1c1c1a).withValues(alpha: 0.95)
+              : Colors.white.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: (isDark ? Colors.white : Colors.black).withValues(alpha:0.08),
+            color:
+                (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
           ),
         ),
         child: Column(
@@ -455,7 +458,8 @@ class _GraphWidgetState extends State<_GraphWidget>
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
-                color: (isDark ? Colors.white : Colors.black).withValues(alpha:0.4),
+                color: (isDark ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.4),
               ),
             ),
             const SizedBox(height: 4),
@@ -464,30 +468,34 @@ class _GraphWidgetState extends State<_GraphWidget>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: entries.map((e) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: e.value,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          e.key,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: (isDark ? Colors.white : Colors.black).withValues(alpha:0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
+                  children: entries
+                      .map((e) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: e.value,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  e.key,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color:
+                                        (isDark ? Colors.white : Colors.black)
+                                            .withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ))
+                      .toList(),
                 ),
               ),
             ),
@@ -541,7 +549,7 @@ class _GraphPainter extends CustomPainter {
       final isHov = hoveredNode != null &&
           (hoveredNode!.id == e.a.id || hoveredNode!.id == e.b.id);
       final edgePaint = Paint()
-        ..color = fg.withValues(alpha:isHov ? 0.35 : 0.12)
+        ..color = fg.withValues(alpha: isHov ? 0.35 : 0.12)
         ..strokeWidth = isHov ? 1.8 : 1.0;
       canvas.drawLine(Offset(e.a.x, e.a.y), Offset(e.b.x, e.b.y), edgePaint);
     }
@@ -563,7 +571,10 @@ class _GraphPainter extends CustomPainter {
         final grad = ui.Gradient.radial(
           Offset(n.x, n.y),
           glowR,
-          [n.color.withValues(alpha:glowAlpha), n.color.withValues(alpha:0.0)],
+          [
+            n.color.withValues(alpha: glowAlpha),
+            n.color.withValues(alpha: 0.0)
+          ],
         );
         canvas.drawCircle(Offset(n.x, n.y), glowR, Paint()..shader = grad);
       }
@@ -574,7 +585,7 @@ class _GraphPainter extends CustomPainter {
             Offset(n.x, n.y),
             r + 2,
             Paint()
-              ..color = n.color.withValues(alpha:0.3)
+              ..color = n.color.withValues(alpha: 0.3)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1);
       }
@@ -585,10 +596,8 @@ class _GraphPainter extends CustomPainter {
 
       // Highlight
       if (r >= 6) {
-        canvas.drawCircle(
-            Offset(n.x - r * 0.25, n.y - r * 0.25),
-            r * 0.35,
-            Paint()..color = Colors.white.withValues(alpha:0.15));
+        canvas.drawCircle(Offset(n.x - r * 0.25, n.y - r * 0.25), r * 0.35,
+            Paint()..color = Colors.white.withValues(alpha: 0.15));
       }
 
       // Label
@@ -602,7 +611,8 @@ class _GraphPainter extends CustomPainter {
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: isHov ? FontWeight.w600 : FontWeight.w500,
-              color: fg.withValues(alpha:isHov ? 1.0 : 0.5 + normalizedDeg * 0.4),
+              color:
+                  fg.withValues(alpha: isHov ? 1.0 : 0.5 + normalizedDeg * 0.4),
             ),
           ),
           textDirection: TextDirection.ltr,
@@ -626,7 +636,7 @@ class _GraphPainter extends CustomPainter {
     final startY = (top / gridSize).floor() * gridSize;
 
     final gridPaint = Paint()
-      ..color = fg.withValues(alpha:0.06)
+      ..color = fg.withValues(alpha: 0.06)
       ..strokeWidth = 0.5;
 
     for (var x = startX; x <= right; x += gridSize) {

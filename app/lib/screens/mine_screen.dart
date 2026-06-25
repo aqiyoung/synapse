@@ -56,7 +56,8 @@ class _MineScreenState extends State<MineScreen> {
     return Container(
       color: colorScheme.surface,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 40, 16, 24),
+        padding: EdgeInsets.fromLTRB(
+            16, MediaQuery.of(context).padding.top + 40, 16, 24),
         children: [
           // 液态玻璃 Header
           GlassContainer(
@@ -121,9 +122,10 @@ class _MineScreenState extends State<MineScreen> {
                           ),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 3),
                             decoration: BoxDecoration(
-                              color: colorScheme.primary.withValues(alpha:0.1),
+                              color: colorScheme.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -146,7 +148,7 @@ class _MineScreenState extends State<MineScreen> {
                   '记录思考，连接知识',
                   style: TextStyle(
                     fontSize: 14,
-                    color: colorScheme.onSurface.withValues(alpha:0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
                   ),
@@ -156,7 +158,7 @@ class _MineScreenState extends State<MineScreen> {
                   '让每一个想法都有归处',
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurface.withValues(alpha:0.4),
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -205,7 +207,7 @@ class _MineScreenState extends State<MineScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha:0.3),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -255,9 +257,11 @@ class _MineScreenState extends State<MineScreen> {
                   label: '开源地址',
                   value: 'github.com/aqiyoung/synapse',
                   onTap: () async {
-                    final uri = Uri.parse('https://github.com/aqiyoung/synapse');
+                    final uri =
+                        Uri.parse('https://github.com/aqiyoung/synapse');
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                 ),
@@ -271,7 +275,7 @@ class _MineScreenState extends State<MineScreen> {
               '用心记录，用知识连接未来',
               style: TextStyle(
                 fontSize: 12,
-                color: colorScheme.onSurface.withValues(alpha:0.4),
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -289,7 +293,7 @@ class _MineScreenState extends State<MineScreen> {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: colorScheme.surfaceContainerHighest.withValues(alpha:0.4),
+      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -333,7 +337,7 @@ class _MineScreenState extends State<MineScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha:0.1),
+                color: colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, size: 16, color: colorScheme.primary),
@@ -347,7 +351,7 @@ class _MineScreenState extends State<MineScreen> {
                     label,
                     style: TextStyle(
                       fontSize: 11,
-                      color: colorScheme.onSurface.withValues(alpha:0.5),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -355,7 +359,7 @@ class _MineScreenState extends State<MineScreen> {
                     value,
                     style: TextStyle(
                       fontSize: 13,
-                      color: colorScheme.onSurface.withValues(alpha:0.8),
+                      color: colorScheme.onSurface.withValues(alpha: 0.8),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -368,7 +372,7 @@ class _MineScreenState extends State<MineScreen> {
                 child: Icon(
                   Icons.open_in_new_rounded,
                   size: 14,
-                  color: colorScheme.primary.withValues(alpha:0.6),
+                  color: colorScheme.primary.withValues(alpha: 0.6),
                 ),
               ),
           ],
@@ -387,7 +391,8 @@ class _MineScreenState extends State<MineScreen> {
           children: [
             Icon(Icons.system_update, color: colorScheme.primary, size: 24),
             const SizedBox(width: 8),
-            Text('v${info.latestVersion}', style: const TextStyle(fontSize: 18)),
+            Text('v${info.latestVersion}',
+                style: const TextStyle(fontSize: 18)),
           ],
         ),
         content: SingleChildScrollView(
@@ -395,19 +400,21 @@ class _MineScreenState extends State<MineScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (info.releaseNotes != null && info.releaseNotes!.isNotEmpty) ...[
+              if (info.releaseNotes != null &&
+                  info.releaseNotes!.isNotEmpty) ...[
                 Text(
                   '更新内容',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withValues(alpha:0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   info.releaseNotes!,
-                  style: TextStyle(fontSize: 14, height: 1.6, color: colorScheme.onSurface),
+                  style: TextStyle(
+                      fontSize: 14, height: 1.6, color: colorScheme.onSurface),
                 ),
               ] else
                 Text(
@@ -420,7 +427,9 @@ class _MineScreenState extends State<MineScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('稍后', style: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.6))),
+            child: Text('稍后',
+                style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6))),
           ),
           TextButton(
             onPressed: () {
@@ -438,7 +447,8 @@ class _MineScreenState extends State<MineScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('直接更新'),
           ),

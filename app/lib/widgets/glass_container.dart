@@ -68,13 +68,13 @@ class GlassContainer extends StatelessWidget {
     // iOS 26 的做法是：亮色用半透明白，暗色用半透明白+一点灰
     final effectiveTint = tint ??
         (isDark
-            ? const Color(0xFF1c1c1e).withValues(alpha:0.3) // 暗色：深灰玻璃
-            : const Color(0xFFFFFFFF).withValues(alpha:0.5)); // 亮色：白玻璃
+            ? const Color(0xFF1c1c1e).withValues(alpha: 0.3) // 暗色：深灰玻璃
+            : const Color(0xFFFFFFFF).withValues(alpha: 0.5)); // 亮色：白玻璃
 
     final effectiveBorder = borderColor ??
         (isDark
-            ? const Color(0xFFFFFFFF).withValues(alpha:0.12) // 暗色：白色细线
-            : const Color(0xFF000000).withValues(alpha:0.08)); // 亮色：黑色细线
+            ? const Color(0xFFFFFFFF).withValues(alpha: 0.12) // 暗色：白色细线
+            : const Color(0xFF000000).withValues(alpha: 0.08)); // 亮色：黑色细线
 
     // 形状（borderRadius 或 shape）
     final effectiveShape = shape ??
@@ -134,7 +134,7 @@ class _GlassPainter extends CustomPainter {
     final path = shape.getOuterPath(Offset.zero & size);
 
     // 1. 底色 tint
-    final fillPaint = Paint()..color = tint.withValues(alpha:tintOpacity);
+    final fillPaint = Paint()..color = tint.withValues(alpha: tintOpacity);
     canvas.drawPath(path, fillPaint);
 
     // 2. 顶部高光渐变（模拟光线折射）
@@ -147,7 +147,7 @@ class _GlassPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.white.withValues(alpha:0.25 * highlightStrength),
+            Colors.white.withValues(alpha: 0.25 * highlightStrength),
             Colors.transparent,
           ],
           stops: const [0.0, 0.5],

@@ -25,20 +25,18 @@ class TagChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected
-              ? colorScheme.primary
-              : colorScheme.surface,
+          color: selected ? colorScheme.primary : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected
                 ? colorScheme.primary
-                : colorScheme.outline.withValues(alpha:0.3),
+                : colorScheme.outline.withValues(alpha: 0.3),
             width: selected ? 1.5 : 1,
           ),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: colorScheme.primary.withValues(alpha:0.3),
+                    color: colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   )
@@ -62,8 +60,8 @@ class TagChip extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: selected
-                      ? Colors.white.withValues(alpha:0.2)
-                      : colorScheme.primary.withValues(alpha:0.1),
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(

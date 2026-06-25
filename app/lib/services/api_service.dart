@@ -40,20 +40,24 @@ class ApiService {
 
   // 获取笔记列表
   // summary: 列表只展示元数据，content 不需要 → 节省 ~80% 响应体积
-  static const String _listFields = 'id,slug,title,summary,tags,created_at,source_created_at,updated_at,is_pinned,folder_id';
+  static const String _listFields =
+      'id,slug,title,summary,tags,created_at,source_created_at,updated_at,is_pinned,folder_id';
 
-  static Future<List<Note>> getNotes({String? tag, String? search, int limit = 200}) async {
+  static Future<List<Note>> getNotes(
+      {String? tag, String? search, int limit = 200}) async {
     // 限制 200 是后端 list_notes 允许的最大值（api.py le=200）；超过需后端加 cursor 分页
-    var url = '$baseUrl/notes?limit=$limit&fields=${Uri.encodeQueryComponent(_listFields)}';
-    if (tag != null && tag.isNotEmpty) url += '&tag=${Uri.encodeQueryComponent(tag)}';
-    if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeQueryComponent(search)}';
+    var url =
+        '$baseUrl/notes?limit=$limit&fields=${Uri.encodeQueryComponent(_listFields)}';
+    if (tag != null && tag.isNotEmpty)
+      url += '&tag=${Uri.encodeQueryComponent(tag)}';
+    if (search != null && search.isNotEmpty)
+      url += '&search=${Uri.encodeQueryComponent(search)}';
 
     final response = await http.get(Uri.parse(url), headers: headers);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final notes = (data['notes'] as List)
-          .map((n) => Note.fromJson(n))
-          .toList();
+      final notes =
+          (data['notes'] as List).map((n) => Note.fromJson(n)).toList();
       return notes;
     }
     throw Exception('获取笔记失败');
@@ -77,7 +81,8 @@ class ApiService {
   }
 
   // 更新笔记
-  static Future<bool> updateNote(int id, {String? title, String? content, List<String>? tags}) async {
+  static Future<bool> updateNote(int id,
+      {String? title, String? content, List<String>? tags}) async {
     final body = <String, dynamic>{};
     if (title != null) body['title'] = title;
     if (content != null) body['content'] = content;
@@ -131,7 +136,8 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final ts = prefs.getInt(_tagsTsKey) ?? 0;
       final raw = prefs.getString(_tagsKey);
-      if (raw != null && raw.isNotEmpty &&
+      if (raw != null &&
+          raw.isNotEmpty &&
           DateTime.now().millisecondsSinceEpoch - ts < _tagsTtlMs) {
         try {
           final list = json.decode(raw) as List;
@@ -293,7 +299,8 @@ class ApiService {
   }
 
   /// AI 对话（RAG）
-  static Future<Map<String, dynamic>> chat(String question, {int limit = 5}) async {
+  static Future<Map<String, dynamic>> chat(String question,
+      {int limit = 5}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/ai/chat'),
       headers: headers,
@@ -303,11 +310,13 @@ class ApiService {
       final data = json.decode(response.body);
       // 确保 references 中包含 summary 字段
       if (data['references'] != null) {
-        data['references'] = (data['references'] as List).map((r) => {
-          'id': r['id'],
-          'title': r['title'] ?? '',
-          'summary': r['summary'] ?? '',
-        }).toList();
+        data['references'] = (data['references'] as List)
+            .map((r) => {
+                  'id': r['id'],
+                  'title': r['title'] ?? '',
+                  'summary': r['summary'] ?? '',
+                })
+            .toList();
       }
       return data;
     }
