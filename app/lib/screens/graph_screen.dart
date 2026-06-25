@@ -139,7 +139,9 @@ class _GraphNode {
     required this.color,
     required this.x,
     required this.y,
-
+    this.vx = 0,
+    this.vy = 0,
+    this.degree = 0,
   });
 
   double get radius => 3 + (degree / 1.0).clamp(0, 1) * 13;
