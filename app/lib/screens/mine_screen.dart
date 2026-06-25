@@ -89,7 +89,7 @@ class _MineScreenState extends State<MineScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: const Center(
-                              child: const Text(
+                              child: Text(
                                 'S',
                                 style: const TextStyle(
                                   fontFamily: 'MiSans',
