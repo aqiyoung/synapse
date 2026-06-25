@@ -127,7 +127,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isPinned ? '已置顶' : '已取消置顶'),
-          duration: Duration(seconds: 1),
+          duration: const Duration(seconds: 1),
         ),
       );
     } catch (e) {
@@ -584,7 +584,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('代码已复制'),
-                        duration: Duration(seconds: 1),
+                        duration: const Duration(seconds: 1),
                       ),
                     );
                   },
