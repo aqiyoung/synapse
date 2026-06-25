@@ -584,7 +584,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('代码已复制'),
-                        duration: const Duration(seconds: 1),
+                        duration: Duration(seconds: 1),
                       ),
                     );
                   },

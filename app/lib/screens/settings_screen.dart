@@ -37,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showAdminLogin = false;
   bool _isLoggedIn = false;
   int _versionTapCount = 0;
-  String _currentVersion = '';
   String _updateChannel = 'stable';
   bool _notificationsEnabled = true;
   int _unreadCount = 0;
@@ -53,25 +52,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadServer();
     _checkLoginState();
-    _loadVersion();
     _loadUpdateChannel();
     _loadNotificationState();
     _loadAiState();
     _loadModelConfig();
-  }
-
-  Future<void> _loadVersion() async {
-    final v = await _getCurrentVersion();
-    if (mounted) setState(() => _currentVersion = v);
-  }
-
-  Future<String> _getCurrentVersion() async {
-    try {
-      final info = await PackageInfo.fromPlatform();
-      return info.version;
-    } catch (_) {
-      return '2.2.4';
-    }
   }
 
   Future<void> _loadNotificationState() async {
@@ -251,6 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 leading: Icon(Icons.info_outline, color: colorScheme.primary, size: 20),
                 title: const Text('当前版本'),
                 trailing: Text('v$version', style: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.6), fontSize: 14)),
+                onTap: _onVersionTap,
               );
             },
           ),

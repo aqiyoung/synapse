@@ -23,7 +23,7 @@ class ApiService {
     // 通过后端代理尝试 (如果后端有 /api/config/model 端点)
     try {
       final r = await http.post(
-        Uri.parse('${baseUrl}/config/model'),
+        Uri.parse('$baseUrl/config/model'),
         headers: {...headers, 'Content-Type': 'application/json'},
         body: json.encode({'model': model}),
       );

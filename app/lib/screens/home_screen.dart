@@ -41,14 +41,12 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
-  List<String> _searchHistory = [];
 
   @override
   void initState() {
     super.initState();
     _loadData();
     _checkUpdate();
-    _loadSearchHistory();
   }
 
   Future<void> _checkUpdate() async {
@@ -109,13 +107,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedTag = tag == _selectedTag ? '' : tag;
     });
     _loadData();
-  }
-
-  Future<void> _loadSearchHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _searchHistory = prefs.getStringList('search_history') ?? [];
-    });
   }
 
   Future<void> _saveSearchHistory(String query) async {
