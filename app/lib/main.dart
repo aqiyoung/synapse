@@ -122,12 +122,12 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
         colorScheme: ColorScheme.light(
           primary: appTheme.lightPrimary,
           secondary: appTheme.lightPrimary,
-          surface: appTheme.lightSurface,
+          backgroundColor: appTheme.lightSurface,
         ),
         scaffoldBackgroundColor: appTheme.lightBg,
         textTheme: const TextTheme().apply(fontFamily: 'MiSans'),
         appBarTheme: AppBarTheme(
-          surface: appTheme.lightSurface,
+          backgroundColor: appTheme.lightSurface,
           foregroundColor: const Color(0xFF141413),
           elevation: 0,
         ),
@@ -137,12 +137,12 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
         colorScheme: ColorScheme.dark(
           primary: appTheme.darkPrimary,
           secondary: appTheme.darkPrimary,
-          surface: appTheme.darkSurface,
+          backgroundColor: appTheme.darkSurface,
         ),
         scaffoldBackgroundColor: appTheme.darkBg,
         textTheme: const TextTheme().apply(fontFamily: 'MiSans'),
         appBarTheme: AppBarTheme(
-          surface: appTheme.darkSurface,
+          backgroundColor: appTheme.darkSurface,
           foregroundColor: const Color(0xFFe4ece0),
           elevation: 0,
         ),

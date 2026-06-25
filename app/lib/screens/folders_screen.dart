@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/folder.dart';
 import '../models/note.dart';
-import '../models/app_theme.dart';
 import 'note_detail_screen.dart';
 import '../services/folder_service.dart';
 

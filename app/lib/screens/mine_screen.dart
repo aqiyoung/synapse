@@ -428,7 +428,7 @@ class _MineScreenState extends State<MineScreen> {
               final url = UpdateService().getGitHubDownloadUrl();
               launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
             },
-            child: const Text('GitHub下载'),
+            child: Text('GitHub下载'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -440,7 +440,7 @@ class _MineScreenState extends State<MineScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('直接更新'),
+            child: Text('直接更新'),
           ),
         ],
       ),
