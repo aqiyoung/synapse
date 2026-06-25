@@ -113,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
+      _searchHistory = prefs.getStringList('search_history') ?? [];
     });
   }
 
