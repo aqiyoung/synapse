@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Test Mount</title>
+<script src="https://wiki.threel.site/js/vue.global.prod.js"></script>
+</head>
+<body>
+<div id="app">
+  <div class="container">
+    <p>Count: {{ count }}</p>
+    <button @click="count++">Add</button>
+  </div>
+</div>
+<script>
+const { createApp, ref, onMounted } = Vue;
+createApp({
+  setup() {
+    const count = ref(0);
+    onMounted(() => {
+      console.log('Mounted! Count is', count.value);
+    });
+    return { count };
+  }
+}).mount('#app');
+console.log('Script executed, mount called');
+</script>
+</body>
+</html>

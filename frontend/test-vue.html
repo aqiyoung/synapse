@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://wiki.threel.site/js/vue.global.prod.js"></script>
+</head>
+<body>
+<div id="msg"></div>
+<script>
+const Vue2 = Vue;
+alert('Vue loaded: ' + typeof Vue2);
+alert('createApp: ' + typeof Vue2.createApp);
+alert('compile: ' + typeof Vue2.compile);
+document.getElementById('msg').textContent = 'Vue version: ' + Vue2.version;
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://wiki.threel.site/js/vue.global.prod.js"></script>
+</head>
+<body>
+<div id="app">
+  <h1>{{ message }}</h1>
+</div>
+<script>
+const { createApp, ref, onMounted } = Vue;
+createApp({
+  setup() {
+    const message = ref('Hello Vue!');
+    onMounted(() => {
+      console.log('Mounted!');
+    });
+    return { message };
+  }
+}).mount('#app');
+console.log('Script executed');
+</script>
+</body>
+</html>
