@@ -91,7 +91,7 @@ class _MineScreenState extends State<MineScreen> {
                             child: const Center(
                               child: Text(
                                 'S',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'MiSans',
                                   fontSize: 28,
                                   fontWeight: FontWeight.w700,
