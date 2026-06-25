@@ -88,10 +88,10 @@ class _MineScreenState extends State<MineScreen> {
                               color: const Color(0xFFc96442),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Center(
-                              child: Text(
+                            child: const Center(
+                              child: const Text(
                                 'S',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontFamily: 'MiSans',
                                   fontSize: 28,
                                   fontWeight: FontWeight.w700,
