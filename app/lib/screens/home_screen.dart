@@ -113,7 +113,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _searchHistory = prefs.getStringList('search_history') ?? [];
     });
   }
 
@@ -125,7 +124,6 @@ class _HomeScreenState extends State<HomeScreen> {
     history.insert(0, query);
     if (history.length > 10) history.removeLast();
     await prefs.setStringList('search_history', history);
-    setState(() => _searchHistory = history);
   }
 
   void _onSearch(String query) {
