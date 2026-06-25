@@ -139,8 +139,6 @@ class _GraphNode {
     required this.color,
     required this.x,
     required this.y,
-    this.vx = 0,
-    this.vy = 0,
     this.degree = 0,
   });
 
