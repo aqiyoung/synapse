@@ -37,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showAdminLogin = false;
   bool _isLoggedIn = false;
   int _versionTapCount = 0;
-  String _currentVersion = '';
   String _updateChannel = 'stable';
   bool _notificationsEnabled = true;
   int _unreadCount = 0;
@@ -487,6 +486,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await prefs.setBool('admin_logged_in', true);
       setState(() => _isLoggedIn = true);
       _passwordController.clear();
+      if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('登录成功')),
@@ -813,7 +813,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             child: Text(
                               '$_unreadCount',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
