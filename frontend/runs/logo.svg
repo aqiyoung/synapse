@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 609" width="700" height="609">
+  <title>Horizon Logo</title>
+  <defs>
+    <style>
+      .ink { fill: #1e2c3a; }
+      .gold { fill: #b57949; }
+    </style>
+  </defs>
+
+  <!-- Mark group: sun + horizon + ripples -->
+  <g id="mark">
+    <!-- Gold crescent: cubic Bezier half-ellipses (kappa=0.5522) -->
+    <path id="sun" class="gold"
+          d="M 254,175
+             C 254,108.74 298.78,55 354,55
+             C 409.22,55 454,108.74 454,175
+             L 432,175
+             C 432,129.72 395.71,93 354,93
+             C 312.29,93 276,129.72 276,175 Z" />
+
+    <!-- Horizon arc: shallow arc, symmetric, ~31px thick at center, tapers to points -->
+    <path id="horizon-arc" class="ink"
+          pathLength="1"
+          d="M 30,275
+             C 200,190 510,190 680,275
+             C 510,240 200,240 30,275 Z" />
+
+    <!-- Three ripples (ellipses) -->
+    <ellipse id="ripple-1" class="ink" cx="354" cy="293" rx="106" ry="13" />
+    <ellipse id="ripple-2" class="ink" cx="354" cy="339" rx="63"  ry="11" />
+    <ellipse id="ripple-3" class="ink" cx="354" cy="380" rx="28"  ry="8"  />
+  </g>
+
+  <!-- Wordmark: live text, split into tspans for cascade -->
+  <text id="wordmark" class="ink"
+        x="354" y="558"
+        text-anchor="middle"
+        font-family="Nimbus Sans, FreeSans, Liberation Sans, Arial, sans-serif"
+        font-size="86"
+        font-weight="300"
+        letter-spacing="22">
+    <tspan id="letter-h">H</tspan><tspan id="letter-o1">o</tspan><tspan id="letter-r">r</tspan><tspan id="letter-i">i</tspan><tspan id="letter-z">z</tspan><tspan id="letter-o2">o</tspan><tspan id="letter-n">n</tspan>
+  </text>
+</svg>

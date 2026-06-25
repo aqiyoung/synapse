@@ -1,0 +1,25 @@
+# Synapse 知识库依赖 (v0.3.7+69 6/19)
+# 
+# 装 (系统 python3,  不用 venv,  Synapse 18800 跑 system):
+#   pip3 install -r requirements.txt --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple
+#
+# 数据: assets/data/*.json (notes.json / tags.json / etc.)
+# 向量索引: data/zvec_index/ (1.8 MB / 172 notes,  自动 rebuild)
+# 知识库 App: 18800
+
+# 核心 API 框架
+fastapi>=0.104
+uvicorn[standard]>=0.24
+sqlalchemy>=2.0
+pydantic>=2.0
+python-multipart>=0.0.5
+
+# 文本处理 + 搜索
+jieba>=0.42
+Pillow>=10.0
+
+# 嵌入 + 向量搜索
+# v0.3.7+69 (6/19): zvec 替代 numpy 暴力,  36x 加速 (19.29ms → 0.54ms)
+# 装 zvec 0.5.0 wheel (75 MB,  Apachel 2.0,  清华镜像 同步快)
+# 注意: pip3 install --break-system-packages  (PEP 668)
+zvec==0.5.0

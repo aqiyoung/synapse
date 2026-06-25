@@ -1,0 +1,57 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+  <!-- Synapse gap ring -->
+  <path
+      android:pathData="M54,47m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"
+      android:strokeColor="#D97757"
+      android:strokeWidth="1"
+      android:strokeAlpha="0.25"
+      android:fillColor="#00000000"
+      android:strokeLineDash="2,3"/>
+
+  <!-- Connections -->
+  <path
+      android:pathData="M30,35 L46,44"
+      android:strokeColor="#D97757"
+      android:strokeWidth="2.5"
+      android:strokeAlpha="0.8"
+      android:strokeLineCap="round"/>
+  <path
+      android:pathData="M78,35 L62,44"
+      android:strokeColor="#D97757"
+      android:strokeWidth="2.5"
+      android:strokeAlpha="0.8"
+      android:strokeLineCap="round"/>
+  <path
+      android:pathData="M54,54 L54,72"
+      android:strokeColor="#D97757"
+      android:strokeWidth="2.5"
+      android:strokeAlpha="0.8"
+      android:strokeLineCap="round"/>
+
+  <!-- Top-left node -->
+  <path
+      android:pathData="M28,33m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"
+      android:fillColor="#D97757"/>
+
+  <!-- Top-right node -->
+  <path
+      android:pathData="M80,33m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"
+      android:fillColor="#D97757"/>
+
+  <!-- Bottom node -->
+  <path
+      android:pathData="M54,74m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"
+      android:fillColor="#D97757"/>
+
+  <!-- Center synapse (white with border) -->
+  <path
+      android:pathData="M54,47m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"
+      android:fillColor="#FFFFFF"
+      android:strokeColor="#D97757"
+      android:strokeWidth="1.5"/>
+</vector>

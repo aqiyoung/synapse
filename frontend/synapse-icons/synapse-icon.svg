@@ -1,0 +1,41 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FAF9F5"/>
+      <stop offset="1" stop-color="#F0EEE6"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <!-- Synapse gap ring -->
+  <circle cx="512" cy="448" r="104" stroke="#D97757" stroke-width="6" opacity="0.25" stroke-dasharray="18 24"/>
+
+  <!-- Connection lines -->
+  <line x1="296" y1="336" x2="448" y2="416" stroke="#D97757" stroke-width="22" opacity="0.8" stroke-linecap="round"/>
+  <line x1="728" y1="336" x2="576" y2="416" stroke="#D97757" stroke-width="22" opacity="0.8" stroke-linecap="round"/>
+  <line x1="512" y1="528" x2="512" y2="688" stroke="#D97757" stroke-width="22" opacity="0.8" stroke-linecap="round"/>
+
+  <!-- Top-left node -->
+  <circle cx="280" cy="320" r="68" fill="#D97757" filter="url(#shadow)"/>
+
+  <!-- Top-right node -->
+  <circle cx="744" cy="320" r="68" fill="#D97757" filter="url(#shadow)"/>
+
+  <!-- Bottom node -->
+  <circle cx="512" cy="704" r="68" fill="#D97757" filter="url(#shadow)"/>
+
+  <!-- Center synapse -->
+  <circle cx="512" cy="448" r="44" fill="#FFFFFF" stroke="#D97757" stroke-width="6" filter="url(#shadow)"/>
+</svg>

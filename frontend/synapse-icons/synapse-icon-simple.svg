@@ -1,0 +1,25 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgSimple" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FAF9F5"/>
+      <stop offset="1" stop-color="#F0EEE6"/>
+    </linearGradient>
+    <filter id="shadowSimple">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bgSimple)"/>
+
+  <!-- Two neurons -->
+  <circle cx="320" cy="512" r="120" fill="#D97757" opacity="0.9" filter="url(#shadowSimple)"/>
+  <circle cx="704" cy="512" r="120" fill="#D97757" opacity="0.9" filter="url(#shadowSimple)"/>
+
+  <!-- Synapse arcs -->
+  <path d="M432 412 Q512 288 592 412" stroke="#FFFFFF" stroke-width="28" opacity="0.95" fill="none" stroke-linecap="round" filter="url(#shadowSimple)"/>
+  <path d="M432 612 Q512 736 592 612" stroke="#FFFFFF" stroke-width="28" opacity="0.95" fill="none" stroke-linecap="round" filter="url(#shadowSimple)"/>
+
+  <!-- Center glow -->
+  <circle cx="512" cy="512" r="36" fill="#FFFFFF" stroke="#D97757" stroke-width="8" filter="url(#shadowSimple)"/>
+</svg>

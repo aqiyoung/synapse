@@ -1,0 +1,11 @@
+<svg width="512" height="128" viewBox="0 0 512 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wordGrad" x1="0" y1="0" x2="512" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1A1A1A"/>
+      <stop offset="0.35" stop-color="#1A1A1A"/>
+      <stop offset="0.42" stop-color="#D97757"/>
+      <stop offset="1" stop-color="#D97757"/>
+    </linearGradient>
+  </defs>
+  <text x="0" y="92" font-family="Georgia, 'Times New Roman', serif" font-size="96" font-weight="500" fill="url(#wordGrad)" letter-spacing="8">Synapse</text>
+</svg>
