@@ -248,9 +248,9 @@ class _GraphWidgetState extends State<_GraphWidget>
       final n = widget.nodes[i];
       final tags = (n['tags'] as List?)?.cast<String>() ?? [];
       final firstTag = tags.isNotEmpty ? tags.first : null;
-      const color = firstTag != null
-          ? (tagColorMap[firstTag] ?? const Color(0xFF8d9e8a))
-          : const Color(0xFF8d9e8a);
+      final color = firstTag != null
+          ? (tagColorMap[firstTag] ?? Color(0xFF8d9e8a))
+          : Color(0xFF8d9e8a);
       final angle = (2 * pi * i) / widget.nodes.length;
       final r = 200.0;
       final node = _GraphNode(
