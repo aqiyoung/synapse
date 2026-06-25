@@ -108,7 +108,7 @@ class AppTheme {
   ColorScheme get colorScheme => ColorScheme(
     brightness: Brightness.light,
     primary: lightPrimary,
-    secondary: lightPrimary.withOpacity(0.7),
+    secondary: lightPrimary.withValues(alpha:0.7),
     surface: lightSurface,
     error: const Color(0xFFB00020),
     onPrimary: Colors.white,

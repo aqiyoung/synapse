@@ -81,13 +81,13 @@ class _GraphScreenState extends State<GraphScreen> {
                   '${_nodes.length} 节点 · ${_edges.length} 连接',
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.onSurface.withValues(alpha:0.5),
                   ),
                 ),
               ],
             ),
           ),
-          Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
+          Divider(height: 1, color: colorScheme.outline.withValues(alpha:0.1)),
           Expanded(
             child: _loading
                 ? Center(
@@ -98,7 +98,7 @@ class _GraphScreenState extends State<GraphScreen> {
                         child: Text(
                           ApiService.isConfigured ? '暂无图谱数据' : '请先在设置中配置服务器',
                           style: TextStyle(
-                            color: colorScheme.onSurface.withOpacity(0.4),
+                            color: colorScheme.onSurface.withValues(alpha:0.4),
                           ),
                         ),
                       )
@@ -445,10 +445,10 @@ class _GraphWidgetState extends State<_GraphWidget>
         constraints: const BoxConstraints(maxHeight: 200),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1c1c1a).withOpacity(0.95) : Colors.white.withOpacity(0.95),
+          color: isDark ? const Color(0xFF1c1c1a).withValues(alpha:0.95) : Colors.white.withValues(alpha:0.95),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: (isDark ? Colors.white : Colors.black).withOpacity(0.08),
+            color: (isDark ? Colors.white : Colors.black).withValues(alpha:0.08),
           ),
         ),
         child: Column(
@@ -460,7 +460,7 @@ class _GraphWidgetState extends State<_GraphWidget>
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
-                color: (isDark ? Colors.white : Colors.black).withOpacity(0.4),
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha:0.4),
               ),
             ),
             const SizedBox(height: 4),
@@ -487,7 +487,7 @@ class _GraphWidgetState extends State<_GraphWidget>
                           e.key,
                           style: TextStyle(
                             fontSize: 11,
-                            color: (isDark ? Colors.white : Colors.black).withOpacity(0.6),
+                            color: (isDark ? Colors.white : Colors.black).withValues(alpha:0.6),
                           ),
                         ),
                       ],
@@ -546,7 +546,7 @@ class _GraphPainter extends CustomPainter {
       final isHov = hoveredNode != null &&
           (hoveredNode!.id == e.a.id || hoveredNode!.id == e.b.id);
       final edgePaint = Paint()
-        ..color = fg.withOpacity(isHov ? 0.35 : 0.12)
+        ..color = fg.withValues(alpha:isHov ? 0.35 : 0.12)
         ..strokeWidth = isHov ? 1.8 : 1.0;
       canvas.drawLine(Offset(e.a.x, e.a.y), Offset(e.b.x, e.b.y), edgePaint);
     }
@@ -568,7 +568,7 @@ class _GraphPainter extends CustomPainter {
         final grad = ui.Gradient.radial(
           Offset(n.x, n.y),
           glowR,
-          [n.color.withOpacity(glowAlpha), n.color.withOpacity(0.0)],
+          [n.color.withValues(alpha:glowAlpha), n.color.withValues(alpha:0.0)],
         );
         canvas.drawCircle(Offset(n.x, n.y), glowR, Paint()..shader = grad);
       }
@@ -579,7 +579,7 @@ class _GraphPainter extends CustomPainter {
             Offset(n.x, n.y),
             r + 2,
             Paint()
-              ..color = n.color.withOpacity(0.3)
+              ..color = n.color.withValues(alpha:0.3)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1);
       }
@@ -593,7 +593,7 @@ class _GraphPainter extends CustomPainter {
         canvas.drawCircle(
             Offset(n.x - r * 0.25, n.y - r * 0.25),
             r * 0.35,
-            Paint()..color = Colors.white.withOpacity(0.15));
+            Paint()..color = Colors.white.withValues(alpha:0.15));
       }
 
       // Label
@@ -607,7 +607,7 @@ class _GraphPainter extends CustomPainter {
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: isHov ? FontWeight.w600 : FontWeight.w500,
-              color: fg.withOpacity(isHov ? 1.0 : 0.5 + normalizedDeg * 0.4),
+              color: fg.withValues(alpha:isHov ? 1.0 : 0.5 + normalizedDeg * 0.4),
             ),
           ),
           textDirection: TextDirection.ltr,
@@ -631,7 +631,7 @@ class _GraphPainter extends CustomPainter {
     final startY = (top / gridSize).floor() * gridSize;
 
     final gridPaint = Paint()
-      ..color = fg.withOpacity(0.06)
+      ..color = fg.withValues(alpha:0.06)
       ..strokeWidth = 0.5;
 
     for (var x = startX; x <= right; x += gridSize) {

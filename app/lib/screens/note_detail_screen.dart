@@ -240,7 +240,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.1),
+                      color: colorScheme.primary.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -256,7 +256,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                   '撰写 ${_formatDate(_note!.sourceCreatedAt!)}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.onSurface.withValues(alpha:0.5),
                   ),
                 )
               else if (_note!.createdAt != null)
@@ -264,7 +264,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                   '撰写 ${_formatDate(_note!.createdAt!)}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.onSurface.withValues(alpha:0.5),
                   ),
                 ),
               if (_note!.sourceCreatedAt != null && _note!.createdAt != null &&
@@ -273,7 +273,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                   '入库 ${_formatDate(_note!.createdAt!)}',
                   style: TextStyle(
                     fontSize: 11,
-                    color: colorScheme.onSurface.withOpacity(0.35),
+                    color: colorScheme.onSurface.withValues(alpha:0.35),
                   ),
                 ),
               if (_note!.updatedAt != null && _note!.createdAt != null &&
@@ -282,13 +282,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                   '修改于 ${_formatDate(_note!.updatedAt!)}',
                   style: TextStyle(
                     fontSize: 11,
-                    color: colorScheme.onSurface.withOpacity(0.35),
+                    color: colorScheme.onSurface.withValues(alpha:0.35),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: 24),
-          Divider(color: colorScheme.outline.withOpacity(0.1)),
+          Divider(color: colorScheme.outline.withValues(alpha:0.1)),
           const SizedBox(height: 24),
           // Content - split into markdown segments and code blocks
           _buildMixedContent(colorScheme),
@@ -361,13 +361,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Row(
             children: [
-              Icon(icon, size: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+              Icon(icon, size: 12, color: colorScheme.onSurface.withValues(alpha:0.5)),
               const SizedBox(width: 4),
               Text(
                 '$label · ${notes.length}',
                 style: TextStyle(
                   fontSize: 11,
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                  color: colorScheme.onSurface.withValues(alpha:0.5),
                   letterSpacing: 0.3,
                 ),
               ),
@@ -398,10 +398,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha:0.4),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.08),
+              color: colorScheme.outline.withValues(alpha:0.08),
             ),
           ),
           child: Row(
@@ -409,7 +409,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               Icon(
                 Icons.article_outlined,
                 size: 16,
-                color: colorScheme.primary.withOpacity(0.7),
+                color: colorScheme.primary.withValues(alpha:0.7),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -427,7 +427,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: colorScheme.onSurface.withOpacity(0.3),
+                color: colorScheme.onSurface.withValues(alpha:0.3),
               ),
             ],
           ),
@@ -492,7 +492,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                       color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.1),
+                        color: colorScheme.outline.withValues(alpha:0.1),
                       ),
                     ),
                     blockquoteDecoration: BoxDecoration(
@@ -516,7 +516,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Divider(
                 height: 1,
-                color: colorScheme.outline.withOpacity(0.15),
+                color: colorScheme.outline.withValues(alpha:0.15),
               ),
             ));
           }
@@ -545,7 +545,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withValues(alpha:0.1),
         ),
       ),
       child: Column(
@@ -562,7 +562,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
               border: Border(
                 bottom: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.1),
+                  color: colorScheme.outline.withValues(alpha:0.1),
                 ),
               ),
             ),
@@ -573,7 +573,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     lang,
                     style: TextStyle(
                       fontSize: 10,
-                      color: colorScheme.onSurface.withOpacity(0.5),
+                      color: colorScheme.onSurface.withValues(alpha:0.5),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -597,14 +597,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                         Icon(
                           Icons.copy_outlined,
                           size: 14,
-                          color: colorScheme.onSurface.withOpacity(0.5),
+                          color: colorScheme.onSurface.withValues(alpha:0.5),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '复制',
                           style: TextStyle(
                             fontSize: 11,
-                            color: colorScheme.onSurface.withOpacity(0.5),
+                            color: colorScheme.onSurface.withValues(alpha:0.5),
                           ),
                         ),
                       ],
@@ -724,7 +724,7 @@ class _AiSummarySheetState extends State<_AiSummarySheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colorScheme.onSurface.withOpacity(0.2),
+                  color: colorScheme.onSurface.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -769,13 +769,13 @@ class _AiSummarySheetState extends State<_AiSummarySheet> {
                   widget.noteTitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.onSurface.withValues(alpha:0.5),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Divider(height: 1, color: colorScheme.outline.withOpacity(0.1)),
+              Divider(height: 1, color: colorScheme.outline.withValues(alpha:0.1)),
               // body
               Expanded(
                 child: SingleChildScrollView(
@@ -804,7 +804,7 @@ class _AiSummarySheetState extends State<_AiSummarySheet> {
             Text(
               '正在生成摘要...',
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.5),
+                color: colorScheme.onSurface.withValues(alpha:0.5),
                 fontSize: 13,
               ),
             ),
@@ -841,7 +841,7 @@ class _AiSummarySheetState extends State<_AiSummarySheet> {
                 '生成中...',
                 style: TextStyle(
                   fontSize: 11,
-                  color: colorScheme.onSurface.withOpacity(0.4),
+                  color: colorScheme.onSurface.withValues(alpha:0.4),
                 ),
               ),
             ],
@@ -853,7 +853,7 @@ class _AiSummarySheetState extends State<_AiSummarySheet> {
             '✨ AI 摘要完成',
             style: TextStyle(
               fontSize: 11,
-              color: colorScheme.primary.withOpacity(0.7),
+              color: colorScheme.primary.withValues(alpha:0.7),
             ),
           ),
         ],
@@ -873,7 +873,7 @@ class _AiSummarySheetState extends State<_AiSummarySheet> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color: colorScheme.onSurface.withOpacity(0.7),
+              color: colorScheme.onSurface.withValues(alpha:0.7),
             ),
           ),
           const SizedBox(height: 16),

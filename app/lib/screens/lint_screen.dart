@@ -134,7 +134,7 @@ class _LintScreenState extends State<LintScreen> {
                   child: Text(
                     ApiService.isConfigured ? '加载失败' : '请先在设置中配置服务器',
                     style: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.4),
+                      color: colorScheme.onSurface.withValues(alpha:0.4),
                       decoration: TextDecoration.none,
                     ),
                   ),
@@ -203,7 +203,7 @@ class _LintScreenState extends State<LintScreen> {
                   '一切正常',
                   style: TextStyle(
                     fontSize: 16,
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha:0.6),
                     decoration: TextDecoration.none,
                   ),
                 ),
@@ -232,7 +232,7 @@ class _LintScreenState extends State<LintScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha:0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,7 +259,7 @@ class _LintScreenState extends State<LintScreen> {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: colorScheme.onSurface.withOpacity(0.5),
+              color: colorScheme.onSurface.withValues(alpha:0.5),
               decoration: TextDecoration.none,
             ),
           ),
@@ -323,7 +323,7 @@ class _LintScreenState extends State<LintScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha:0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,7 +353,7 @@ class _LintScreenState extends State<LintScreen> {
                     '• ${n['title'] ?? ''}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha:0.6),
                       decoration: TextDecoration.none,
                     ),
                   ),
@@ -367,7 +367,7 @@ class _LintScreenState extends State<LintScreen> {
                     '• ${l['from']} → ${l['to']}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha:0.6),
                       decoration: TextDecoration.none,
                     ),
                   ),

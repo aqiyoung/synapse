@@ -175,25 +175,25 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
-          indicatorColor: colorScheme.primary.withOpacity(0.18),
+          indicatorColor: colorScheme.primary.withValues(alpha:0.18),
           height: 64,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
           NavigationDestination(
             icon: Icon(Icons.library_books_outlined,
-                color: colorScheme.onSurface.withOpacity(0.6)),
+                color: colorScheme.onSurface.withValues(alpha:0.6)),
             selectedIcon: Icon(Icons.library_books, color: colorScheme.primary),
             label: _isChinese ? '笔记' : 'Notes',
           ),
           NavigationDestination(
             icon: Icon(Icons.hub_outlined,
-                color: colorScheme.onSurface.withOpacity(0.6)),
+                color: colorScheme.onSurface.withValues(alpha:0.6)),
             selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
             label: _isChinese ? '图谱' : 'Graph',
           ),
           NavigationDestination(
             icon: Icon(Icons.chat_bubble_outline,
-                color: colorScheme.onSurface.withOpacity(0.6)),
+                color: colorScheme.onSurface.withValues(alpha:0.6)),
             selectedIcon: Icon(Icons.chat_bubble, color: colorScheme.primary),
             label: _isChinese ? 'AI' : 'AI',
           ),
@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   clipBehavior: Clip.none,
                   children: [
                     Icon(Icons.person_outline,
-                        color: colorScheme.onSurface.withOpacity(0.6)),
+                        color: colorScheme.onSurface.withValues(alpha:0.6)),
                     if (count > 0)
                       Positioned(
                         right: -6,
@@ -248,8 +248,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  colorScheme.primary.withOpacity(0.10),
-                  colorScheme.primary.withOpacity(0.03),
+                  colorScheme.primary.withValues(alpha:0.10),
+                  colorScheme.primary.withValues(alpha:0.03),
                   colorScheme.surface,
                 ],
                 stops: const [0.0, 0.3, 0.7],
@@ -287,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         '${_notes.length} 篇',
                         style: TextStyle(
                           fontSize: 12,
-                          color: colorScheme.onSurface.withOpacity(0.5),
+                          color: colorScheme.onSurface.withValues(alpha:0.5),
                         ),
                       ),
                     ],
@@ -310,14 +310,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: InputDecoration(
                       hintText: '搜索笔记...',
                       hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.4),
+                        color: colorScheme.onSurface.withValues(alpha:0.4),
                       ),
                       prefixIcon: Icon(Icons.search,
-                          color: colorScheme.onSurface.withOpacity(0.4)),
+                          color: colorScheme.onSurface.withValues(alpha:0.4)),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
                               icon: Icon(Icons.clear,
-                                  color: colorScheme.onSurface.withOpacity(0.4)),
+                                  color: colorScheme.onSurface.withValues(alpha:0.4)),
                               onPressed: () {
                                 _searchController.clear();
                                 _onSearch('');
@@ -325,16 +325,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             )
                           : null,
                       filled: true,
-                      fillColor: colorScheme.surface.withOpacity(0.6),
+                      fillColor: colorScheme.surface.withValues(alpha:0.6),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                            color: colorScheme.outline.withOpacity(0.2)),
+                            color: colorScheme.outline.withValues(alpha:0.2)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                            color: colorScheme.outline.withOpacity(0.2)),
+                            color: colorScheme.outline.withValues(alpha:0.2)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -392,7 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Text(
                                 ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
                                 style: TextStyle(
-                                  color: colorScheme.onSurface.withOpacity(0.4),
+                                  color: colorScheme.onSurface.withValues(alpha:0.4),
                                 ),
                               ),
                               if (!ApiService.isConfigured) ...[
@@ -537,7 +537,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           note.summary,
                           TextStyle(
                             fontSize: 12,
-                            color: colorScheme.onSurface.withOpacity(0.5),
+                            color: colorScheme.onSurface.withValues(alpha:0.5),
                           ),
                           colorScheme,
                         ),
@@ -547,7 +547,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       note.summary,
                       style: TextStyle(
                         fontSize: 12,
-                        color: colorScheme.onSurface.withOpacity(0.5),
+                        color: colorScheme.onSurface.withValues(alpha:0.5),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -561,7 +561,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.1),
+                      color: colorScheme.primary.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -578,7 +578,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   timeAgo,
                   style: TextStyle(
                     fontSize: 11,
-                    color: colorScheme.onSurface.withOpacity(0.4),
+                    color: colorScheme.onSurface.withValues(alpha:0.4),
                   ),
                 ),
               ],
