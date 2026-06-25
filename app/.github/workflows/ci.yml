@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, beta]
+  pull_request:
+    branches: [main, master]
+
+env:
+  FLUTTER_VERSION: '3.29.3'
+
+jobs:
+  analyze:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: ./app
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Format check
+        working-directory: ./app
+        run: dart format --set-exit-if-changed lib/
+
+      - name: Tests
+        working-directory: ./app
+        run: flutter test
