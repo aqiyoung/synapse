@@ -88,8 +88,8 @@ class _MineScreenState extends State<MineScreen> {
                               color: const Color(0xFFc96442),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Center(
-                              child: const Text(
+                            child: Center(
+                              child: Text(
                                 'S',
                                 style: TextStyle(
                                   fontFamily: 'MiSans',
@@ -106,7 +106,7 @@ class _MineScreenState extends State<MineScreen> {
                     const SizedBox(width: 16),
                     // 标题和版本
                     Expanded(
-                      child: const Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
