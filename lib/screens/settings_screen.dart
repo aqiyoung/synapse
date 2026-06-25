@@ -173,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Icon(Icons.system_update, color: colorScheme.primary, size: 24),
             const SizedBox(width: 8),
-            const Text('v${info.latestVersion}', style: TextStyle(fontSize: 18)),
+            Text('v${info.latestVersion}', style: const TextStyle(fontSize: 18)),
           ],
         ),
         content: SingleChildScrollView(
