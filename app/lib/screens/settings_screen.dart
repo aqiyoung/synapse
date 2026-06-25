@@ -37,6 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showAdminLogin = false;
   bool _isLoggedIn = false;
   int _versionTapCount = 0;
+  String _currentVersion = '';
   String _updateChannel = 'stable';
   bool _notificationsEnabled = true;
   int _unreadCount = 0;

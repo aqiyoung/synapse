@@ -41,7 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
-  List<String> _searchHistory = [];
 
   @override
   void initState() {
