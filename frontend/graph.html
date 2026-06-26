@@ -81,6 +81,7 @@ a{color:var(--accent);text-decoration:none}
   var isPanning = false;
   var panStart = { x: 0, y: 0 };
   var dragNode = null;
+  var dragMoved = false;
 
   function initGraph(data) {
     var rawNodes = data.nodes || [];
@@ -243,10 +244,11 @@ a{color:var(--accent);text-decoration:none}
   });
 
   svg.addEventListener('click', function(e) {
+    if (dragMoved) { dragMoved = false; return; }
     var target = e.target.closest('[data-node]');
     if (target) {
       var nodeId = target.getAttribute('data-node');
-      window.location.href = '/note/' + nodeId;
+      window.location.href = '/note.html?id=' + nodeId;
     }
   });
 
@@ -304,11 +306,12 @@ a{color:var(--accent);text-decoration:none}
       dragNode.y = pt.y;
       dragNode.vx = 0;
       dragNode.vy = 0;
+      dragMoved = true;
     }
   });
 
   document.addEventListener('mouseup', function() {
-    setTimeout(function() { dragNode = null; }, 10);
+    setTimeout(function() { dragNode = null; dragMoved = false; }, 10);
   });
 
   document.addEventListener('touchmove', function(e) {
@@ -318,11 +321,12 @@ a{color:var(--accent);text-decoration:none}
       dragNode.y = pt.y;
       dragNode.vx = 0;
       dragNode.vy = 0;
+      dragMoved = true;
     }
   });
 
   document.addEventListener('touchend', function() {
-    setTimeout(function() { dragNode = null; }, 10);
+    setTimeout(function() { dragNode = null; dragMoved = false; }, 10);
   });
 
   // Load data

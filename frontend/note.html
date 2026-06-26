@@ -62,7 +62,12 @@ h1{font-size:28px;font-weight:500;margin-bottom:12px;line-height:1.3}
 
 <script>
 (function() {
+  // Support both /note/123 and /note.html?id=123
   var noteId = window.location.pathname.split('/').pop();
+  if (!noteId || noteId === 'note.html') {
+    var params = new URLSearchParams(window.location.search);
+    noteId = params.get('id');
+  }
   var container = document.getElementById('noteContent');
 
   fetch('/api/notes/' + noteId)
