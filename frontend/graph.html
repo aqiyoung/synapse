@@ -209,7 +209,7 @@ a{color:var(--accent);text-decoration:none}
         html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (r + 5) + '" fill="' + n.color + '" opacity="0.15" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '"/>';
       }
 
-      html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + n.color + '" opacity="0.85" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '" style="cursor:pointer" onclick="window.location.href=\'/note.html?id=' + n.id + '\'"/>';
+      html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + n.color + '" opacity="0.85" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '" style="cursor:pointer" onclick="window.location.href=\'/note.html?id=' + n.id + '\';return false;"/>';
 
       if (n.degree >= 3) {
         html += '<text x="' + n.x + '" y="' + (n.y + 4) + '" text-anchor="middle" fill="white" font-size="9" font-weight="600" data-node="' + n.id + '">' + label + '</text>';
@@ -255,11 +255,25 @@ a{color:var(--accent);text-decoration:none}
   });
 
   function startAnimation() {
-    function loop() {
+    var frameCount = 0;
+    var loop = function() {
       simulate();
-      render();
+      frameCount++;
+      // Only render every 3 frames to reduce DOM updates
+      if (frameCount % 3 === 0) {
+        render();
+      }
+      // Stop animation when equilibrium reached
+      var totalEnergy = 0;
+      for (var i = 0; i < nodes.length; i++) {
+        totalEnergy += nodes[i].vx * nodes[i].vx + nodes[i].vy * nodes[i].vy;
+      }
+      if (totalEnergy < 0.01 && !dragNode) {
+        render(); // Final render
+        return; // Stop animation
+      }
       requestAnimationFrame(loop);
-    }
+    };
     loop();
   }
 
