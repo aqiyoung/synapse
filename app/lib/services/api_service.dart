@@ -44,10 +44,10 @@ class ApiService {
       'id,slug,title,summary,tags,created_at,source_created_at,updated_at,is_pinned,folder_id';
 
   static Future<List<Note>> getNotes(
-      {String? tag, String? search, int limit = 200}) async {
+      {String? tag, String? search, int limit = 200, int skip = 0}) async {
     // 限制 200 是后端 list_notes 允许的最大值（api.py le=200）；超过需后端加 cursor 分页
     var url =
-        '$baseUrl/notes?limit=$limit&fields=${Uri.encodeQueryComponent(_listFields)}';
+        '$baseUrl/notes?limit=$limit&skip=$skip&fields=${Uri.encodeQueryComponent(_listFields)}';
     if (tag != null && tag.isNotEmpty) {
       url += '&tag=${Uri.encodeQueryComponent(tag)}';
     }

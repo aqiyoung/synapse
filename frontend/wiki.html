@@ -2,241 +2,253 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>知识笔记 - <span style="color:#1a1a1a">Syn</span>apse</title>
+<title>知识笔记 - Synapse</title>
 <link rel="icon" href="/logo.png">
 <style>
+:root{--bg:#fafaf8;--panel:#fff;--text:#1a1a18;--muted:#6b6b6b;--line:rgba(0,0,0,.06);--accent:#c96442;--accent-light:rgba(201,100,66,.08);--accent-hover:#b8543a}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Georgia,'Noto Sans SC',serif;background:#fafaf8;color:#1a1a18;line-height:1.6;font-size:15px}
-a{color:#c96442;text-decoration:none}
-a:hover{color:#b8543a}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:14px}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-hover)}
 .container{max-width:900px;margin:0 auto;padding:0 20px}
-.nav{position:fixed;top:0;left:0;right:0;background:rgba(250,250,248,.95);backdrop-filter:blur(8px);border-bottom:1px solid rgba(0,0,0,.06);z-index:100}
-.nav-inner{max-width:900px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
-.nav-logo{font-weight:700;font-size:18px}
-.header{padding:80px 0 20px}
-.header h1{font-size:26px;margin-bottom:6px}
-.stats{display:flex;gap:20px;padding:14px 0;border-top:1px solid rgba(0,0,0,.06);border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:24px}
-.stat-num{font-size:22px;font-weight:700;color:#c96442}
-.stat-label{font-size:11px;color:#999}
-.notes{display:flex;flex-direction:column;gap:12px}
-.note{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:8px;padding:16px 20px;cursor:pointer;transition:border-color .15s}
-.note:hover{border-color:rgba(201,100,66,.3)}
-.note h2{font-size:15px;font-weight:600;margin-bottom:4px}
-.note p{font-size:13px;color:#555;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.note .meta{margin-top:8px;font-size:11px;color:#aaa}
-.tag{display:inline-block;padding:1px 6px;margin-right:4px;border-radius:3px;background:rgba(201,100,66,.08);color:#c96442;font-size:9px}
-.empty{text-align:center;padding:40px;color:#999}
-.pager{display:flex;gap:4px;justify-content:center;align-items:center;margin:30px 0;flex-wrap:wrap}
-.pager button{background:none;border:1px solid rgba(0,0,0,.1);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:13px}
-.pager button:hover:not(:disabled){border-color:#c96442;color:#c96442}
-.pager button.active{background:#c96442;border-color:#c96442;color:#fff}
-.pager button:disabled{opacity:.3;cursor:not-allowed}
-.pager span{font-size:12px;color:#999;margin:0 8px}
-.tagcloud{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:30px 0}
-.tag-pill{display:inline-flex;align-items:center;gap:2px;padding:3px 10px;border:1px solid rgba(0,0,0,.06);border-radius:14px;font-size:11px;cursor:pointer;background:#fff}
-.tag-pill:hover{background:#c96442;border-color:#c96442;color:#fff}
-.footer{border-top:1px solid rgba(0,0,0,.06);padding:20px 0;margin-top:40px;text-align:center;font-size:11px;color:#999}
 
-.kb-header h1 {
-  font-size: 32px;
-  font-weight: 400;
-  color: #1a1a1a;
-  margin-bottom: 16px;
-  letter-spacing: -0.5px;
-}
-.kb-header p {
-  color: #6b6b6b;
-  font-size: 14px;
-  max-width: 500px;
-  margin: 0 auto;
-  line-height: 1.7;
-}
-.kb-list {
-  max-width: 680px;
-  margin: 0 auto;
-}
-.kb-list .note {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(0,0,0,.06);
-  border-radius: 0;
-  padding: 20px 0;
-  cursor: pointer;
-}
-.kb-list .note:hover {
-  background: rgba(201,100,66,.02);
-  border-color: rgba(201,100,66,.15);
-}
-.kb-list .note h2 {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 6px;
-  font-family: 'Noto Sans SC', -apple-system, sans-serif;
-}
-.kb-list .note p {
-  color: #555;
-  font-size: 13px;
-  line-height: 1.7;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.kb-list .note .meta {
-  margin-top: 8px;
-  font-size: 11px;
-  color: #999;
-}
-.kb-search {
-  text-align: center;
-  margin-bottom: 40px;
-}
-.kb-search input {
-  width: 100%;
-  max-width: 400px;
-  padding: 10px 16px;
-  border: 1px solid rgba(0,0,0,.1);
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
-}
-.kb-search input:focus {
-  border-color: #c96442;
-}
+.navbar{position:fixed;top:0;left:0;right:0;padding:12px 0;background:rgba(250,250,248,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:100}
+.navbar .container{display:flex;align-items:center;justify-content:space-between}
+.navbar .brand{font-weight:700;font-size:18px}
+.navbar .brand .s{color:var(--text)}
+.navbar .brand .a{color:var(--accent)}
+.navbar .links a{color:var(--muted);font-size:13px;margin-left:16px}
+
+.header{padding:80px 0 20px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.header h1{font-size:26px;margin-bottom:6px}
+
+.stats-row{display:flex;gap:20px;margin-bottom:32px}
+.stat-num{font-size:22px;font-weight:700;color:var(--accent)}
+.stat-label{font-size:11px;color:var(--muted)}
+
+.notes{list-style:none;padding:0}
+.note{padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.note:last-child{border-bottom:none}
+.note-title{font-size:15px;font-weight:600;margin-bottom:4px;color:var(--text);display:flex;align-items:center;gap:8px}
+.note-title .arrow{font-size:12px;color:var(--line)}
+.note-preview{font-size:13px;color:var(--muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.note-full{font-size:14px;line-height:1.9;color:var(--text);margin-top:12px;padding-top:16px;border-top:1px solid var(--line)}
+.note-full h1,.note-full h2,.note-full h3{font-weight:600;margin:16px 0 8px}
+.note-full h1{font-size:20px}.note-full h2{font-size:17px}.note-full h3{font-size:15px}
+.note-full p{margin:8px 0}
+.note-full code{background:#f2f2ef;padding:2px 6px;border-radius:4px;font-size:13px}
+.note-full pre{background:#1e1e2e;color:#a6e22e;padding:14px;border-radius:6px;overflow-x:auto;margin:14px 0}
+.note-full pre code{background:none;padding:0;color:inherit}
+.note-full a{color:var(--accent)}
+.note-meta{margin-top:8px;font-size:11px;color:#aaa}
+.tag{display:inline-block;padding:1px 6px;margin-right:4px;border-radius:3px;background:var(--accent-light);color:var(--accent);font-size:10px}
+.expand-tip{display:inline-block;margin-left:8px;font-size:10px;color:var(--accent);opacity:.6}
+
+.empty-state{text-align:center;padding:60px 0;color:var(--muted)}
+
+.pager{display:flex;gap:4px;justify-content:center;align-items:center;margin:30px 0;flex-wrap:wrap}
+.pager button{background:none;border:1px solid var(--line);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--muted)}
+.pager button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.pager button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pager button:disabled{opacity:.3;cursor:not-allowed}
+.pager .info{font-size:12px;color:var(--muted)}
+
+.tagcloud{display:flex;flex-wrap:wrap;gap:6px;margin:24px 0}
+.tag-pill{display:inline-flex;align-items:center;gap:3px;padding:5px 12px;border:1px solid var(--line);border-radius:16px;font-size:12px;cursor:pointer;background:var(--panel)}
+.tag-pill:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.footer{border-top:1px solid var(--line);padding:24px 0;margin-top:48px;text-align:center;font-size:12px;color:var(--muted)}
+.note-detail{padding:20px 0}
+.note-detail-back{color:var(--accent);cursor:pointer;font-size:14px;margin-bottom:20px;display:inline-block}
+.note-detail-back:hover{text-decoration:underline}
+.note-detail-title{font-size:24px;font-weight:600;margin-bottom:12px;line-height:1.3}
+.note-detail-meta{font-size:13px;color:var(--muted);margin-bottom:24px}
+.note-detail-body{font-size:15px;line-height:1.9;color:var(--text)}
+.note-detail-body h1,.note-detail-body h2,.note-detail-body h3{font-weight:600;margin:20px 0 10px}
+.note-detail-body h1{font-size:22px}.note-detail-body h2{font-size:18px}.note-detail-body h3{font-size:15px}
+.note-detail-body p{margin:10px 0}
+.note-detail-body code{background:#f2f2ef;padding:2px 6px;border-radius:4px;font-size:13px}
+.note-detail-body pre{background:#1e1e2e;color:#a6e22e;padding:16px;border-radius:6px;overflow-x:auto;margin:16px 0}
+.note-detail-body pre code{background:none;padding:0;color:inherit}
+.note-detail-body a{color:var(--accent)}
 </style>
 <script src="js/vue.global.prod.js"></script>
 <script src="js/marked.min.js"></script>
 </head>
 <body>
-<div class="nav">
-  <div class="nav-inner">
-    <a href="/" class="nav-logo"><span style="color:#1a1a1a">Syn</span>apse 知识库</a>
-    <div><a href="/">首页</a> · <a href="/wiki.html">笔记</a></div>
+
+<div class="navbar">
+  <div class="container">
+    <a href="/" class="brand"><span class="s">Syn</span><span class="a">apse</span> 知识库</a>
+    <div class="links"><a href="/">首页</a></div>
   </div>
 </div>
+
 <div id="app">
 <div class="container">
-<div class="header"><h1>知识笔记</h1></div>
-<div class="stats">
-  <div class="stat"><div class="stat-num">{{ totalNotes }}</div><div class="stat-label">笔记</div></div>
-  <div class="stat"><div class="stat-num">{{ tagList.length }}</div><div class="stat-label">标签</div></div>
-  <div class="stat"><div class="stat-num">{{ edges }}</div><div class="stat-label">关联</div></div>
+
+<div class="header">
+  <h1>知识笔记</h1>
 </div>
 
-<!-- KB Search -->
+<div class="stats-row">
+  <div><div class="stat-num">{{ totalNotes }}</div><div class="stat-label">笔记</div></div>
+  <div><div class="stat-num">{{ tagList.length }}</div><div class="stat-label">标签</div></div>
+</div>
+
 <!-- Note List -->
-<div class="notes" v-if="notes.length">
-  <div v-for="n in notes" :key="n.id" class="note" @click="openNote(n.id)">
-    <h2>{{ n.title }}</h2>
-    <p>{{ preview(n.content) }}</p>
-    <div class="meta">
+<div class="notes" v-if="notes.length && !expanded">
+  <div class="note" v-for="n in notes" :key="n.id" @click="toggle(n.id)">
+    <div class="note-title">
+      <span class="arrow">›</span>
+      {{ n.title }}
+    </div>
+    <div class="note-preview">{{ n.content.replace(/^#+\s/gm, '').substring(0, 120) }}...</div>
+    <div class="note-meta">
       {{ fmt(n.source_created_at || n.created_at) }}
-      <span v-for="t in n.tags" :key="t" class="tag">{{ t }}</span>
+      <span class="tag" v-for="t in n.tags" :key="t">{{ t }}</span>
     </div>
   </div>
 </div>
-<div v-else class="empty">暂无笔记</div>
 
-<!-- 分页 -->
-<div class="pager" v-if="totalPages > 1">
-  <button :disabled="page === 1" @click="go(page - 1)">上一页</button>
-  <button v-for="p in pageList" :key="p" :class="{ active: p === page }" @click="go(p)">{{ p }}</button>
-  <button :disabled="page === totalPages" @click="go(page + 1)">下一页</button>
-  <span>{{ page }} / {{ totalPages }}</span>
+<!-- Expanded Note -->
+<div class="note-detail" v-if="expanded">
+  <div class="note-detail-back" @click="expanded=null">← 返回列表</div>
+  <div class="note-detail-title">{{ currentNote.title }}</div>
+  <div class="note-detail-meta">
+    {{ fmt(currentNote.source_created_at || currentNote.created_at) }}
+    <span class="tag" v-for="t in currentNote.tags" :key="t">{{ t }}</span>
+  </div>
+  <div class="note-detail-body" v-html="renderMd(currentNote.content)"></div>
 </div>
 
-<!-- 标签云 -->
-<div class="tagcloud" v-if="tagList.length">
-  <span v-for="t in tagList" :key="t.name" class="tag-pill" @click="filterByTag(t.name)">
-    {{ t.name }} <small style="opacity:.6;margin-left:2px">{{ t.count }}</small>
-  </span>
+<div v-if="!notes.length && !expanded" class="empty-state">暂无笔记</div>
+
+<!-- Pagination -->
+<div class="pager" v-if="totalPages > 1">
+  <button :disabled="page === 1" @click="go(page - 1)">‹ 上一页</button>
+  <button v-for="p in pageList" :key="p" :class="{ active: p === page }" @click="go(p)">{{ p }}</button>
+  <button :disabled="page === totalPages" @click="go(page + 1)">下一页 ›</button>
+  <span class="info">{{ page }} / {{ totalPages }}</span>
+</div>
+
+<!-- Tag Cloud -->
+<div v-if="tagList.length">
+  <div style="font-size:12px;color:var(--muted);margin-bottom:12px">标签</div>
+  <div class="tagcloud">
+    <span class="tag-pill" v-for="t in tagList" :key="t.name" @click="filterByTag(t.name)">
+      {{ t.name }} <small style="opacity:.6">{{ t.count }}</small>
+    </span>
+  </div>
 </div>
 
 <div class="footer">
-  <p><a href="/">← 返回首页</a></p>
-  <p style="margin-top:8px"><a href="https://docs.openclaw.ai">OpenClaw</a> 驱动 · <span style="color:#1a1a1a">Syn</span>apse 知识库</p>
+  <a href="/">← 返回首页</a> · <a href="https://docs.openclaw.ai">OpenClaw</a>
+</div>
+
 </div>
 </div>
-</div>
+
 <script>
 const { createApp, ref, onMounted, computed } = Vue;
-const API = '/api';
-const TOKEN = 'Bearer 535f740c4b4f1963bb19353654ed6dcdcd988fa64b51277ad4d142cdc75bc05e';
-const PER_PAGE = 15;
-const headers = { Authorization: TOKEN, 'Content-Type': 'application/json' };
 
-function fmtDate(d) {
+function fmt(d) {
   if (!d) return '';
-  const diff = Date.now() - new Date(d);
+  var diff = Date.now() - new Date(d);
   if (diff < 86400000) return '今天';
   if (diff < 172800000) return '昨天';
-  if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
-  return new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+  if (diff < 604800000) return Math.floor(diff/86400000) + '天前';
+  return new Date(d).toLocaleDateString('zh-CN', {month:'short',day:'numeric'});
 }
 
-function preview(text) {
-  if (!text) return '';
-  return text.replace(/^#+\s/gm, '').substring(0, 120) + (text.length > 120 ? '...' : '');
+function renderMd(text) {
+  if (typeof marked === 'undefined') return text || '';
+  return marked.parse(text || '');
 }
+
+var TOKEN = 'Bearer ' + '535f740c4b4f1963bb19353654ed6dcdcd988fa64b51277ad4d142cdc75bc05e';
+var PER_PAGE = 15;
+var API = '/api';
+var headers = { 'Authorization': TOKEN, 'Content-Type': 'application/json' };
 
 createApp({
   setup() {
-    const notes = ref([]);
-    const tagList = ref([]);
-    const totalNotes = ref(0);
-    const edges = ref(0);
-    const page = ref(1);
+    var notes = ref([]);
+    var tagList = ref([]);
+    var totalNotes = ref(0);
+    var page = ref(1);
+    var expanded = ref(null);
+    var currentNote = computed(function() {
+      if (!expanded.value) return null;
+      for (var i = 0; i < notes.value.length; i++) {
+        if (notes.value[i].id === expanded.value) return notes.value[i];
+      }
+      return null;
+    });
 
-    async function fetchPage() {
-      const skip = (page.value - 1) * PER_PAGE;
-      const res = await fetch(API + '/notes?skip=' + skip + '&limit=' + PER_PAGE, { headers });
-      const data = await res.json();
-      notes.value = data.notes || [];
-      totalNotes.value = data.total || 0;
+    function fetchPage() {
+      var skip = (page.value - 1) * PER_PAGE;
+      fetch(API + '/notes?skip=' + skip + '&limit=' + PER_PAGE, { headers: headers })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          notes.value = d.notes || [];
+          totalNotes.value = d.total || 0;
+        });
     }
 
-    async function fetchTags() {
-      const res = await fetch(API + '/tags', { headers });
-      const data = await res.json();
-      tagList.value = data.filter(t => t.count > 0).sort((a, b) => b.count - a.count).slice(0, 30);
-      stats.value.tags = data.length;
-      edges.value = data.reduce((sum, t) => sum + t.count, 0);
+    function fetchTags() {
+      fetch(API + '/tags', { headers: headers })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          tagList.value = d.filter(function(t) { return t.count > 0; }).sort(function(a, b) { return b.count - a.count; });
+        });
     }
-
-    const stats = ref({ tags: 0 });
 
     function go(p) {
-      const total = Math.ceil(totalNotes.value / PER_PAGE);
+      var total = Math.ceil(totalNotes.value / PER_PAGE);
       if (p < 1 || p > total) return;
       page.value = p;
       fetchPage();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function openNote(id) {
-      window.location.hash = 'note-' + id;
+    function toggle(id) {
+      expanded.value = expanded.value === id ? null : id;
     }
 
-    function filterByTag(tag) {
-      alert('筛选: ' + tag);
-    }
+    function filterByTag(tag) { alert('筛选: ' + tag); }
 
-    const totalPages = computed(() => Math.ceil(totalNotes.value / PER_PAGE));
-    const pageList = computed(() => {
-      const pages = [];
-      for (let i = 1; i <= totalPages.value; i++) pages.push(i);
+    var totalPages = computed(function() { return Math.ceil(totalNotes.value / PER_PAGE); });
+    var pageList = computed(function() {
+      var pages = [];
+      for (var i = 1; i <= totalPages.value; i++) pages.push(i);
       return pages;
     });
 
-    onMounted(() => {
+    onMounted(function() {
       fetchPage();
       fetchTags();
+      if (window.location.hash) {
+        var m = window.location.hash.match(/#note-(\d+)/);
+        if (m) expanded.value = parseInt(m[1]);
+      }
     });
 
     return {
-      notes, tagList, totalNotes, edges, page, totalPages, pageList,
-      go, openNote, filterByTag, fmt: fmtDate, preview, stats
+      notes: notes,
+      tagList: tagList,
+      totalNotes: totalNotes,
+      page: page,
+      expanded: expanded,
+      totalPages: totalPages,
+      pageList: pageList,
+      go: go,
+      toggle: toggle,
+      filterByTag: filterByTag,
+      currentNote: currentNote,
+      fmt: fmt,
+      renderMd: renderMd
     };
   }
 }).mount('#app');

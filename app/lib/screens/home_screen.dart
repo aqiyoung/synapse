@@ -39,6 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedTag = '';
   String _searchQuery = '';
   bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  int _skip = 0;
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -61,22 +64,29 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  static const int _pageSize = 10;
+
   Future<void> _loadData() async {
     if (!ApiService.isConfigured) {
       setState(() => _loading = false);
       return;
     }
     setState(() => _loading = true);
+    _skip = 0;
+    _hasMore = true;
     try {
       final notes = await ApiService.getNotes(
         tag: _selectedTag.isEmpty ? null : _selectedTag,
         search: _searchQuery.isEmpty ? null : _searchQuery,
+        limit: _pageSize,
+        skip: 0,
       );
       final tags = await ApiService.getTags();
       setState(() {
         _notes = notes;
         _tags = tags;
         _loading = false;
+        _hasMore = notes.length >= _pageSize;
       });
     } catch (e) {
       if (!mounted) return;
@@ -100,6 +110,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         ))),
           ),
         ),
+      );
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final notes = await ApiService.getNotes(
+        tag: _selectedTag.isEmpty ? null : _selectedTag,
+        search: _searchQuery.isEmpty ? null : _searchQuery,
+        limit: _pageSize,
+        skip: _skip + _pageSize,
+      );
+      setState(() {
+        _notes.addAll(notes);
+        _skip += _pageSize;
+        _hasMore = notes.length >= _pageSize;
+        _loadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadingMore = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('加载更多失败: $e')),
       );
     }
   }
@@ -414,9 +449,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: ListView.builder(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             cacheExtent: 600,
-                            itemCount: _notes.length,
-                            itemBuilder: (context, index) =>
-                                _buildNoteItem(_notes[index], colorScheme),
+                            itemCount: _notes.length + (_hasMore ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index >= _notes.length) {
+                                return _buildLoadMoreItem(colorScheme);
+                              }
+                              return _buildNoteItem(_notes[index], colorScheme);
+                            },
                           ),
                         ),
             ),
@@ -666,5 +705,35 @@ class _HomeScreenState extends State<HomeScreen> {
     // 随机选择5个（使用固定的种子，保证同一会话内顺序一致）
     topTags.shuffle();
     return topTags.take(5).toList();
+  }
+
+  Widget _buildLoadMoreItem(ColorScheme colorScheme) {
+    if (_loadingMore) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: colorScheme.primary,
+            ),
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: TextButton(
+          onPressed: _loadMore,
+          child: Text(
+            '加载更多 (${_notes.length} 条)',
+            style: TextStyle(color: colorScheme.primary),
+          ),
+        ),
+      ),
+    );
   }
 }
