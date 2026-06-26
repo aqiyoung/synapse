@@ -72,14 +72,16 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     setState(() => _loading = true);
-    _skip = 0;
-    _hasMore = true;
+    final isRefresh = _skip == 0;
+    if (isRefresh) {
+      _hasMore = true;
+    }
     try {
       final notes = await ApiService.getNotes(
         tag: _selectedTag.isEmpty ? null : _selectedTag,
         search: _searchQuery.isEmpty ? null : _searchQuery,
         limit: _pageSize,
-        skip: 0,
+        skip: _skip,
       );
       final tags = await ApiService.getTags();
       setState(() {
@@ -707,6 +709,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return topTags.take(5).toList();
   }
 
+  int get _currentPage => (_skip ~/ _pageSize) + 1;
+
   Widget _buildLoadMoreItem(ColorScheme colorScheme) {
     if (_loadingMore) {
       return Padding(
@@ -724,16 +728,76 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: TextButton(
-          onPressed: _loadMore,
-          child: Text(
-            '加载更多 (${_notes.length} 条)',
-            style: TextStyle(color: colorScheme.primary),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Previous button
+          IconButton(
+            onPressed: _currentPage > 1 ? _goToPreviousPage : null,
+            icon: const Icon(Icons.chevron_left),
+            color: colorScheme.primary,
           ),
-        ),
+          const SizedBox(width: 8),
+          // Page numbers
+          ...List.generate(
+            _currentPage + (_hasMore ? 1 : 0),
+            (index) {
+              final page = index + 1;
+              final isCurrent = page == _currentPage;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: InkWell(
+                  onTap: () => _goToPage(page),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isCurrent ? colorScheme.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isCurrent ? colorScheme.primary : colorScheme.outline,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$page',
+                      style: TextStyle(
+                        color: isCurrent ? Colors.white : colorScheme.onSurface,
+                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          // Next button
+          IconButton(
+            onPressed: _hasMore ? _goToNextPage : null,
+            icon: const Icon(Icons.chevron_right),
+            color: colorScheme.primary,
+          ),
+        ],
       ),
     );
   }
+
+  void _goToPage(int page) {
+    if (page < 1 || (_loadingMore)) return;
+    final newSkip = (page - 1) * _pageSize;
+    if (newSkip == _skip) return;
+    setState(() {
+      _skip = newSkip;
+      _notes.clear();
+      _loading = true;
+    });
+    _loadData();
+  }
+
+  void _goToPreviousPage() => _goToPage(_currentPage - 1);
+  void _goToNextPage() => _goToPage(_currentPage + 1);
 }
