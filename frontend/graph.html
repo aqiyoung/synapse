@@ -11,31 +11,38 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:14px}
 a{color:var(--accent);text-decoration:none}
 .container{max-width:900px;margin:0 auto;padding:0 20px}
-.navbar{position:fixed;top:0;left:0;right:0;padding:12px 0;background:rgba(250,250,248,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:100}
-.navbar .container{display:flex;align-items:center;justify-content:space-between}
-.navbar .brand{font-weight:700;font-size:18px;display:flex;align-items:center;gap:8px}
+.navbar{position:fixed;top:0;left:0;right:0;padding:12px 0;background:rgba(250,250,248,0.92);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,0,0,0.06);z-index:100}
+.navbar .container{max-width:800px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
+.navbar .brand{display:flex;align-items:center;gap:8px;text-decoration:none}
 .navbar .brand .logo{width:28px;height:28px;border-radius:6px}
+.navbar .brand-text{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:18px;color:var(--text)}
+.navbar .brand-text span{color:var(--accent)}
 .navbar .links a{color:var(--muted);font-size:13px;margin-left:16px}
+.navbar .links a:hover{color:var(--accent)}
 .header{padding:80px 0 20px;border-bottom:1px solid var(--line);margin-bottom:24px}
 .header h1{font-size:26px;margin-bottom:6px}
-.stats-row{display:flex;gap:20px;margin-bottom:24px}
+.stats-row{display:flex;gap:20px;margin-bottom:16px}
 .stat-num{font-size:22px;font-weight:700;color:var(--accent)}
 .stat-label{font-size:11px;color:var(--muted)}
-.graph-container{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:16px}
-.graph-container svg{width:100%;height:70vh}
+.graph-container{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px;overflow:hidden}
+.graph-container svg{width:100%;height:75vh;cursor:grab}
+.graph-container svg:active{cursor:grabbing}
 .footer{border-top:1px solid var(--line);padding:24px 0;margin-top:48px;text-align:center;font-size:12px;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin-bottom:8px}
+.tooltip{position:fixed;background:#1a1a18;color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;pointer-events:none;z-index:200;display:none;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
 <div class="navbar">
   <div class="container">
     <a href="/" class="brand">
-      <img class="logo" src="/logo.png" alt="Synapse">
-      <span>Synapse</span>
+      <img class="logo" src="/logo.png" alt="">
+      <span class="brand-text">Syn<span>apse</span></span>
     </a>
     <div class="links">
       <a href="/">首页</a>
       <a href="/wiki.html">笔记</a>
+      <a href="/graph.html">图谱</a>
     </div>
   </div>
 </div>
@@ -47,93 +54,328 @@ a{color:var(--accent);text-decoration:none}
       <div><div class="stat-num" id="nodeCount">加载中...</div><div class="stat-label">节点</div></div>
       <div><div class="stat-num" id="edgeCount">加载中...</div><div class="stat-label">连接</div></div>
     </div>
+    <div class="hint">拖拽节点可移动 · 滚轮缩放</div>
   </div>
 
   <div class="graph-container">
-    <svg id="graphSvg" viewBox="0 0 800 600"></svg>
+    <svg id="graphSvg" viewBox="-400 -300 800 600"></svg>
   </div>
 </div>
 
+<div class="tooltip" id="tooltip"></div>
+
 <div class="footer">
-  Powered by <a href="https://docs.openclaw.ai">OpenClaw</a>
+  Synapse · 私人知识库
 </div>
 
 <script>
 (function() {
   var svg = document.getElementById('graphSvg');
-  var nodeCount = document.getElementById('nodeCount');
-  var edgeCount = document.getElementById('edgeCount');
+  var nodeCountEl = document.getElementById('nodeCount');
+  var edgeCountEl = document.getElementById('edgeCount');
 
-  // Generate pseudo-random positions from node id
-  function seededPos(id, w, h) {
-    var x = Math.sin(id * 12.9898) * 43758.5453;
-    x = x - Math.floor(x);
-    var y = Math.sin(id * 78.233) * 43758.5453;
-    y = y - Math.floor(y);
-    return { x: x * (w - 100) + 50, y: y * (h - 100) + 50 };
+  var colors = ['#c96442', '#4a9e8a', '#8b6bbf', '#d4a843', '#5b8abf', '#bf6b8a', '#6bbf4a', '#bf8a5b'];
+
+  var nodes = [];
+  var edges = [];
+  var nodeMap = {};
+
+  // View transform
+  var panX = 0, panY = 0, scale = 1;
+  var isPanning = false;
+  var panStart = { x: 0, y: 0 };
+  var dragNode = null;
+  var dragMoved = false;
+
+  function initGraph(data) {
+    var rawNodes = data.nodes || [];
+    var rawEdges = data.edges || [];
+
+    // Build nodes
+    nodes = [];
+    nodeMap = {};
+    rawNodes.forEach(function(n, i) {
+      var angle = (2 * Math.PI * i) / rawNodes.length;
+      var r = 200;
+      var node = {
+        id: n.id,
+        title: n.title || '无标题',
+        tags: n.tags || [],
+        color: colors[i % colors.length],
+        x: r * Math.cos(angle),
+        y: r * Math.sin(angle),
+        vx: 0,
+        vy: 0,
+        degree: 0
+      };
+      nodes.push(node);
+      nodeMap[n.id] = node;
+    });
+
+    // Build edges
+    edges = [];
+    rawEdges.forEach(function(e) {
+      var srcId = e.source || e.from;
+      var tgtId = e.target || e.to;
+      var src = nodeMap[srcId];
+      var tgt = nodeMap[tgtId];
+      if (src && tgt) {
+        edges.push({ a: src, b: tgt });
+        src.degree++;
+        tgt.degree++;
+      }
+    });
+
+    nodeCountEl.textContent = nodes.length;
+    edgeCountEl.textContent = edges.length;
+
+    simulate();
+    render();
+    startAnimation();
   }
 
+  function simulate() {
+    var alpha = 0.3;
+    var i, j, n, e;
+
+    // Damping
+    for (i = 0; i < nodes.length; i++) {
+      nodes[i].vx *= 0.85;
+      nodes[i].vy *= 0.85;
+    }
+
+    // Node repulsion
+    for (i = 0; i < nodes.length; i++) {
+      for (j = i + 1; j < nodes.length; j++) {
+        var a = nodes[i], b = nodes[j];
+        var dx = a.x - b.x, dy = a.y - b.y;
+        var distSq = dx * dx + dy * dy;
+        var dist = Math.sqrt(distSq);
+        if (dist < 200 && dist > 0.1) {
+          var f = (200 - dist) * 0.05 * alpha;
+          var fx = dx / dist * f;
+          var fy = dy / dist * f;
+          a.vx += fx;
+          a.vy += fy;
+          b.vx -= fx;
+          b.vy -= fy;
+        }
+      }
+    }
+
+    // Edge springs
+    for (i = 0; i < edges.length; i++) {
+      e = edges[i];
+      dx = e.b.x - e.a.x;
+      dy = e.b.y - e.a.y;
+      dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0.1) {
+        f = (dist - 120) * 0.008 * alpha;
+        fx = dx / dist * f;
+        fy = dy / dist * f;
+        e.a.vx += fx;
+        e.a.vy += fy;
+        e.b.vx -= fx;
+        e.b.vy -= fy;
+      }
+    }
+
+    // Center gravity
+    for (i = 0; i < nodes.length; i++) {
+      n = nodes[i];
+      n.vx += (0 - n.x) * 0.001 * alpha;
+      n.vy += (0 - n.y) * 0.001 * alpha;
+    }
+
+    // Apply velocity
+    for (i = 0; i < nodes.length; i++) {
+      n = nodes[i];
+      if (n === dragNode) continue;
+      n.x += n.vx;
+      n.y += n.vy;
+    }
+  }
+
+  function render() {
+    var html = '';
+
+    // Edges
+    edges.forEach(function(e) {
+      html += '<line x1="' + e.a.x + '" y1="' + e.a.y + '" x2="' + e.b.x + '" y2="' + e.b.y + '" stroke="#d4d4d4" stroke-width="1" opacity="0.5"/>';
+    });
+
+    // Nodes
+    nodes.forEach(function(n) {
+      var r = Math.min(4 + n.degree * 2, 18);
+      var label = n.title.length > 6 ? n.title.substring(0, 6) + '..' : n.title;
+
+      if (n.degree >= 4) {
+        html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (r + 5) + '" fill="' + n.color + '" opacity="0.15" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '"/>';
+      }
+
+      html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + n.color + '" opacity="0.85" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '" style="cursor:pointer" onclick="window.location.href=\'/note.html?id=' + n.id + '\';return false;"/>';
+
+      if (n.degree >= 3) {
+        html += '<text x="' + n.x + '" y="' + (n.y + 4) + '" text-anchor="middle" fill="white" font-size="9" font-weight="600" data-node="' + n.id + '">' + label + '</text>';
+      }
+    });
+
+    svg.innerHTML = html;
+  }
+
+  // Event delegation for hover and click
+  var tooltip = document.getElementById('tooltip');
+  var clickedNode = null;
+
+  svg.addEventListener('mouseover', function(e) {
+    var target = e.target.closest('[data-node]');
+    if (target) {
+      var title = target.getAttribute('data-title');
+      tooltip.textContent = title;
+      tooltip.style.display = 'block';
+    }
+  });
+
+  svg.addEventListener('mousemove', function(e) {
+    if (tooltip.style.display === 'block') {
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY + 12) + 'px';
+    }
+  });
+
+  svg.addEventListener('mouseout', function() {
+    tooltip.style.display = 'none';
+  });
+
+  svg.addEventListener('click', function(e) {
+    if (dragMoved) { dragMoved = false; return; }
+    var target = e.target.closest('[data-node]');
+    if (target) {
+      var nodeId = target.getAttribute('data-node');
+      if (nodeId) {
+        window.location.href = '/note.html?id=' + nodeId;
+      }
+    }
+  });
+
+  function startAnimation() {
+    // Run simulation for a fixed number of steps, then stop
+    var steps = 0;
+    var maxSteps = 300;
+    var loop = function() {
+      if (steps >= maxSteps) {
+        render();
+        return;
+      }
+      simulate();
+      steps++;
+      // Render every 5 steps
+      if (steps % 5 === 0) {
+        render();
+      }
+      requestAnimationFrame(loop);
+    };
+    loop();
+  }
+
+  // Re-render on window resize
+  window.addEventListener('resize', function() {
+    render();
+  });
+
+  // Drag interaction
+  function startDrag(e, node) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragNode = node;
+    var pt = getEventPoint(e);
+    panStart = pt;
+    clickedNode = null; // prevent click after drag
+  }
+
+  function getEventPoint(e) {
+    var rect = svg.getBoundingClientRect();
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) / rect.width * 800 - 400,
+      y: (clientY - rect.top) / rect.height * 600 - 300
+    };
+  }
+
+  svg.addEventListener('mousedown', function(e) {
+    var target = e.target.closest('[data-node]');
+    if (target) {
+      var nodeId = target.getAttribute('data-node');
+      var node = nodeMap[nodeId];
+      if (node) {
+        dragNode = node;
+        dragMoved = false;
+        panStart = getEventPoint(e);
+      }
+    }
+  });
+
+  svg.addEventListener('touchstart', function(e) {
+    var target = e.target.closest('[data-node]');
+    if (target) {
+      var nodeId = target.getAttribute('data-node');
+      var node = nodeMap[nodeId];
+      if (node) {
+        dragNode = node;
+        dragMoved = false;
+        panStart = getEventPoint(e);
+      }
+    }
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (dragNode) {
+      var pt = getEventPoint(e);
+      var dx = pt.x - panStart.x;
+      var dy = pt.y - panStart.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        dragMoved = true;
+      }
+      dragNode.x = pt.x;
+      dragNode.y = pt.y;
+      dragNode.vx = 0;
+      dragNode.vy = 0;
+    }
+  });
+
+  document.addEventListener('mouseup', function() {
+    dragNode = null;
+  });
+
+  document.addEventListener('touchmove', function(e) {
+    if (dragNode) {
+      var pt = getEventPoint(e);
+      var dx = pt.x - panStart.x;
+      var dy = pt.y - panStart.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        dragMoved = true;
+      }
+      dragNode.x = pt.x;
+      dragNode.y = pt.y;
+      dragNode.vx = 0;
+      dragNode.vy = 0;
+    }
+  });
+
+  document.addEventListener('touchend', function() {
+    dragNode = null;
+  });
+
+  // Load data
   fetch('/api/graph')
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      var nodes = data.nodes || [];
-      var edges = data.edges || [];
-
-      nodeCount.textContent = nodes.length;
-      edgeCount.textContent = edges.length;
-
-      // Calculate degree for each node
-      var degreeMap = {};
-      edges.forEach(function(e) {
-        degreeMap[e.source] = (degreeMap[e.source] || 0) + 1;
-        degreeMap[e.target] = (degreeMap[e.target] || 0) + 1;
-      });
-
-      var W = 800, H = 600;
-      var colors = ['#c96442', '#5b9abf', '#7b6bbf', '#4a9e8a', '#d4a843', '#bf6b8a', '#6bbf4a', '#bf8a5b'];
-
-      // Generate positions
-      var positions = {};
-      nodes.forEach(function(n, i) {
-        var pos = seededPos(n.id, W, H);
-        positions[n.id] = { x: pos.x, y: pos.y };
-      });
-
-      var html = '';
-
-      // Edges
-      edges.forEach(function(e) {
-        var s = positions[e.source];
-        var t = positions[e.target];
-        if (!s || !t) return;
-        html += '<line x1="' + s.x + '" y1="' + s.y + '" x2="' + t.x + '" y2="' + t.y + '" stroke="#d4d4d4" stroke-width="1" opacity="0.5"/>';
-      });
-
-      // Nodes
-      nodes.forEach(function(n) {
-        var pos = positions[n.id];
-        var deg = degreeMap[n.id] || 0;
-        var r = Math.min(4 + deg * 2, 18);
-        var color = colors[(n.id - 1) % colors.length];
-        var label = n.title.length > 6 ? n.title.substring(0, 6) + '..' : n.title;
-
-        // Glow for high-degree nodes
-        if (deg >= 4) {
-          html += '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + (r + 5) + '" fill="' + color + '" opacity="0.15"/>';
-        }
-
-        html += '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + r + '" fill="' + color + '" opacity="0.85"/>';
-
-        if (deg >= 3) {
-          html += '<text x="' + pos.x + '" y="' + (pos.y + 4) + '" text-anchor="middle" fill="white" font-size="9" font-weight="600">' + label + '</text>';
-        }
-      });
-
-      svg.innerHTML = html;
+      initGraph(data);
     })
     .catch(function(e) {
-      nodeCount.textContent = '加载失败';
-      edgeCount.textContent = '';
+      nodeCountEl.textContent = '加载失败';
+      edgeCountEl.textContent = '';
       console.error('Failed to load graph:', e);
     });
 })();
