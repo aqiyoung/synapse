@@ -511,7 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
-      onLongPress: () => _showNoteMenu(note, colorScheme),
+      onLongPress: () => _showNoteMenu(note),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
@@ -625,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showNoteMenu(Note note, ColorScheme colorScheme) {
+  void _showNoteMenu(Note note) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
