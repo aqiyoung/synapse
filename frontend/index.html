@@ -1,171 +1,28 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Synapse · AI 知识管理</title>
-<link rel="icon" type="image/png" href="/logo.png">
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<style>
-:root {
-  --bg: #fafaf8;
-  --panel: #ffffff;
-  --text: #1a1a18;
-  --text-secondary: #6b6964;
-  --muted: #999590;
-  --accent: #c96442;
-  --radius: 8px;
-  --font: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: 'Playfair Display', Georgia, serif;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
-a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
-a:hover { color: #b8543a; }
-
-.nav {
-  position: fixed; top: 0; left: 0; right: 0;
-  padding: 12px 0;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(250,250,248,0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  z-index: 100;
-}
-.nav-inner { width: 100%; max-width: 800px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
-.nav-brand { display: flex; align-items: center; gap: 8px; }
-.nav-logo { font-family: var(--font-serif); font-weight: 700; font-size: 18px; color: var(--text); }
-.nav-logo span { color: var(--accent); }
-
-.hero {
-  padding: 120px 24px 60px;
-  text-align: center;
-}
-.hero-title {
-  font-family: var(--font-serif);
-  font-size: clamp(36px, 7vw, 60px);
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--text);
-  letter-spacing: -1px;
-  margin-bottom: 16px;
-}
-.hero-title span { color: var(--accent); }
-.hero-subtitle {
-  font-size: 17px;
-  color: var(--text-secondary);
-  max-width: 520px;
-  margin: 0 auto 28px;
-  line-height: 1.8;
-}
-.hero-cta {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 14px 28px;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 6px;
-  font-size: 15px;
-  font-weight: 600;
-  transition: all 0.3s;
-  box-shadow: 0 2px 12px rgba(201,100,66,0.25);
-}
-.hero-cta:hover {
-  background: #b8543a;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(201,100,66,0.35);
-  color: #fff;
-}
-
-.features {
-  padding: 40px 24px 80px;
-  max-width: 800px;
-  margin: 0 auto;
-  text-align: center;
-}
-.features-title {
-  font-family: var(--font-serif);
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 32px;
-}
-.features-title span { color: var(--accent); }
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-.feature-card {
-  background: var(--panel);
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: var(--radius);
-  padding: 28px 20px;
-  transition: all 0.3s;
-}
-.feature-card:hover {
-  border-color: rgba(201,100,66,0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-}
-.feature-icon { font-size: 32px; margin-bottom: 14px; }
-.feature-title { font-family: var(--font-serif); font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-.feature-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-
-.footer { border-top: 1px solid rgba(0,0,0,0.06); padding: 24px; text-align: center; color: var(--muted); font-size: 12px; }
-.footer a { color: var(--accent); }
-
-@media (max-width: 768px) {
-  .features-grid { grid-template-columns: 1fr; }
-  .hero { padding: 100px 16px 40px; }
-}
-</style>
-</head>
-<body>
-
-<nav class="nav">
-  <div class="nav-inner">
-    <a href="/" class="nav-brand">
-      <div class="nav-logo">Syn<span>apse</span></div>
-    </a>
-  </div>
-</nav>
-
-<section class="hero">
-  <h1 class="hero-title">沉淀你的<br><span>知识宇宙</span></h1>
-  <p class="hero-subtitle">一个属于运维工程师的私人知识库。让零散的笔记变成有温度的知识网络，让每一次排查都有迹可循。</p>
-  <a href="https://wiki.threel.site/wiki.html?view=kb" class="hero-cta">进入知识库</a>
-</section>
-
-<section class="features">
-  <div class="features-title">为什么用 <span>Synapse</span></div>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon">🧠</div>
-      <div class="feature-title">AI 驱动</div>
-      <div class="feature-desc">智能标签自动提取、知识关联推荐、自然语言查询。让 AI 成为你的知识管家。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🔗</div>
-      <div class="feature-title">知识图谱</div>
-      <div class="feature-desc">笔记之间的关联一目了然。每个知识点都是知识网络的一个节点。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">⚡</div>
-      <div class="feature-title">极速访问</div>
-      <div class="feature-desc">纯前端渲染，毫秒级响应。不需要等后端返回，所有数据已经在你的浏览器里。</div>
-    </div>
-  </div>
-</section>
-
-<footer class="footer">
-  <p>由 <a href="https://docs.openclaw.ai">OpenClaw</a> 驱动 · 知识库系统</p>
-</footer>
-
-<script>
-const { createApp } = Vue;
-createApp({}).mount('#app');
-</script>
-</body>
-</html>
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Synapse 知识库</title><meta name="description" content="AI 知识管理笔记系统"><link rel="icon" type="image/x-icon" href="/favicon.png"></head> <body class="min-h-screen bg-[#fafaf8] text-neutral-800 antialiased dark:bg-neutral-950 dark:text-neutral-200">  <div class="container mx-auto px-5 py-8"> <!-- Header --> <div class="mb-8 border-b border-neutral-200 pb-6 dark:border-neutral-700"> <h1 class="text-3xl font-bold text-neutral-800 dark:text-neutral-100">知识笔记</h1> <div class="mt-2 flex gap-4 text-sm text-neutral-500"> <span id="totalNotes">加载中...</span> <span id="totalTags"></span> </div> </div> <!-- Notes List --> <div id="notesList" class="space-y-0"> <!-- Notes will be loaded by JavaScript --> </div> <!-- Loading State --> <div id="loading" class="flex justify-center py-12"> <div class="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-600"></div> </div> <!-- Empty State --> <div id="emptyState" class="hidden py-12 text-center text-neutral-500">暂无笔记</div> <!-- Pagination --> <div id="pagination" class="mt-8 flex items-center justify-center gap-1"> <!-- Pagination will be loaded by JavaScript --> </div> <!-- Tags --> <div id="tagSection" class="mt-10 border-t border-neutral-200 pt-6 dark:border-neutral-700"> <h3 class="mb-3 text-xs font-medium text-neutral-500">标签</h3> <div id="tagCloud" class="flex flex-wrap gap-2"> <!-- Tags will be loaded by JavaScript --> </div> </div> </div> <script>const i="/api";let r=1,l=0,s=1;function m(t){if(!t)return"";const e=Date.now()-new Date(t);return e<864e5?"今天":e<1728e5?"昨天":e<6048e5?Math.floor(e/864e5)+"天前":new Date(t).toLocaleDateString("zh-CN",{month:"short",day:"numeric"})}function d(t){const e=new URL(window.location);return t===1?e.searchParams.delete("page"):e.searchParams.set("page",t),e.pathname+e.search}async function g(){const t=(r-1)*10,e=`${i}/notes?skip=${t}&limit=10`,a=await fetch(e);if(!a.ok)throw new Error("Failed to fetch");return await a.json()}async function p(){const t=await fetch(`${i}/tags`);if(!t.ok)throw new Error("Failed to fetch tags");return(await t.json()).filter(a=>a.note_count>0).sort((a,n)=>n.note_count-a.note_count).slice(0,20)}function h(t){const e=document.getElementById("notesList");if(t.length===0){document.getElementById("emptyState").classList.remove("hidden");return}e.innerHTML=t.map(a=>`
+        <a href="/note/${a.id}" class="block border-b border-neutral-100 py-4 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50">
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                ${a.isPinned?'<span class="text-xs text-amber-500">📌</span>':""}
+                <h2 class="truncate text-base font-medium text-neutral-800 dark:text-neutral-100">${a.title}</h2>
+              </div>
+              ${a.summary?`<p class="mt-1 line-clamp-2 text-sm text-neutral-500 dark:text-neutral-400">${a.summary.substring(0,120)}...</p>`:""}
+              <div class="mt-2 flex items-center gap-3 text-xs text-neutral-400">
+                <span>${m(a.source_created_at||a.created_at)}</span>
+                ${a.tags.map(n=>`<span class="rounded bg-neutral-100 px-1.5 py-0.5 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">${n}</span>`).join("")}
+              </div>
+            </div>
+            <span class="text-neutral-300 dark:text-neutral-600">›</span>
+          </div>
+        </a>
+      `).join("")}function x(){const t=document.getElementById("pagination");if(s<=1){t.innerHTML="";return}const e=[];if(s<=7)for(let n=1;n<=s;n++)e.push(n);else{e.push(1),r>3&&e.push("...");const n=Math.max(2,r-1),u=Math.min(s-1,r+1);for(let o=n;o<=u;o++)e.push(o);r<s-2&&e.push("..."),e.push(s)}let a=`
+        <a href="${r>1?d(r-1):"#"}" class="rounded px-3 py-1.5 text-sm ${r>1?"text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800":"cursor-not-allowed text-neutral-300 dark:text-neutral-600"}">‹</a>
+      `;e.forEach(n=>{n==="..."?a+='<span class="px-2 text-neutral-400">…</span>':a+=`<a href="${d(n)}" class="rounded px-3 py-1.5 text-sm ${n===r?"bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-800":"text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"}">${n}</a>`}),a+=`
+        <a href="${r<s?d(r+1):"#"}" class="rounded px-3 py-1.5 text-sm ${r<s?"text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800":"cursor-not-allowed text-neutral-300 dark:text-neutral-600"}">›</a>
+        <span class="ml-3 text-xs text-neutral-400">${r} / ${s}</span>
+      `,t.innerHTML=a}function f(t){const e=document.getElementById("tagCloud");e.innerHTML=t.map(a=>`
+        <span class="rounded-full border border-neutral-200 px-3 py-1 text-xs text-neutral-600 dark:border-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800" onclick="filterByTag('${a.name}')">
+          ${a.name} <span class="ml-1 text-neutral-400">${a.note_count}</span>
+        </span>
+      `).join("")}async function y(){document.getElementById("loading").classList.remove("hidden"),document.getElementById("notesList").innerHTML="",document.getElementById("emptyState").classList.add("hidden");try{const t=await g();l=t.total||0,s=Math.ceil(l/10),document.getElementById("totalNotes").textContent=`${l} 笔记`,h(t.notes||[]),x()}catch(t){console.error("Failed to load notes:",t)}finally{document.getElementById("loading").classList.add("hidden")}}async function b(){try{const t=await p();document.getElementById("totalTags").textContent=`${t.length} 标签`,f(t)}catch(t){console.error("Failed to load tags:",t)}}const k=new URLSearchParams(window.location.search),c=k.get("page");c&&(r=Math.max(1,parseInt(c)||1));y();b();
+</script>  </body></html>
