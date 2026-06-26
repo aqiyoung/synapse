@@ -255,27 +255,29 @@ a{color:var(--accent);text-decoration:none}
   });
 
   function startAnimation() {
-    var frameCount = 0;
+    // Run simulation for a fixed number of steps, then stop
+    var steps = 0;
+    var maxSteps = 300;
     var loop = function() {
-      simulate();
-      frameCount++;
-      // Only render every 3 frames to reduce DOM updates
-      if (frameCount % 3 === 0) {
+      if (steps >= maxSteps) {
         render();
+        return;
       }
-      // Stop animation when equilibrium reached
-      var totalEnergy = 0;
-      for (var i = 0; i < nodes.length; i++) {
-        totalEnergy += nodes[i].vx * nodes[i].vx + nodes[i].vy * nodes[i].vy;
-      }
-      if (totalEnergy < 0.01 && !dragNode) {
-        render(); // Final render
-        return; // Stop animation
+      simulate();
+      steps++;
+      // Render every 5 steps
+      if (steps % 5 === 0) {
+        render();
       }
       requestAnimationFrame(loop);
     };
     loop();
   }
+
+  // Re-render on window resize
+  window.addEventListener('resize', function() {
+    render();
+  });
 
   // Drag interaction
   function startDrag(e, node) {
