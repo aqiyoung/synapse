@@ -449,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : RefreshIndicator(
                           onRefresh: _loadData,
                           child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.only(top: 8, bottom: 80),
                             cacheExtent: 600,
                             itemCount: _notes.length + (_hasMore ? 1 : 0),
                             itemBuilder: (context, index) {
