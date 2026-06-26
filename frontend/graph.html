@@ -26,6 +26,7 @@ a{color:var(--accent);text-decoration:none}
 .graph-container svg:active{cursor:grabbing}
 .footer{border-top:1px solid var(--line);padding:24px 0;margin-top:48px;text-align:center;font-size:12px;color:var(--muted)}
 .hint{font-size:12px;color:var(--muted);margin-bottom:8px}
+.tooltip{position:fixed;background:#1a1a18;color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;pointer-events:none;z-index:200;display:none;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -56,6 +57,8 @@ a{color:var(--accent);text-decoration:none}
     <svg id="graphSvg" viewBox="-400 -300 800 600"></svg>
   </div>
 </div>
+
+<div class="tooltip" id="tooltip"></div>
 
 <div class="footer">
   Powered by <a href="https://docs.openclaw.ai">OpenClaw</a>
@@ -202,26 +205,50 @@ a{color:var(--accent);text-decoration:none}
       var label = n.title.length > 6 ? n.title.substring(0, 6) + '..' : n.title;
 
       if (n.degree >= 4) {
-        html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (r + 5) + '" fill="' + n.color + '" opacity="0.15"/>';
+        html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (r + 5) + '" fill="' + n.color + '" opacity="0.15" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '"/>';
       }
 
-      html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + n.color + '" opacity="0.85"/>';
+      html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + n.color + '" opacity="0.85" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '" style="cursor:pointer"/>';
 
       if (n.degree >= 3) {
-        html += '<text x="' + n.x + '" y="' + (n.y + 4) + '" text-anchor="middle" fill="white" font-size="9" font-weight="600">' + label + '</text>';
+        html += '<text x="' + n.x + '" y="' + (n.y + 4) + '" text-anchor="middle" fill="white" font-size="9" font-weight="600" data-node="' + n.id + '">' + label + '</text>';
       }
     });
 
     svg.innerHTML = html;
-
-    // Update circle elements for interaction
-    svg.querySelectorAll('circle').forEach(function(c, i) {
-      if (i >= nodes.length) return; // skip glow circles
-      var node = nodes[i];
-      c.addEventListener('mousedown', function(e) { startDrag(e, node); });
-      c.addEventListener('touchstart', function(e) { startDrag(e, node); });
-    });
   }
+
+  // Event delegation for hover and click
+  var tooltip = document.getElementById('tooltip');
+  var clickedNode = null;
+
+  svg.addEventListener('mouseover', function(e) {
+    var target = e.target.closest('[data-node]');
+    if (target) {
+      var title = target.getAttribute('data-title');
+      tooltip.textContent = title;
+      tooltip.style.display = 'block';
+    }
+  });
+
+  svg.addEventListener('mousemove', function(e) {
+    if (tooltip.style.display === 'block') {
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY + 12) + 'px';
+    }
+  });
+
+  svg.addEventListener('mouseout', function() {
+    tooltip.style.display = 'none';
+  });
+
+  svg.addEventListener('click', function(e) {
+    var target = e.target.closest('[data-node]');
+    if (target) {
+      var nodeId = target.getAttribute('data-node');
+      window.location.href = '/note/' + nodeId;
+    }
+  });
 
   function startAnimation() {
     function loop() {
@@ -235,9 +262,11 @@ a{color:var(--accent);text-decoration:none}
   // Drag interaction
   function startDrag(e, node) {
     e.preventDefault();
+    e.stopPropagation();
     dragNode = node;
     var pt = getEventPoint(e);
     panStart = pt;
+    clickedNode = null; // prevent click after drag
   }
 
   function getEventPoint(e) {
@@ -250,6 +279,24 @@ a{color:var(--accent);text-decoration:none}
     };
   }
 
+  svg.addEventListener('mousedown', function(e) {
+    var target = e.target.closest('[data-node]');
+    if (target) {
+      var nodeId = target.getAttribute('data-node');
+      var node = nodeMap[nodeId];
+      if (node) startDrag(e, node);
+    }
+  });
+
+  svg.addEventListener('touchstart', function(e) {
+    var target = e.target.closest('[data-node]');
+    if (target) {
+      var nodeId = target.getAttribute('data-node');
+      var node = nodeMap[nodeId];
+      if (node) startDrag(e, node);
+    }
+  });
+
   document.addEventListener('mousemove', function(e) {
     if (dragNode) {
       var pt = getEventPoint(e);
@@ -261,7 +308,7 @@ a{color:var(--accent);text-decoration:none}
   });
 
   document.addEventListener('mouseup', function() {
-    dragNode = null;
+    setTimeout(function() { dragNode = null; }, 10);
   });
 
   document.addEventListener('touchmove', function(e) {
@@ -275,7 +322,7 @@ a{color:var(--accent);text-decoration:none}
   });
 
   document.addEventListener('touchend', function() {
-    dragNode = null;
+    setTimeout(function() { dragNode = null; }, 10);
   });
 
   // Load data
