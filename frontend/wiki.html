@@ -192,7 +192,7 @@ a:hover { color: #b8543a; }
     <a href="/" class="brand" style="font-family:Georgia,serif;font-size:18px">
       <img class="logo" src="/logo.png" alt="" style="vertical-align:middle"><span style="color:var(--nk)">Syn</span><span style="color:var(--tc)">apse</span>
     </a>
-    <div class="links"><a href="/">首页</a></div>
+    <div class="links"><a href="/">首页</a> · <a href="/graph.html">图谱</a></div>
   </div>
 </div>
 
@@ -258,13 +258,6 @@ a:hover { color: #b8543a; }
       {{ t.name }} <small style="opacity:.6">{{ t.note_count }}</small>
     </span>
   </div>
-</div>
-
-<!-- Graph -->
-<div id="graph" style="margin-top:40px;border-top:1px solid var(--line);padding-top:24px">
-  <h2 style="font-size:16px;font-weight:600;margin-bottom:6px">知识图谱</h2>
-  <p id="graphStats" style="font-size:12px;color:var(--og);margin-bottom:12px">加载中...</p>
-  <svg id="graphSvg" viewBox="0 0 800 600" style="width:100%;height:50vh;border:1px solid var(--line);border-radius:6px"></svg>
 </div>
 
 <div class="footer">
@@ -407,32 +400,6 @@ createApp({
   }
 }).mount('#app');
 
-// Graph
-(function() {
-  var svg = document.getElementById('graphSvg');
-  var stats = document.getElementById('graphStats');
-  if (!svg) return;
-  fetch('/api/graph')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var nodes = data.nodes || [], edges = data.edges || [];
-      stats.textContent = nodes.length + ' 节点 · ' + edges.length + ' 连接';
-      var h = '';
-      edges.forEach(function(e) {
-        var s = nodes.find(function(n){return n.id===e.source;});
-        var t = nodes.find(function(n){return n.id===e.target;});
-        if (!s||!t) return;
-        h += '<line x1="'+((s.x||0)+400)+'" y1="'+((s.y||0)+300)+'" x2="'+((t.x||0)+400)+'" y2="'+((t.y||0)+300)+'" stroke="#ccc" stroke-width="1"/>';
-      });
-      nodes.forEach(function(n) {
-        var x=(n.x||0)+400,y=(n.y||0)+300,r=Math.min(3+(n.degree||0)*2,18);
-        h += '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+(n.color||'#8d9e8a')+'"/>';
-        if((n.degree||0)>=3) h += '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" fill="#fff" font-size="9">'+(n.title.length>6?n.title.substring(0,6)+'...':n.title)+'</text>';
-      });
-      svg.innerHTML = h;
-    })
-    .catch(function(){ stats.textContent='加载失败'; });
-})();
 </script>
 </body>
 </html>
