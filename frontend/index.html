@@ -36,6 +36,7 @@ a:hover { color: #b8543a; }
 }
 .nav-inner { width: 100%; max-width: 800px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
 .nav-brand { display: flex; align-items: center; gap: 8px; }
+.nav-brand .logo { width: 28px; height: 28px; border-radius: 6px; }
 .nav-logo { font-family: var(--font-serif); font-weight: 700; font-size: 18px; color: var(--text); }
 .nav-logo span { color: var(--accent); }
 
@@ -127,8 +128,13 @@ a:hover { color: #b8543a; }
 <nav class="nav">
   <div class="nav-inner">
     <a href="/" class="nav-brand">
+      <img class="logo" src="/logo.png" alt="" style="vertical-align:middle">
       <div class="nav-logo">Syn<span>apse</span></div>
     </a>
+    <div class="nav-links" style="display:flex;gap:16px">
+      <a href="/wiki.html" style="color:var(--text-secondary);font-size:13px">笔记</a>
+      <a href="/graph.html" style="color:var(--text-secondary);font-size:13px">图谱</a>
+    </div>
   </div>
 </nav>
 
@@ -160,7 +166,7 @@ a:hover { color: #b8543a; }
 </section>
 
 <footer class="footer">
-  <p>由 <a href="https://docs.openclaw.ai">OpenClaw</a> 驱动 · 知识库系统</p>
+  <p>Synapse · 私人知识库</p>
 </footer>
 
 <script>

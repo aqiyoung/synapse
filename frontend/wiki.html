@@ -30,13 +30,14 @@ body {
 }
 a { color: var(--tc); text-decoration: none; transition: color 0.2s; }
 a:hover { color: #b8543a; }
+[v-cloak] { display: none; }
 .container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
 
 /* Mobile responsive */
 @media (max-width: 640px) {
   .container { padding: 0 16px; }
-  .navbar { padding: 12px 0; }
-  .navbar .brand { font-size: 16px; }
+  .navbar { padding: 10px 0; }
+  .navbar .brand-text { font-size: 16px; }
   .navbar .brand .logo { width: 24px; height: 24px; }
   .navbar .links a { font-size: 12px; margin-left: 12px; }
   .header { padding: 80px 0 16px; margin-bottom: 16px; }
@@ -60,23 +61,25 @@ a:hover { color: #b8543a; }
   .note-detail-body h2 { font-size: 16px; }
   .note-detail-body h3 { font-size: 14px; }
   .footer { padding: 16px 0; margin-top: 32px; font-size: 11px; }
+  .fab-back { display: flex; }
 }
 
-/* Navbar */
+/* Navbar - unified with index.html */
 .navbar {
   position: fixed; top: 0; left: 0; right: 0;
-  padding: 16px 0;
-  background: rgba(250, 249, 245, 0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--bc);
+  padding: 12px 0;
+  background: rgba(250,250,248,0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
   z-index: 100;
 }
-.navbar .container { display: flex; align-items: center; justify-content: space-between; }
-.navbar .brand { font-weight: 500; font-size: 18px; display: flex; align-items: center; gap: 8px; font-family: Georgia, 'Times New Roman', serif; }
+.navbar .container { max-width: 800px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+.navbar .brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
 .navbar .brand .logo { width: 28px; height: 28px; border-radius: 6px; }
-.navbar .brand .s { color: var(--nk); }
-.navbar .brand .a { color: var(--tc); }
+.navbar .brand-text { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 18px; color: var(--nk); }
+.navbar .brand-text span { color: var(--tc); }
 .navbar .links a { color: var(--og); font-size: 13px; margin-left: 16px; }
+.navbar .links a:hover { color: var(--tc); }
 
 /* Header */
 .header { padding: 100px 0 24px; border-bottom: 1px solid var(--bc); margin-bottom: 24px; }
@@ -97,6 +100,9 @@ a:hover { color: #b8543a; }
   min-width: 0;
 }
 .search-box input::placeholder { color: var(--ws); }
+.search-hint {
+  font-size: 11px; color: var(--sg); margin-top: 8px; padding-left: 4px;
+}
 
 @media (max-width: 640px) {
   .search-box { padding: 10px 12px; }
@@ -123,6 +129,7 @@ a:hover { color: #b8543a; }
   font-size: 13px; color: var(--og); line-height: 1.6;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
+.note-preview mark { background: rgba(201, 100, 66, 0.2); color: inherit; padding: 0 2px; border-radius: 2px; }
 .note-meta { margin-top: 8px; font-size: 11px; color: var(--sg); }
 .tag {
   display: inline-block; padding: 1px 6px; margin-right: 4px;
@@ -155,6 +162,11 @@ a:hover { color: #b8543a; }
 }
 .tag-pill:hover { background: var(--tc); border-color: var(--tc); color: #fff; }
 .tag-pill.active { background: var(--tc); border-color: var(--tc); color: #fff; }
+.tag-toggle {
+  font-size: 12px; color: var(--tc); cursor: pointer; padding: 5px 8px;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.tag-toggle:hover { text-decoration: underline; }
 
 /* Loading */
 .loading { display: flex; justify-content: center; padding: 24px; }
@@ -165,12 +177,12 @@ a:hover { color: #b8543a; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Note detail */
-.note-detail { padding: 24px 0; }
+.note-detail { padding: 24px 0; min-height: 50vh; }
 .note-detail-back { color: var(--tc); cursor: pointer; font-size: 14px; margin-bottom: 24px; display: inline-block; }
 .note-detail-back:hover { text-decoration: underline; }
 .note-detail-title { font-size: 24px; font-weight: 500; margin-bottom: 12px; line-height: 1.3; font-family: Georgia, 'Times New Roman', serif; }
 .note-detail-meta { font-size: 13px; color: var(--og); margin-bottom: 24px; }
-.note-detail-body { font-size: 15px; line-height: 1.9; color: var(--nk); }
+.note-detail-body { font-size: 15px; line-height: 1.9; color: var(--nk); word-break: break-word; }
 .note-detail-body h1, .note-detail-body h2, .note-detail-body h3 { font-weight: 500; margin: 20px 0 10px; font-family: Georgia, 'Times New Roman', serif; }
 .note-detail-body h1 { font-size: 22px; } .note-detail-body h2 { font-size: 18px; } .note-detail-body h3 { font-size: 15px; }
 .note-detail-body p { margin: 10px 0; }
@@ -178,42 +190,71 @@ a:hover { color: #b8543a; }
 .note-detail-body pre { background: var(--ds); color: #a6e22e; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 16px 0; }
 .note-detail-body pre code { background: none; padding: 0; color: inherit; }
 .note-detail-body a { color: var(--tc); }
+.note-detail-body blockquote { border-left: 3px solid var(--tc); padding-left: 16px; margin: 16px 0; color: var(--og); }
+.note-detail-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+.note-detail-body th, .note-detail-body td { border: 1px solid var(--bc); padding: 8px 12px; text-align: left; }
+.note-detail-body th { background: var(--iv); font-weight: 500; }
+.note-detail-body img { max-width: 100%; border-radius: 6px; margin: 12px 0; }
+.detail-loading { display: flex; justify-content: center; padding: 80px 0; }
+
+/* Related notes */
+.related { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bc); }
+.related h3 { font-size: 14px; color: var(--og); margin-bottom: 12px; }
+.related-item { padding: 8px 0; cursor: pointer; font-size: 13px; color: var(--tc); }
+.related-item:hover { text-decoration: underline; }
+
+/* Floating back button (mobile) */
+.fab-back {
+  display: none;
+  position: fixed; bottom: 24px; right: 24px;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--tc); color: #fff; border: none;
+  font-size: 20px; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(201,100,66,0.3);
+  z-index: 99; transition: all 0.2s;
+  align-items: center; justify-content: center;
+}
+.fab-back:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(201,100,66,0.4); }
 
 /* Footer */
 .footer { border-top: 1px solid var(--bc); padding: 24px 0; margin-top: 48px; text-align: center; font-size: 12px; color: var(--sg); }
 </style>
-<script src="js/vue.global.prod.js"></script>
-<script src="js/marked.min.js"></script>
 </head>
 <body>
 
 <div class="navbar">
   <div class="container">
-    <a href="/" class="brand" style="font-family:Georgia,serif;font-size:18px">
-      <img class="logo" src="/logo.png" alt="" style="vertical-align:middle"><span style="color:var(--nk)">Syn</span><span style="color:var(--tc)">apse</span>
+    <a href="/" class="brand">
+      <img class="logo" src="/logo.png" alt="">
+      <span class="brand-text">Syn<span>apse</span></span>
     </a>
-    <div class="links"><a href="/">首页</a> · <a href="/graph.html">图谱</a></div>
+    <div class="links"><a href="/">首页</a> · <a href="/wiki.html">笔记</a> · <a href="/graph.html">图谱</a></div>
   </div>
 </div>
 
-<div id="app">
+<div id="app" v-cloak>
 <div class="container">
 
-<div class="header">
+<!-- Header: only show in list view -->
+<div class="header" v-if="!expanded">
   <h1>知识笔记</h1>
   <div class="search-box">
-    <input type="text" v-model="searchQuery" @input="onSearch" placeholder="搜索笔记..." />
+    <input type="text" v-model="searchQuery" @input="onSearch" placeholder="搜索笔记标题和内容..." />
+  </div>
+  <div class="search-hint" v-if="searchQuery.trim()">
+    搜索 "{{ searchQuery.trim() }}" - 找到 {{ totalNotes }} 条结果
   </div>
 </div>
 
 <!-- Note List -->
 <div class="notes" v-if="notes.length && !expanded">
-  <div class="note" v-for="n in notes" :key="n.id" @click="toggle(n.id)">
+  <div class="note" v-for="n in notes" :key="n.id" @click="openNote(n.id)">
     <div class="note-title">
       <span class="arrow">›</span>
       {{ n.title }}
     </div>
-    <div class="note-preview">{{ n.content.replace(/^#+\s/gm, '').substring(0, 120) }}...</div>
+    <div class="note-preview" v-if="n.snippet" v-html="n.snippet"></div>
+    <div class="note-preview" v-else>{{ n.content.replace(/^#+\s/gm, '').substring(0, 120) }}...</div>
     <div class="note-meta">
       {{ fmt(n.source_created_at || n.created_at) }}
       <span class="tag" v-for="t in n.tags" :key="t">{{ t }}</span>
@@ -228,22 +269,42 @@ a:hover { color: #b8543a; }
 
 <!-- Expanded Note -->
 <div class="note-detail" v-if="expanded">
-  <div class="note-detail-back" @click="expanded=null">← 返回列表</div>
-  <div class="note-detail-title">{{ currentNote.title }}</div>
-  <div class="note-detail-meta">
-    {{ fmt(currentNote.source_created_at || currentNote.created_at) }}
-    <span class="tag" v-for="t in currentNote.tags" :key="t">{{ t }}</span>
+  <div class="note-detail-back" @click="closeNote()">← 返回列表</div>
+
+  <!-- Detail loading -->
+  <div v-if="detailLoading" class="detail-loading">
+    <div class="loading-spinner"></div>
   </div>
-  <div class="note-detail-body" v-html="renderMd(currentNote.content)"></div>
+
+  <!-- Detail content -->
+  <template v-else-if="currentNote">
+    <div class="note-detail-title">{{ currentNote.title }}</div>
+    <div class="note-detail-meta">
+      {{ fmt(currentNote.source_created_at || currentNote.created_at) }}
+      <span class="tag" v-for="t in currentNote.tags" :key="t">{{ t }}</span>
+    </div>
+    <div class="note-detail-body" v-html="renderMd(currentNote.content)"></div>
+
+    <!-- Related notes -->
+    <div class="related" v-if="relatedNotes.length">
+      <h3>📎 相关笔记</h3>
+      <div class="related-item" v-for="r in relatedNotes" :key="r.id" @click="openNote(r.id)">
+        › {{ r.title }}
+      </div>
+    </div>
+  </template>
 </div>
 
-<div v-if="!notes.length && !expanded && !loading" class="empty-state">暂无笔记</div>
+<div v-if="!notes.length && !expanded && !loading" class="empty-state">
+  <template v-if="searchQuery.trim()">没有找到匹配的笔记</template>
+  <template v-else>暂无笔记</template>
+</div>
 
 <!-- Pagination -->
-<div class="pager" v-if="totalPages > 1">
+<div class="pager" v-if="totalPages > 1 && !expanded">
   <button :disabled="page === 1 || loading" @click="go(page - 1)">‹</button>
   <template v-for="p in pageList" :key="p">
-    <span v-if="p === '...'" class="ellipsis">…</span>
+    <span v-if="p === '...'" class="ellipsis">...</span>
     <button v-else :class="{ active: p === page }" :disabled="loading" @click="go(p)">{{ p }}</button>
   </template>
   <button :disabled="page === totalPages || loading" @click="go(page + 1)">›</button>
@@ -251,24 +312,37 @@ a:hover { color: #b8543a; }
 </div>
 
 <!-- Tag Cloud -->
-<div v-if="tagList.length">
-  <div style="font-size:12px;color:var(--og);margin-bottom:12px">标签 <span v-if="activeTag" style="color:var(--tc);cursor:pointer" @click="clearTagFilter()">✕ 清除筛选: {{ activeTag }}</span></div>
+<div v-if="tagList.length && !expanded">
+  <div style="font-size:12px;color:var(--og);margin-bottom:12px">
+    标签
+    <span v-if="activeTag" style="color:var(--tc);cursor:pointer" @click="clearTagFilter()">✕ 清除筛选: {{ activeTag }}</span>
+  </div>
   <div class="tagcloud">
-    <span class="tag-pill" :class="{ active: activeTag === t.name }" v-for="t in tagList.slice(0, 10)" :key="t.name" @click="filterByTag(t.name)">
+    <span class="tag-pill" :class="{ active: activeTag === t.name }"
+      v-for="t in displayedTags" :key="t.name" @click="filterByTag(t.name)">
       {{ t.name }} <small style="opacity:.6">{{ t.note_count }}</small>
+    </span>
+    <span class="tag-toggle" v-if="tagList.length > tagLimit" @click="showAllTags = !showAllTags">
+      {{ showAllTags ? '收起' : '更多(' + tagList.length + ')' }} {{ showAllTags ? '↑' : '↓' }}
     </span>
   </div>
 </div>
 
 <div class="footer">
-  Powered by <a href="https://docs.openclaw.ai">OpenClaw</a>
+  Synapse · 私人知识库
 </div>
 
 </div>
 </div>
 
+<!-- Mobile floating back button -->
+<button class="fab-back" v-if="expanded" @click="closeNote()" title="返回列表">←</button>
+
+<script src="js/vue.global.prod.js"></script>
+<script src="js/marked.min.js"></script>
 <script>
-const { createApp, ref, onMounted, computed } = Vue;
+(function() {
+var { createApp, ref, onMounted, computed, watch, nextTick } = Vue;
 
 function fmt(d) {
   if (!d) return '';
@@ -284,7 +358,7 @@ function renderMd(text) {
   return marked.parse(text || '');
 }
 
-var PER_PAGE = 10;
+var PER_PAGE = 15;
 var API = '/api';
 
 createApp({
@@ -294,32 +368,79 @@ createApp({
     var totalNotes = ref(0);
     var page = ref(1);
     var expanded = ref(null);
+    var detailLoading = ref(false);
+    var detailNote = ref(null);      // full note from /api/notes/{id}
+    var relatedNotes = ref([]);
     var loading = ref(false);
     var activeTag = ref(null);
     var searchQuery = ref('');
     var searchTimeout = null;
+    var showAllTags = ref(false);
+    var tagLimit = 15;
+    var returnScrollY = 0;           // remember scroll position
+
     var currentNote = computed(function() {
       if (!expanded.value) return null;
+      if (detailNote.value && detailNote.value.id === expanded.value) return detailNote.value;
+      // fallback: use list data while loading
       for (var i = 0; i < notes.value.length; i++) {
         if (notes.value[i].id === expanded.value) return notes.value[i];
       }
       return null;
     });
 
+    var displayedTags = computed(function() {
+      if (showAllTags.value) return tagList.value;
+      return tagList.value.slice(0, tagLimit);
+    });
+
+    // Decide which endpoint to use for listing
     function fetchPage() {
       loading.value = true;
-      var skip = (page.value - 1) * PER_PAGE;
-      var url = API + '/notes?skip=' + skip + '&limit=' + PER_PAGE;
-      if (activeTag.value) url += '&tag=' + encodeURIComponent(activeTag.value);
-      if (searchQuery.value.trim()) url += '&keyword=' + encodeURIComponent(searchQuery.value.trim());
+      var q = searchQuery.value.trim();
+      var url;
+      if (q) {
+        // Use dedicated search endpoint (FTS)
+        url = API + '/search?q=' + encodeURIComponent(q) + '&limit=' + (PER_PAGE * 3);
+      } else {
+        var skip = (page.value - 1) * PER_PAGE;
+        url = API + '/notes?skip=' + skip + '&limit=' + PER_PAGE;
+        if (activeTag.value) url += '&tag=' + encodeURIComponent(activeTag.value);
+      }
       fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(d) {
-          notes.value = d.notes || [];
-          totalNotes.value = d.total || 0;
+          if (q) {
+            // /api/search returns array of {id, title, snippet, ...}
+            var results = Array.isArray(d) ? d : (d.notes || []);
+            notes.value = results.map(function(r) {
+              return {
+                id: r.id,
+                title: r.title || '(无标题)',
+                content: r.snippet || '',
+                snippet: r.snippet ? highlightSnippet(r.snippet) : '',
+                tags: r.tags || [],
+                source_created_at: r.source_created_at || r.created_at,
+                created_at: r.created_at
+              };
+            });
+            totalNotes.value = notes.value.length;
+          } else {
+            notes.value = d.notes || [];
+            totalNotes.value = d.total || 0;
+          }
           loading.value = false;
         })
         .catch(function() { loading.value = false; });
+    }
+
+    function highlightSnippet(text) {
+      if (!text) return '';
+      // Highlight **bold** markers from FTS
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<mark>$1</mark>')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/&lt;mark&gt;/g, '<mark>').replace(/&lt;\/mark&gt;/g, '</mark>');
     }
 
     function onSearch() {
@@ -334,11 +455,13 @@ createApp({
       fetch(API + '/tags')
         .then(function(r) { return r.json(); })
         .then(function(d) {
-          tagList.value = d.filter(function(t) { return t.note_count > 0; }).sort(function(a, b) { return b.note_count - a.note_count; });
+          tagList.value = d.filter(function(t) { return t.note_count > 0; })
+            .sort(function(a, b) { return b.note_count - a.note_count; });
         });
     }
 
     function go(p) {
+      if (searchQuery.value.trim()) return; // search results don't paginate
       var total = Math.ceil(totalNotes.value / PER_PAGE);
       if (p < 1 || p > total) return;
       page.value = p;
@@ -346,8 +469,45 @@ createApp({
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function toggle(id) {
-      expanded.value = expanded.value === id ? null : id;
+    // Open note detail - fetch full content
+    function openNote(id) {
+      expanded.value = id;
+      returnScrollY = window.scrollY;
+      detailLoading.value = true;
+      relatedNotes.value = [];
+      window.scrollTo({ top: 0 });
+
+      // Update URL hash
+      history.pushState(null, '', '#note-' + id);
+
+      // Fetch full note
+      fetch(API + '/notes/' + id)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          detailNote.value = d;
+          detailLoading.value = false;
+        })
+        .catch(function() {
+          detailLoading.value = false;
+        });
+
+      // Fetch related notes
+      fetch(API + '/notes/' + id + '/relations')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          relatedNotes.value = Array.isArray(d) ? d : (d.notes || []);
+        })
+        .catch(function() {});
+    }
+
+    function closeNote() {
+      expanded.value = null;
+      detailNote.value = null;
+      relatedNotes.value = [];
+      history.pushState(null, '', window.location.pathname);
+      nextTick(function() {
+        window.scrollTo({ top: returnScrollY });
+      });
     }
 
     function filterByTag(tag) {
@@ -364,7 +524,11 @@ createApp({
       fetchPage();
     }
 
-    var totalPages = computed(function() { return Math.ceil(totalNotes.value / PER_PAGE); });
+    var totalPages = computed(function() {
+      if (searchQuery.value.trim()) return 1; // search doesn't paginate
+      return Math.ceil(totalNotes.value / PER_PAGE);
+    });
+
     var pageList = computed(function() {
       var pages = [];
       var total = totalPages.value;
@@ -383,23 +547,45 @@ createApp({
       return pages;
     });
 
+    // Keyboard shortcut: Escape to close detail
+    function onKeydown(e) {
+      if (e.key === 'Escape' && expanded.value) {
+        closeNote();
+      }
+    }
+
+    // Handle browser back button
+    window.addEventListener('popstate', function() {
+      if (!window.location.hash && expanded.value) {
+        expanded.value = null;
+        detailNote.value = null;
+        relatedNotes.value = [];
+      }
+    });
+
     onMounted(function() {
       fetchPage();
       fetchTags();
+      document.addEventListener('keydown', onKeydown);
+
+      // Deep link: #note-123
       if (window.location.hash) {
         var m = window.location.hash.match(/#note-(\d+)/);
-        if (m) expanded.value = parseInt(m[1]);
+        if (m) openNote(parseInt(m[1]));
       }
     });
 
     return {
-      notes, tagList, totalNotes, page, expanded, loading, activeTag, searchQuery,
-      totalPages, pageList, go, toggle, filterByTag, clearTagFilter, onSearch,
+      notes, tagList, totalNotes, page, expanded, detailLoading, detailNote,
+      relatedNotes, loading, activeTag, searchQuery, showAllTags, tagLimit,
+      totalPages, pageList, displayedTags,
+      go, openNote, closeNote, filterByTag, clearTagFilter, onSearch,
       currentNote, fmt, renderMd
     };
   }
 }).mount('#app');
 
+})();
 </script>
 </body>
 </html>

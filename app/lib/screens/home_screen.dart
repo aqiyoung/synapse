@@ -636,21 +636,41 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(
-                note.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
-                color: colorScheme.primary,
-              ),
-              title: Text(note.isPinned ? '取消置顶' : '置顶'),
+              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              title: const Text('删除', style: TextStyle(color: Colors.redAccent)),
               onTap: () async {
                 Navigator.pop(ctx);
-                try {
-                  await ApiService.togglePin(note.id);
-                  _loadData();
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('操作失败: $e')),
-                  );
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (dCtx) => AlertDialog(
+                    title: const Text('确认删除'),
+                    content: Text('删除“${note.title}”?\n删除后将移到回收站。'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dCtx, false),
+                        child: const Text('取消'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(dCtx, true),
+                        child: const Text('删除', style: TextStyle(color: Colors.redAccent)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  try {
+                    await ApiService.deleteNote(note.id);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('已删除')),
+                    );
+                    _loadData();
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('删除失败: $e')),
+                    );
+                  }
                 }
               },
             ),
