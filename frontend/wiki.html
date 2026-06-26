@@ -104,9 +104,10 @@ a:hover{color:var(--accent-hover)}
   <h1>知识笔记</h1>
 </div>
 
-<div class="stats-row">
-  <div><div class="stat-num">{{ totalNotes }}</div><div class="stat-label">笔记</div></div>
-  <div><div class="stat-num">{{ tagList.length }}</div><div class="stat-label">标签</div></div>
+<div style="display:flex;gap:16px;margin-bottom:20px;font-size:13px;color:var(--muted)">
+  <span>{{ totalNotes }} 笔记</span>
+  <span>{{ tagList.length }} 标签</span>
+  <span v-if="activeTag" style="color:var(--accent)">筛选: {{ activeTag }} <a href="#" @click.prevent="clearTagFilter()" style="color:var(--muted);margin-left:4px">✕</a></span>
 </div>
 
 <!-- Note List -->
@@ -154,11 +155,11 @@ a:hover{color:var(--accent-hover)}
 </div>
 
 <!-- Tag Cloud -->
-<div v-if="tagList.length">
-  <div style="font-size:12px;color:var(--muted);margin-bottom:12px">标签 <span v-if="activeTag" style="color:var(--accent);cursor:pointer" @click="clearTagFilter()">✕ 清除筛选: {{ activeTag }}</span></div>
+<div v-if="tagList.length" style="margin-bottom:24px">
+  <div style="font-size:12px;color:var(--muted);margin-bottom:8px">标签</div>
   <div class="tagcloud">
-    <span class="tag-pill" :class="{ active: activeTag === t.name }" v-for="t in tagList" :key="t.name" @click="filterByTag(t.name)">
-      {{ t.name }} <small style="opacity:.6">{{ t.count }}</small>
+    <span class="tag-pill" :class="{ active: activeTag === t.name }" v-for="t in tagList.slice(0, 20)" :key="t.name" @click="filterByTag(t.name)">
+      {{ t.name }} <small style="opacity:.6">{{ t.note_count }}</small>
     </span>
   </div>
 </div>
@@ -226,7 +227,7 @@ createApp({
       fetch(API + '/tags')
         .then(function(r) { return r.json(); })
         .then(function(d) {
-          tagList.value = d.filter(function(t) { return t.count > 0; }).sort(function(a, b) { return b.count - a.count; });
+          tagList.value = d.filter(function(t) { return t.note_count > 0; }).sort(function(a, b) { return b.note_count - a.note_count; });
         });
     }
 
