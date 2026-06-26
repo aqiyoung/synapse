@@ -495,7 +495,16 @@ createApp({
       fetch(API + '/notes/' + id + '/relations')
         .then(function(r) { return r.json(); })
         .then(function(d) {
-          relatedNotes.value = Array.isArray(d) ? d : (d.notes || []);
+          var all = [];
+          if (d.outgoing) all = all.concat(d.outgoing);
+          if (d.incoming) all = all.concat(d.incoming);
+          // dedupe
+          var seen = {};
+          relatedNotes.value = all.filter(function(r) {
+            if (seen[r.id]) return false;
+            seen[r.id] = true;
+            return true;
+          });
         })
         .catch(function() {});
     }
