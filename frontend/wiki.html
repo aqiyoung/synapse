@@ -355,7 +355,16 @@ function fmt(d) {
 
 function renderMd(text) {
   if (typeof marked === 'undefined') return text || '';
-  return marked.parse(text || '');
+  // Custom renderer for wiki-links [[title]]
+  var renderer = new marked.Renderer();
+  renderer.link = function(href, title, text) {
+    if (href && href.startsWith('[[')) {
+      var wikiTitle = href.replace(/^\[\[|\]\]$/g, '');
+      return '<a href="/?q=' + encodeURIComponent(wikiTitle) + '">' + text + '</a>';
+    }
+    return '<a href="' + href + '"' + (title ? ' title="' + title + '"' : '') + '>' + text + '</a>';
+  };
+  return marked.parse(text || '', { renderer: renderer });
 }
 
 var PER_PAGE = 15;

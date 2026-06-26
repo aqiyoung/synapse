@@ -108,7 +108,17 @@ h1{font-size:28px;font-weight:500;margin-bottom:12px;line-height:1.3}
 
       // Content
       if (typeof marked !== 'undefined' && note.content) {
-        html += '<div class="content">' + marked.parse(note.content) + '</div>';
+        // Custom renderer for wiki-links [[title]]
+        var renderer = new marked.Renderer();
+        renderer.link = function(href, title, text) {
+          if (href && href.startsWith('[[')) {
+            // Wiki-link: [[title]] — link to search
+            var wikiTitle = href.replace(/^\[\[|\]\]$/g, '');
+            return '<a href="/?q=' + encodeURIComponent(wikiTitle) + '">' + text + '</a>';
+          }
+          return '<a href="' + href + '"' + (title ? ' title="' + title + '"' : '') + '>' + text + '</a>';
+        };
+        html += '<div class="content">' + marked.parse(note.content, { renderer: renderer }) + '</div>';
       } else if (note.content) {
         html += '<div class="content"><pre>' + note.content + '</pre></div>';
       }
