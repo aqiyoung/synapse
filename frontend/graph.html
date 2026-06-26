@@ -209,7 +209,7 @@ a{color:var(--accent);text-decoration:none}
         html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (r + 5) + '" fill="' + n.color + '" opacity="0.15" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '"/>';
       }
 
-      html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + n.color + '" opacity="0.85" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '" style="cursor:pointer"/>';
+      html += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + n.color + '" opacity="0.85" data-node="' + n.id + '" data-title="' + n.title.replace(/"/g, '&quot;') + '" style="cursor:pointer" onclick="window.location.href=\'/note.html?id=' + n.id + '\'"/>';
 
       if (n.degree >= 3) {
         html += '<text x="' + n.x + '" y="' + (n.y + 4) + '" text-anchor="middle" fill="white" font-size="9" font-weight="600" data-node="' + n.id + '">' + label + '</text>';
