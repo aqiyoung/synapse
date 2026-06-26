@@ -244,11 +244,13 @@ a{color:var(--accent);text-decoration:none}
   });
 
   svg.addEventListener('click', function(e) {
-    if (dragMoved) { dragMoved = false; return; }
+    if (dragMoved) { return; }
     var target = e.target.closest('[data-node]');
     if (target) {
       var nodeId = target.getAttribute('data-node');
-      window.location.href = '/note.html?id=' + nodeId;
+      if (nodeId) {
+        window.location.href = '/note.html?id=' + nodeId;
+      }
     }
   });
 
@@ -286,7 +288,11 @@ a{color:var(--accent);text-decoration:none}
     if (target) {
       var nodeId = target.getAttribute('data-node');
       var node = nodeMap[nodeId];
-      if (node) startDrag(e, node);
+      if (node) {
+        dragNode = node;
+        dragMoved = false;
+        panStart = getEventPoint(e);
+      }
     }
   });
 
@@ -295,7 +301,11 @@ a{color:var(--accent);text-decoration:none}
     if (target) {
       var nodeId = target.getAttribute('data-node');
       var node = nodeMap[nodeId];
-      if (node) startDrag(e, node);
+      if (node) {
+        dragNode = node;
+        dragMoved = false;
+        panStart = getEventPoint(e);
+      }
     }
   });
 
