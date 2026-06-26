@@ -64,6 +64,15 @@ a{color:var(--accent);text-decoration:none}
   var nodeCount = document.getElementById('nodeCount');
   var edgeCount = document.getElementById('edgeCount');
 
+  // Generate pseudo-random positions from node id
+  function seededPos(id, w, h) {
+    var x = Math.sin(id * 12.9898) * 43758.5453;
+    x = x - Math.floor(x);
+    var y = Math.sin(id * 78.233) * 43758.5453;
+    y = y - Math.floor(y);
+    return { x: x * (w - 100) + 50, y: y * (h - 100) + 50 };
+  }
+
   fetch('/api/graph')
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -73,34 +82,50 @@ a{color:var(--accent);text-decoration:none}
       nodeCount.textContent = nodes.length;
       edgeCount.textContent = edges.length;
 
+      // Calculate degree for each node
+      var degreeMap = {};
+      edges.forEach(function(e) {
+        degreeMap[e.source] = (degreeMap[e.source] || 0) + 1;
+        degreeMap[e.target] = (degreeMap[e.target] || 0) + 1;
+      });
+
+      var W = 800, H = 600;
+      var colors = ['#c96442', '#5b9abf', '#7b6bbf', '#4a9e8a', '#d4a843', '#bf6b8a', '#6bbf4a', '#bf8a5b'];
+
+      // Generate positions
+      var positions = {};
+      nodes.forEach(function(n, i) {
+        var pos = seededPos(n.id, W, H);
+        positions[n.id] = { x: pos.x, y: pos.y };
+      });
+
       var html = '';
 
       // Edges
       edges.forEach(function(e) {
-        var s = nodes.find(function(n) { return n.id === e.source; });
-        var t = nodes.find(function(n) { return n.id === e.target; });
+        var s = positions[e.source];
+        var t = positions[e.target];
         if (!s || !t) return;
-        var sx = (s.x || 0) + 400, sy = (s.y || 0) + 300;
-        var tx = (t.x || 0) + 400, ty = (t.y || 0) + 300;
-        html += '<line x1="' + sx + '" y1="' + sy + '" x2="' + tx + '" y2="' + ty + '" stroke="#d4d4d4" stroke-width="1.5" opacity="0.6"/>';
+        html += '<line x1="' + s.x + '" y1="' + s.y + '" x2="' + t.x + '" y2="' + t.y + '" stroke="#d4d4d4" stroke-width="1" opacity="0.5"/>';
       });
 
       // Nodes
       nodes.forEach(function(n) {
-        var x = (n.x || 0) + 400, y = (n.y || 0) + 300;
-        var r = Math.min(3 + (n.degree || 0) * 2, 20);
-        var color = n.color || '#8d9e8a';
-        var label = n.title.length > 8 ? n.title.substring(0, 8) + '...' : n.title;
+        var pos = positions[n.id];
+        var deg = degreeMap[n.id] || 0;
+        var r = Math.min(4 + deg * 2, 18);
+        var color = colors[(n.id - 1) % colors.length];
+        var label = n.title.length > 6 ? n.title.substring(0, 6) + '..' : n.title;
 
         // Glow for high-degree nodes
-        if ((n.degree || 0) >= 4) {
-          html += '<circle cx="' + x + '" cy="' + y + '" r="' + (r + 6) + '" fill="' + color + '" opacity="0.15"/>';
+        if (deg >= 4) {
+          html += '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + (r + 5) + '" fill="' + color + '" opacity="0.15"/>';
         }
 
-        html += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + color + '" opacity="0.9"/>';
+        html += '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + r + '" fill="' + color + '" opacity="0.85"/>';
 
-        if ((n.degree || 0) >= 3) {
-          html += '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" fill="white" font-size="10" font-weight="500">' + label + '</text>';
+        if (deg >= 3) {
+          html += '<text x="' + pos.x + '" y="' + (pos.y + 4) + '" text-anchor="middle" fill="white" font-size="9" font-weight="600">' + label + '</text>';
         }
       });
 
