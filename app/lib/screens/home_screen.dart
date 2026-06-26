@@ -526,10 +526,11 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (note.isPinned) ...[
                   Icon(Icons.push_pin, size: 14, color: colorScheme.primary),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                 ],
                 Expanded(
                   child: hasHighlight
@@ -540,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: _highlightText(
                               note.title,
                               TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w500,
                                 color: colorScheme.onSurface,
                               ),
@@ -551,7 +552,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : Text(
                           note.title,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.w500,
                             color: colorScheme.onSurface,
                           ),
@@ -562,7 +563,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             if (note.summary.isNotEmpty) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               hasHighlight
                   ? RichText(
                       maxLines: 1,
