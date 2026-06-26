@@ -244,7 +244,7 @@ a{color:var(--accent);text-decoration:none}
   });
 
   svg.addEventListener('click', function(e) {
-    if (dragMoved) { return; }
+    if (dragMoved) { dragMoved = false; return; }
     var target = e.target.closest('[data-node]');
     if (target) {
       var nodeId = target.getAttribute('data-node');
@@ -312,31 +312,39 @@ a{color:var(--accent);text-decoration:none}
   document.addEventListener('mousemove', function(e) {
     if (dragNode) {
       var pt = getEventPoint(e);
+      var dx = pt.x - panStart.x;
+      var dy = pt.y - panStart.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        dragMoved = true;
+      }
       dragNode.x = pt.x;
       dragNode.y = pt.y;
       dragNode.vx = 0;
       dragNode.vy = 0;
-      dragMoved = true;
     }
   });
 
   document.addEventListener('mouseup', function() {
-    setTimeout(function() { dragNode = null; dragMoved = false; }, 10);
+    dragNode = null;
   });
 
   document.addEventListener('touchmove', function(e) {
     if (dragNode) {
       var pt = getEventPoint(e);
+      var dx = pt.x - panStart.x;
+      var dy = pt.y - panStart.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        dragMoved = true;
+      }
       dragNode.x = pt.x;
       dragNode.y = pt.y;
       dragNode.vx = 0;
       dragNode.vy = 0;
-      dragMoved = true;
     }
   });
 
   document.addEventListener('touchend', function() {
-    setTimeout(function() { dragNode = null; dragMoved = false; }, 10);
+    dragNode = null;
   });
 
   // Load data
