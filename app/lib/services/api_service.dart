@@ -30,7 +30,7 @@ class ApiService {
       // 200 = 成功, 404 = 后端没配此端点 (可接受)
       if (r.statusCode == 200) return;
     } catch (_) {}
-    // 后端没配 /api/config/model — 仅本地持久化, 下次重启后需手动改 openclaw.json
+    // 后端没配 /api/config/model - 仅本地持久化, 下次重启后需手动改 openclaw.json
   }
 
   static Map<String, String> get headers => {
@@ -39,13 +39,15 @@ class ApiService {
       };
 
   // 获取笔记列表
-  // summary: 列表只展示元数据，content 不需要 → 节省 ~80% 响应体积
+  // summary: 列表只展示元数据,content 不需要 → 节省 ~80% 响应体积
   static const String _listFields =
       'id,slug,title,summary,tags,created_at,source_created_at,updated_at,is_pinned,folder_id';
 
-  static Future<List<Note>> getNotes(
+  // v0.3.10.23 (6/27): 返回 (notes, total) — 后端 API 有 total 字段, 用于
+  // 首页显示笔记总数, 不再用 _notes.length (只显示当前页数).
+  static Future<(List<Note>, int)> getNotes(
       {String? tag, String? search, int limit = 200, int skip = 0}) async {
-    // 限制 200 是后端 list_notes 允许的最大值（api.py le=200）；超过需后端加 cursor 分页
+    // 限制 200 是后端 list_notes 允许的最大值(api.py le=200);超过需后端加 cursor 分页
     var url =
         '$baseUrl/notes?limit=$limit&skip=$skip&fields=${Uri.encodeQueryComponent(_listFields)}';
     if (tag != null && tag.isNotEmpty) {
@@ -60,12 +62,13 @@ class ApiService {
       final data = json.decode(response.body);
       final notes =
           (data['notes'] as List).map((n) => Note.fromJson(n)).toList();
-      return notes;
+      final total = (data['total'] as int?) ?? notes.length;
+      return (notes, total);
     }
     throw Exception('获取笔记失败');
   }
 
-  // 获取笔记详情（需要完整 content）
+  // 获取笔记详情(需要完整 content)
   static Future<Note> getNoteFull(int id) async {
     final response =
         await http.get(Uri.parse('$baseUrl/notes/$id'), headers: headers);
@@ -96,7 +99,7 @@ class ApiService {
       body: json.encode(body),
     );
     if (response.statusCode == 200) {
-      // tags 参数变化会改标签表，使缓存过期
+      // tags 参数变化会改标签表,使缓存过期
       if (tags != null) await invalidateTags();
       return true;
     }
@@ -128,7 +131,7 @@ class ApiService {
   }
 
   // 获取所有标签
-  // 性能优化：SharedPreferences 缓存 5 分钟，避免频繁请求不变的标签列表
+  // 性能优化:SharedPreferences 缓存 5 分钟,避免频繁请求不变的标签列表
   static const _tagsKey = 'cached_tags';
   static const _tagsTsKey = 'cached_tags_ts';
   static const _tagsTtlMs = 5 * 60 * 1000;
@@ -145,7 +148,7 @@ class ApiService {
           final list = json.decode(raw) as List;
           return list.map((t) => Tag.fromJson(t)).toList();
         } catch (_) {
-          // 缓存解析失败，刷新
+          // 缓存解析失败,刷新
         }
       }
     }
@@ -166,7 +169,8 @@ class ApiService {
 
   // 搜索笔记
   static Future<List<Note>> searchNotes(String query) async {
-    return getNotes(search: query);
+    final (notes, _) = await getNotes(search: query);
+    return notes;
   }
 
   // 获取图谱数据
@@ -191,7 +195,7 @@ class ApiService {
     return {'issues': [], 'stats': {}};
   }
 
-  // 删除笔记（管理员功能）
+  // 删除笔记(管理员功能)
   static Future<bool> deleteNote(int id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/notes/$id'),
@@ -202,7 +206,7 @@ class ApiService {
 
   // ── 健康检查修复 API ──
 
-  /// 清除所有断链（从笔记内容中移除 [[不存在的标题]]）
+  /// 清除所有断链(从笔记内容中移除 [[不存在的标题]])
   static Future<Map<String, dynamic>> fixBrokenLinks() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/broken-links'),
@@ -215,7 +219,7 @@ class ApiService {
     throw Exception('清除断链失败');
   }
 
-  /// 清除所有孤立笔记（删除无任何关联的笔记）
+  /// 清除所有孤立笔记(删除无任何关联的笔记)
   static Future<Map<String, dynamic>> fixOrphans() async {
     final response = await http.post(
       Uri.parse('$baseUrl/lint/fix/orphans'),
@@ -228,7 +232,7 @@ class ApiService {
     throw Exception('清除孤立笔记失败');
   }
 
-  /// 分析图谱中的问题边（自环、重复边、stale 边）
+  /// 分析图谱中的问题边(自环、重复边、stale 边)
   static Future<Map<String, dynamic>> analyzeGraph() async {
     final response = await http.post(
       Uri.parse('$baseUrl/graph/analyze'),
@@ -241,7 +245,7 @@ class ApiService {
     throw Exception('分析图谱失败');
   }
 
-  /// 统一修复入口，根据 type 调用对应修复方法
+  /// 统一修复入口,根据 type 调用对应修复方法
   static Future<Map<String, dynamic>> fixLint(String type) async {
     switch (type) {
       case 'broken_link':
@@ -283,7 +287,7 @@ class ApiService {
     throw Exception('自动关联失败');
   }
 
-  /// 验证管理员密码（服务端校验）
+  /// 验证管理员密码(服务端校验)
   static Future<bool> verifyAdmin(String password) async {
     try {
       final response = await http.post(
@@ -300,7 +304,7 @@ class ApiService {
     }
   }
 
-  /// AI 对话（RAG）
+  /// AI 对话(RAG)
   static Future<Map<String, dynamic>> chat(String question,
       {int limit = 5}) async {
     final response = await http.post(

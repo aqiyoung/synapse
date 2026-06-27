@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loadingMore = false;
   bool _hasMore = true;
   int _skip = 0;
+  int _totalCount = 0; // v0.3.10.23: 服务端返回的笔记总数
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -77,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _hasMore = true;
     }
     try {
-      final notes = await ApiService.getNotes(
+      final (notes, total) = await ApiService.getNotes(
         tag: _selectedTag.isEmpty ? null : _selectedTag,
         search: _searchQuery.isEmpty ? null : _searchQuery,
         limit: _pageSize,
@@ -87,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _notes = notes;
         _tags = tags;
+        _totalCount = total;
         _loading = false;
         _hasMore = notes.length >= _pageSize;
       });
@@ -120,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_loadingMore || !_hasMore) return;
     setState(() => _loadingMore = true);
     try {
-      final notes = await ApiService.getNotes(
+      final (notes, total) = await ApiService.getNotes(
         tag: _selectedTag.isEmpty ? null : _selectedTag,
         search: _searchQuery.isEmpty ? null : _searchQuery,
         limit: _pageSize,
@@ -129,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _notes.addAll(notes);
         _skip += _pageSize;
+        _totalCount = total;
         _hasMore = notes.length >= _pageSize;
         _loadingMore = false;
       });
@@ -313,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const Spacer(),
                       Text(
-                        '${_notes.length} 篇',
+                        '$_totalCount 篇',
                         style: TextStyle(
                           fontSize: 12,
                           color: colorScheme.onSurface.withValues(alpha: 0.5),
@@ -388,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: TagChip(
                                 label: '全部',
                                 selected: _selectedTag.isEmpty,
-                                count: _notes.length,
+                                count: _totalCount,
                                 onTap: () => _onTagSelected(''),
                               ),
                             ),
