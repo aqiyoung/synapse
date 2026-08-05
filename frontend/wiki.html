@@ -6,11 +6,6 @@
 <title>Synapse · 知识笔记</title>
 <link rel="icon" href="/logo.png">
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://unpkg.com/@tiptap/vue-3/dist/tiptap-vue-3.js"></script>
-<script src="https://unpkg.com/@tiptap/starter-kit/dist/tiptap-starter-kit.js"></script>
-<script src="https://unpkg.com/@tiptap/extension-underline/dist/tiptap-extension-underline.js"></script>
-<script src="https://unpkg.com/@tiptap/extension-link/dist/tiptap-extension-link.js"></script>
-<script src="https://unpkg.com/@tiptap/extension-placeholder/dist/tiptap-extension-placeholder.js"></script>
 <style>
 :root {
   --bg: #fbfbfa;
@@ -25,7 +20,6 @@
   --accent-light: rgba(201,100,66,0.08);
   --accent-hover: #b0553a;
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
   --radius: 8px;
   --radius-lg: 12px;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
@@ -45,7 +39,7 @@ body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-hover); }
 
-/* ===== Navbar ===== */
+/* Navbar */
 .navbar {
   position: fixed; top: 0; left: 0; right: 0;
   height: 56px;
@@ -101,12 +95,12 @@ a:hover { color: var(--accent-hover); }
   font-size: 12px; font-weight: 600;
 }
 
-/* ===== Layout ===== */
+/* Main */
 .main {
   max-width: 960px; margin: 0 auto; padding: 80px 24px 40px;
 }
 
-/* ===== Header ===== */
+/* Header */
 .page-header {
   padding: 24px 0 32px;
   border-bottom: 1px solid var(--border-light);
@@ -118,10 +112,8 @@ a:hover { color: var(--accent-hover); }
   margin-bottom: 20px;
 }
 
-/* ===== Search ===== */
-.search-wrap {
-  position: relative;
-}
+/* Search */
+.search-wrap { position: relative; }
 .search-wrap input {
   width: 100%; padding: 12px 16px 12px 44px;
   background: var(--surface); border: 1px solid var(--border);
@@ -134,11 +126,9 @@ a:hover { color: var(--accent-hover); }
   position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
   color: var(--text-muted); font-size: 16px;
 }
-.search-status {
-  font-size: 12px; color: var(--text-muted); margin-top: 8px; padding-left: 4px;
-}
+.search-status { font-size: 12px; color: var(--text-muted); margin-top: 8px; padding-left: 4px; }
 
-/* ===== Note List ===== */
+/* Note List */
 .note-list { display: flex; flex-direction: column; gap: 2px; }
 .note-card {
   padding: 18px 20px;
@@ -169,7 +159,7 @@ a:hover { color: var(--accent-hover); }
   background: var(--accent-light); color: var(--accent);
 }
 
-/* ===== Note Detail ===== */
+/* Note Detail */
 .note-detail { max-width: 700px; margin: 0 auto; padding: 24px 0; }
 .note-detail-back {
   display: inline-flex; align-items: center; gap: 6px;
@@ -229,82 +219,12 @@ a:hover { color: var(--accent-hover); }
 .note-content th, .note-content td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; }
 .note-content th { background: var(--surface); font-weight: 500; }
 
-/* Edit hint on hover (only when authenticated) */
-.note-content.editable { position: relative; }
-.note-content.editable:hover {
-  outline: 2px dashed var(--border); outline-offset: 8px;
-  border-radius: var(--radius);
-}
-.edit-hint {
-  position: absolute; top: -32px; right: 0;
-  font-size: 12px; color: var(--text-muted);
-  padding: 4px 10px; background: var(--surface);
-  border: 1px solid var(--border); border-radius: 4px;
-  display: none;
-}
-.note-content.editable:hover .edit-hint { display: block; }
-
-/* ===== Edit Mode (Inline) ===== */
-.edit-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-  z-index: 150; display: flex; align-items: flex-start; justify-content: center;
-  padding: 80px 24px 40px; overflow-y: auto;
-}
-.edit-container {
-  width: 100%; max-width: 700px; background: var(--surface);
-  border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  overflow: hidden;
-}
-.edit-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 24px; border-bottom: 1px solid var(--border-light);
-}
-.edit-header h3 { font-size: 15px; font-weight: 500; }
-.edit-header .actions { display: flex; gap: 8px; }
-
-.title-input {
-  width: 100%; padding: 20px 24px 16px;
-  font-family: var(--font-serif); font-size: 28px; font-weight: 600;
-  border: none; outline: none; background: transparent;
+/* Edit button in detail */
+.note-edit-btn {
+  margin-left: auto;
 }
 
-.tiptap-wrap { padding: 0 24px 24px; }
-.tiptap-toolbar {
-  display: flex; flex-wrap: wrap; gap: 4px;
-  padding: 8px 0; margin-bottom: 12px;
-  border-bottom: 1px solid var(--border-light);
-}
-.tiptap-toolbar button {
-  padding: 5px 10px; border: 1px solid transparent; border-radius: 4px;
-  background: none; color: var(--text-secondary); font-size: 13px;
-  cursor: pointer; transition: all 0.15s;
-}
-.tiptap-toolbar button:hover { background: var(--surface-hover); color: var(--text); }
-.tiptap-toolbar button.active { background: var(--accent); color: #fff; }
-.tiptap-toolbar .sep { width: 1px; background: var(--border-light); margin: 0 4px; }
-
-.ProseMirror {
-  min-height: 300px; outline: none; font-size: 16px; line-height: 1.9;
-}
-.ProseMirror p { margin: 10px 0; }
-.ProseMirror h1 { font-size: 24px; font-weight: 600; margin: 24px 0 12px; }
-.ProseMirror h2 { font-size: 20px; font-weight: 600; margin: 20px 0 10px; }
-.ProseMirror h3 { font-size: 17px; font-weight: 600; margin: 16px 0 8px; }
-.ProseMirror ul, .ProseMirror ol { padding-left: 24px; margin: 10px 0; }
-.ProseMirror blockquote { border-left: 3px solid var(--accent); padding: 8px 20px; margin: 16px 0; color: var(--text-secondary); background: var(--accent-light); }
-.ProseMirror code { background: var(--border-light); padding: 2px 6px; border-radius: 4px; font-size: 14px; }
-.ProseMirror pre { background: #1e1e2e; color: #cdd6f4; padding: 16px; border-radius: var(--radius); overflow-x: auto; margin: 16px 0; }
-.ProseMirror pre code { background: none; padding: 0; color: inherit; }
-
-.tags-input-wrap { padding: 0 24px 20px; }
-.tags-input-wrap label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; }
-.tags-input-wrap input {
-  width: 100%; padding: 10px 14px; border: 1px solid var(--border);
-  border-radius: var(--radius); font-size: 14px; outline: none;
-}
-.tags-input-wrap input:focus { border-color: var(--accent); }
-
-/* ===== Pagination ===== */
+/* Pagination */
 .pagination {
   display: flex; gap: 6px; justify-content: center; align-items: center;
   margin: 40px 0 32px; flex-wrap: wrap;
@@ -320,7 +240,7 @@ a:hover { color: var(--accent-hover); }
 .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
 .pagination .info { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
 
-/* ===== Tags ===== */
+/* Tags */
 .tags-section { margin: 24px 0; }
 .tags-section h4 { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
 .tags-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -333,7 +253,7 @@ a:hover { color: var(--accent-hover); }
 .tag-pill:hover { border-color: var(--accent); color: var(--accent); }
 .tag-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-/* ===== Loading & Empty ===== */
+/* Loading & Empty */
 .loading { display: flex; justify-content: center; padding: 40px; }
 .spinner {
   width: 24px; height: 24px; border: 2px solid var(--border);
@@ -343,7 +263,7 @@ a:hover { color: var(--accent-hover); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .empty { text-align: center; padding: 60px 0; color: var(--text-muted); font-size: 14px; }
 
-/* ===== Modal ===== */
+/* Modal */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.5);
   display: flex; align-items: center; justify-content: center; z-index: 200;
@@ -368,7 +288,48 @@ a:hover { color: var(--accent-hover); }
 .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
 .modal-actions .btn { flex: 1; justify-content: center; }
 
-/* ===== Related Notes ===== */
+/* Edit Panel */
+.edit-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 150; display: flex; align-items: flex-start; justify-content: center;
+  padding: 80px 24px 40px; overflow-y: auto;
+}
+.edit-container {
+  width: 100%; max-width: 700px; background: var(--surface);
+  border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+.edit-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; border-bottom: 1px solid var(--border-light);
+}
+.edit-header h3 { font-size: 15px; font-weight: 500; }
+.edit-header .actions { display: flex; gap: 8px; }
+
+.title-input {
+  width: 100%; padding: 20px 24px 16px;
+  font-family: var(--font-serif); font-size: 28px; font-weight: 600;
+  border: none; outline: none; background: transparent;
+}
+
+.editor-wrap { padding: 0 24px 24px; }
+.editor-wrap textarea {
+  width: 100%; min-height: 400px; padding: 16px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: var(--font); font-size: 15px; line-height: 1.8;
+  outline: none; resize: vertical;
+}
+.editor-wrap textarea:focus { border-color: var(--accent); }
+
+.tags-input-wrap { padding: 0 24px 20px; }
+.tags-input-wrap label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; }
+.tags-input-wrap input {
+  width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 14px; outline: none;
+}
+.tags-input-wrap input:focus { border-color: var(--accent); }
+
+/* Related */
 .related { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-light); }
 .related h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
 .related-item {
@@ -379,14 +340,14 @@ a:hover { color: var(--accent-hover); }
 .related-item .icon { font-size: 14px; }
 .related-item .title { font-size: 14px; color: var(--text); }
 
-/* ===== Footer ===== */
+/* Footer */
 .footer {
   text-align: center; padding: 32px 0; margin-top: 48px;
   font-size: 12px; color: var(--text-muted);
   border-top: 1px solid var(--border-light);
 }
 
-/* ===== Responsive ===== */
+/* Responsive */
 @media (max-width: 640px) {
   .navbar-inner { padding: 0 16px; }
   .main { padding: 72px 16px 32px; }
@@ -395,7 +356,7 @@ a:hover { color: var(--accent-hover); }
   .note-detail { padding: 16px 0; }
   .edit-overlay { padding: 60px 12px 20px; }
   .title-input { font-size: 22px; padding: 16px 16px 12px; }
-  .tiptap-wrap { padding: 0 16px 16px; }
+  .editor-wrap { padding: 0 16px 16px; }
 }
 </style>
 </head>
@@ -424,9 +385,9 @@ a:hover { color: var(--accent-hover); }
     </div>
   </nav>
 
-  <!-- Main Content -->
+  <!-- Main -->
   <main class="main">
-    <!-- Note List View -->
+    <!-- List View -->
     <template v-if="!expanded">
       <header class="page-header">
         <h1>知识笔记</h1>
@@ -439,7 +400,6 @@ a:hover { color: var(--accent-hover); }
         </div>
       </header>
 
-      <!-- Notes -->
       <div class="note-list" v-if="notes.length">
         <div class="note-card" v-for="n in notes" :key="n.id" @click="openNote(n.id)">
           <div class="note-card-title">
@@ -455,18 +415,15 @@ a:hover { color: var(--accent-hover); }
         </div>
       </div>
 
-      <!-- Loading -->
       <div class="loading" v-if="loading && !notes.length">
         <div class="spinner"></div>
       </div>
 
-      <!-- Empty -->
       <div class="empty" v-if="!notes.length && !expanded && !loading">
         <span v-if="searchQuery.trim()">没有找到匹配的笔记</span>
         <span v-else>暂无笔记</span>
       </div>
 
-      <!-- Pagination -->
       <div class="pagination" v-if="totalPages > 1 && !searchQuery.trim()">
         <button :disabled="page === 1" @click="go(page - 1)">‹</button>
         <template v-for="p in pageList" :key="p">
@@ -477,7 +434,6 @@ a:hover { color: var(--accent-hover); }
         <span class="info">{{ page }} / {{ totalPages }}</span>
       </div>
 
-      <!-- Tags -->
       <section class="tags-section" v-if="tagList.length">
         <h4>标签</h4>
         <div class="tags-cloud">
@@ -489,31 +445,26 @@ a:hover { color: var(--accent-hover); }
       </section>
     </template>
 
-    <!-- Note Detail View -->
+    <!-- Detail View -->
     <template v-if="expanded">
       <article class="note-detail">
         <div class="note-detail-back" @click="closeNote">← 返回</div>
 
-        <!-- Loading -->
         <div class="loading" v-if="detailLoading">
           <div class="spinner"></div>
         </div>
 
-        <!-- Content -->
         <template v-else-if="currentNote">
           <h1 class="note-title">{{ currentNote.title }}</h1>
           <div class="note-meta">
             <span>{{ fmt(currentNote.source_created_at || currentNote.created_at) }}</span>
             <span class="tag" v-for="t in (currentNote.tags || [])" :key="t">{{ t }}</span>
             <template v-if="isAuthenticated">
-              <button class="btn btn-ghost" style="margin-left: auto;" @click="startInlineEdit">✏️ 编辑</button>
+              <button class="btn btn-ghost note-edit-btn" @click="startEdit">✏️ 编辑</button>
             </template>
           </div>
-          <div class="note-content" :class="{editable: isAuthenticated}" v-html="renderMd(currentNote.content)">
-            <div class="edit-hint">点击编辑</div>
-          </div>
+          <div class="note-content" v-html="renderMd(currentNote.content)"></div>
 
-          <!-- Related -->
           <div class="related" v-if="relatedNotes.length">
             <h4>📎 相关笔记</h4>
             <div class="related-item" v-for="r in relatedNotes" :key="r.id" @click="openNote(r.id)">
@@ -542,7 +493,7 @@ a:hover { color: var(--accent-hover); }
     </div>
   </div>
 
-  <!-- Inline Edit Overlay -->
+  <!-- Edit Panel -->
   <div class="edit-overlay" v-if="editMode" @click.self="cancelEdit">
     <div class="edit-container">
       <div class="edit-header">
@@ -557,26 +508,8 @@ a:hover { color: var(--accent-hover); }
 
       <input class="title-input" v-model="editingNote.title" placeholder="无标题">
 
-      <div class="tiptap-wrap">
-        <div class="tiptap-toolbar">
-          <button :class="{active: editor?.isActive('bold')}" @click="editor?.chain().focus().toggleBold().run()"><b>B</b></button>
-          <button :class="{active: editor?.isActive('italic')}" @click="editor?.chain().focus().toggleItalic().run()"><i>I</i></button>
-          <button :class="{active: editor?.isActive('underline')}" @click="editor?.chain().focus().toggleUnderline().run()"><u>U</u></button>
-          <button :class="{active: editor?.isActive('strike')}" @click="editor?.chain().focus().toggleStrike().run()"><s>S</s></button>
-          <span class="sep"></span>
-          <button :class="{active: editor?.isActive('heading',{level:1})}" @click="editor?.chain().focus().toggleHeading({level:1}).run()">H1</button>
-          <button :class="{active: editor?.isActive('heading',{level:2})}" @click="editor?.chain().focus().toggleHeading({level:2}).run()">H2</button>
-          <button :class="{active: editor?.isActive('heading',{level:3})}" @click="editor?.chain().focus().toggleHeading({level:3}).run()">H3</button>
-          <span class="sep"></span>
-          <button :class="{active: editor?.isActive('bulletList')}" @click="editor?.chain().focus().toggleBulletList().run()">•</button>
-          <button :class="{active: editor?.isActive('orderedList')}" @click="editor?.chain().focus().toggleOrderedList().run()">1.</button>
-          <button :class="{active: editor?.isActive('blockquote')}" @click="editor?.chain().focus().toggleBlockquote().run()">❝</button>
-          <button :class="{active: editor?.isActive('codeBlock')}" @click="editor?.chain().focus().toggleCodeBlock().run()">&lt;/&gt;</button>
-          <span class="sep"></span>
-          <button @click="editor?.chain().focus().undo().run()">↶</button>
-          <button @click="editor?.chain().focus().redo().run()">↷</button>
-        </div>
-        <editor-content :editor="editor" />
+      <div class="editor-wrap">
+        <textarea v-model="editingContent" placeholder="开始写作...支持 Markdown 语法"></textarea>
       </div>
 
       <div class="tags-input-wrap">
@@ -587,28 +520,17 @@ a:hover { color: var(--accent-hover); }
   </div>
 </div>
 
+<script src="js/marked.min.js"></script>
 <script>
 (function() {
   var { createApp, ref, computed, onMounted, nextTick } = Vue;
-  var { useEditor, EditorContent } = TiptapVue;
-  var { StarterKit } = TiptapStarterKit;
-  var { Underline } = TiptapExtensionUnderline;
-  var { Link } = TiptapExtensionLink;
-  var { Placeholder } = TiptapExtensionPlaceholder;
 
   var API = '/api';
   var PER_PAGE = 20;
 
   createApp({
-    components: { EditorContent },
     setup() {
-      // TipTap Editor
-      var editor = useEditor({
-        content: '',
-        extensions: [StarterKit, Underline, Link, Placeholder.configure({ placeholder: '开始写作...' })],
-      });
-
-      // ===== State =====
+      // State
       var notes = ref([]);
       var tagList = ref([]);
       var totalNotes = ref(0);
@@ -625,19 +547,20 @@ a:hover { color: var(--accent-hover); }
       var tagLimit = 20;
       var returnScrollY = 0;
 
-      // Auth state
+      // Auth
       var isAuthenticated = ref(false);
       var showLogin = ref(false);
       var loginPassword = ref('');
       var loginError = ref('');
 
-      // Edit state
+      // Edit
       var editMode = ref(false);
       var editingNote = ref(null);
+      var editingContent = ref('');
       var editingTags = ref('');
       var saving = ref(false);
 
-      // ===== Computed =====
+      // Computed
       var currentNote = computed(function() {
         if (!expanded.value) return null;
         if (detailNote.value && detailNote.value.id === expanded.value) return detailNote.value;
@@ -647,13 +570,10 @@ a:hover { color: var(--accent-hover); }
         return null;
       });
 
-      var userInitial = computed(function() {
-        return '编';
-      });
+      var userInitial = computed(function() { return '编'; });
 
       var displayedTags = computed(function() {
-        if (showAllTags.value) return tagList.value;
-        return tagList.value.slice(0, tagLimit);
+        return showAllTags.value ? tagList.value : tagList.value.slice(0, tagLimit);
       });
 
       var totalPages = computed(function() {
@@ -679,7 +599,7 @@ a:hover { color: var(--accent-hover); }
         return pages;
       });
 
-      // ===== Helpers =====
+      // Helpers
       function fmt(d) {
         if (!d) return '';
         var diff = Date.now() - new Date(d);
@@ -707,7 +627,7 @@ a:hover { color: var(--accent-hover); }
           .replace(/&lt;mark/g, '<mark').replace(/mark&gt;/g, 'mark>');
       }
 
-      // ===== Data Fetching =====
+      // Data
       function fetchPage() {
         loading.value = true;
         var q = searchQuery.value.trim();
@@ -817,7 +737,7 @@ a:hover { color: var(--accent-hover); }
         fetchPage();
       }
 
-      // ===== Auth =====
+      // Auth
       function login() {
         loginError.value = '';
         fetch(API + '/admin/verify', {
@@ -842,29 +762,30 @@ a:hover { color: var(--accent-hover); }
         isAuthenticated.value = false;
       }
 
-      // ===== Editing =====
+      // Edit
       function startNewNote() {
         editingNote.value = { id: null, title: '', content: '' };
+        editingContent.value = '';
         editingTags.value = '';
         editMode.value = true;
-        if (editor) editor.value.commands.setContent('');
       }
 
-      function startInlineEdit() {
+      function startEdit() {
         if (!isAuthenticated.value) { showLogin.value = true; return; }
         editingNote.value = {
           id: currentNote.value.id,
           title: currentNote.value.title,
           content: currentNote.value.content
         };
+        editingContent.value = currentNote.value.content;
         editingTags.value = (currentNote.value.tags || []).join(', ');
         editMode.value = true;
-        if (editor) editor.value.commands.setContent(currentNote.value.content || '');
       }
 
       function cancelEdit() {
         editMode.value = false;
         editingNote.value = null;
+        editingContent.value = '';
       }
 
       function saveNote() {
@@ -874,7 +795,7 @@ a:hover { color: var(--accent-hover); }
         var tags = editingTags.value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
         var payload = {
           title: editingNote.value.title || '无标题',
-          content: editor.value ? editor.value.getHTML() : editingNote.value.content,
+          content: editingContent.value,
           tags: tags
         };
 
@@ -903,7 +824,7 @@ a:hover { color: var(--accent-hover); }
         .catch(function() { saving.value = false; });
       }
 
-      // ===== Keyboard =====
+      // Keyboard
       function onKeydown(e) {
         if (e.key === 'Escape') {
           if (editMode.value) cancelEdit();
@@ -938,13 +859,12 @@ a:hover { color: var(--accent-hover); }
         currentNote, fmt, renderMd, stripMd,
         isAuthenticated, showLogin, loginPassword, loginError, userInitial,
         login, logout,
-        editMode, editingNote, editingTags, saving,
-        startNewNote, startInlineEdit, cancelEdit, saveNote, editor
+        editMode, editingNote, editingContent, editingTags, saving,
+        startNewNote, startEdit, cancelEdit, saveNote
       };
     }
   }).mount('#app');
 })();
 </script>
-<script src="js/marked.min.js"></script>
 </body>
 </html>
