@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
 import '../services/ai_service.dart';
@@ -20,13 +19,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Note? _note;
   Relations? _relations;
   bool _loading = true;
-  bool _isAdmin = false;
   bool _aiEnabled = true;
 
   @override
   void initState() {
     super.initState();
-    _checkAdmin();
     _loadNote();
     _loadRelations();
     _loadAiEnabled();
@@ -39,13 +36,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         _aiEnabled = enabled;
       });
     }
-  }
-
-  Future<void> _checkAdmin() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isAdmin = prefs.getBool('admin_logged_in') ?? false;
-    });
   }
 
   Future<void> _loadRelations() async {
@@ -91,74 +81,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
-  void _showDeleteDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除笔记'),
-        content: Text('确定要删除「${_note?.title}」吗？此操作不可恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: _deleteNote,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Future<void> _togglePin() async {
-    if (_note == null) return;
-    try {
-      final isPinned = await ApiService.togglePin(widget.noteId);
-      if (!mounted) return;
-      setState(() {
-        _note = _note!.copyWith(isPinned: isPinned);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isPinned ? '已置顶' : '已取消置顶'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('操作失败: $e')),
-      );
-    }
-  }
-
-  Future<void> _deleteNote() async {
-    Navigator.pop(context); // 关闭对话框
-    try {
-      final success = await ApiService.deleteNote(widget.noteId);
-      if (!mounted) return;
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('删除成功')),
-        );
-        Navigator.pop(context); // 返回列表
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('删除失败')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('删除失败: $e')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,23 +107,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                 tooltip: 'AI 摘要',
               ),
             IconButton(
-              icon: Icon(
-                _note?.isPinned == true
-                    ? Icons.push_pin
-                    : Icons.push_pin_outlined,
-              ),
-              onPressed: _note != null ? _togglePin : null,
-              tooltip: _note?.isPinned == true ? '取消置顶' : '置顶',
-            ),
-            IconButton(
               icon: const Icon(Icons.share_outlined),
               onPressed: _note != null ? _shareLink : null,
             ),
-            if (_isAdmin)
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: _note != null ? _showDeleteDialog : null,
-              ),
           ],
         ),
         body: _loading

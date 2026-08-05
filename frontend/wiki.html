@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>知识笔记 - Synapse</title>
 <link rel="icon" href="/logo.png">
+<script src="https://unpkg.com/@tiptap/vue-3"></script>
+<script src="https://unpkg.com/@tiptap/starter-kit"></script>
+<script src="https://unpkg.com/@tiptap/extension-underline"></script>
+<script src="https://unpkg.com/@tiptap/extension-link"></script>
+<script src="https://unpkg.com/@tiptap/extension-code-block-lowlight"></script>
+<script src="https://unpkg.com/@tiptap/extension-placeholder"></script>
+<script src="https://unpkg.com/@tiptap/pm"></script>
 <style>
 :root {
   --pg: #f5f4ed;
@@ -218,6 +225,84 @@ a:hover { color: #b8543a; }
 
 /* Footer */
 .footer { border-top: 1px solid var(--bc); padding: 24px 0; margin-top: 48px; text-align: center; font-size: 12px; color: var(--sg); }
+
+/* ===== Edit Mode Styles ===== */
+.edit-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 14px; border: 1px solid var(--bc); border-radius: 6px;
+  background: var(--iv); color: var(--og); font-size: 13px; cursor: pointer;
+  transition: all 0.15s; margin-left: auto;
+}
+.edit-btn:hover { border-color: var(--tc); color: var(--tc); }
+.edit-btn.primary { background: var(--tc); border-color: var(--tc); color: #fff; }
+.edit-btn.primary:hover { background: #b8543a; }
+.edit-btn.danger { color: #e74c3c; border-color: #e74c3c; }
+.edit-btn.danger:hover { background: #e74c3c; color: #fff; }
+
+/* Edit header actions */
+.edit-actions { display: flex; gap: 8px; align-items: center; }
+
+/* TipTap Editor */
+.tiptap-editor {
+  border: 1px solid var(--bc); border-radius: 8px; background: var(--iv);
+  min-height: 300px; margin: 16px 0;
+}
+.tiptap-editor .toolbar {
+  display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px;
+  border-bottom: 1px solid var(--bc); background: var(--pg);
+}
+.tiptap-editor .toolbar button {
+  padding: 4px 10px; border: 1px solid var(--bc); border-radius: 4px;
+  background: var(--iv); color: var(--nk); font-size: 13px; cursor: pointer;
+  transition: all 0.15s;
+}
+.tiptap-editor .toolbar button:hover { border-color: var(--tc); color: var(--tc); }
+.tiptap-editor .toolbar button.active { background: var(--tc); border-color: var(--tc); color: #fff; }
+.tiptap-editor .toolbar .separator { width: 1px; background: var(--bc); margin: 0 4px; }
+
+.tiptap-editor .ProseMirror {
+  padding: 16px; min-height: 250px; outline: none; font-size: 15px; line-height: 1.8;
+}
+.tiptap-editor .ProseMirror p { margin: 8px 0; }
+.tiptap-editor .ProseMirror h1 { font-size: 22px; font-weight: 600; margin: 16px 0 8px; }
+.tiptap-editor .ProseMirror h2 { font-size: 18px; font-weight: 600; margin: 14px 0 6px; }
+.tiptap-editor .ProseMirror h3 { font-size: 16px; font-weight: 600; margin: 12px 0 4px; }
+.tiptap-editor .ProseMirror ul, .tiptap-editor .ProseMirror ol { padding-left: 24px; margin: 8px 0; }
+.tiptap-editor .ProseMirror blockquote { border-left: 3px solid var(--tc); padding-left: 16px; margin: 12px 0; color: var(--og); }
+.tiptap-editor .ProseMirror code { background: var(--bc); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.tiptap-editor .ProseMirror pre { background: var(--ds); color: #a6e22e; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 12px 0; }
+.tiptap-editor .ProseMirror pre code { background: none; padding: 0; color: inherit; }
+.tiptap-editor .ProseMirror a { color: var(--tc); }
+.tiptap-editor .ProseMirror img { max-width: 100%; border-radius: 6px; }
+
+/* Auth modal */
+.auth-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+}
+.auth-modal {
+  background: var(--iv); border-radius: 12px; padding: 32px; width: 90%; max-width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.auth-modal h3 { font-size: 18px; margin-bottom: 16px; }
+.auth-modal input {
+  width: 100%; padding: 12px 16px; border: 1px solid var(--bc); border-radius: 8px;
+  font-size: 14px; outline: none; transition: border-color 0.2s;
+}
+.auth-modal input:focus { border-color: var(--tc); }
+.auth-modal .error { color: #e74c3c; font-size: 13px; margin-top: 8px; }
+.auth-modal .actions { display: flex; gap: 8px; margin-top: 16px; }
+
+/* Floating edit button */
+.fab-edit {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--tc); color: #fff; border: none;
+  font-size: 20px; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(201,100,66,0.3);
+  z-index: 99; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.fab-edit:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(201,100,66,0.4); }
 </style>
 </head>
 <body>
@@ -228,7 +313,12 @@ a:hover { color: #b8543a; }
       <img class="logo" src="/logo.png" alt="">
       <span class="brand-text">Syn<span>apse</span></span>
     </a>
-    <div class="links"><a href="/">首页</a> · <a href="/wiki.html">笔记</a> · <a href="/graph.html">图谱</a></div>
+    <div class="links">
+      <a href="/">首页</a> · <a href="/wiki.html">笔记</a> · <a href="/graph.html">图谱</a>
+      <template v-if="!editingMode">
+        <button class="edit-btn" @click="enterEditMode" style="margin-left:12px">✏️ 编辑</button>
+      </template>
+    </div>
   </div>
 </div>
 
@@ -276,14 +366,17 @@ a:hover { color: #b8543a; }
     <div class="loading-spinner"></div>
   </div>
 
-  <!-- Detail content -->
-  <template v-else-if="currentNote">
-    <div class="note-detail-title">{{ currentNote.title }}</div>
-    <div class="note-detail-meta">
-      {{ fmt(currentNote.source_created_at || currentNote.created_at) }}
-      <span class="tag" v-for="t in currentNote.tags" :key="t">{{ t }}</span>
-    </div>
-    <div class="note-detail-body" v-html="renderMd(currentNote.content)"></div>
+   <!-- Detail content -->
+   <template v-else-if="currentNote">
+     <div style="display:flex;align-items:flex-start;gap:12px">
+       <div class="note-detail-title" style="flex:1">{{ currentNote.title }}</div>
+       <button class="edit-btn" @click="editExistingNote(currentNote)">✏️ 编辑</button>
+     </div>
+     <div class="note-detail-meta">
+       {{ fmt(currentNote.source_created_at || currentNote.created_at) }}
+       <span class="tag" v-for="t in currentNote.tags" :key="t">{{ t }}</span>
+     </div>
+     <div class="note-detail-body" v-html="renderMd(currentNote.content)"></div>
 
     <!-- Related notes -->
     <div class="related" v-if="relatedNotes.length">
@@ -335,14 +428,88 @@ a:hover { color: #b8543a; }
 </div>
 </div>
 
+<!-- Auth Modal -->
+<div class="auth-overlay" v-if="showAuthModal" @click.self="showAuthModal = false">
+  <div class="auth-modal">
+    <h3>🔒 输入编辑密码</h3>
+    <input type="password" v-model="authPassword" @keyup.enter="verifyAuth" placeholder="请输入密码..." autofocus>
+    <div class="error" v-if="authError">{{ authError }}</div>
+    <div class="actions">
+      <button class="edit-btn" @click="showAuthModal = false">取消</button>
+      <button class="edit-btn primary" @click="verifyAuth">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Mode: Note Editor -->
+<div class="container" v-if="editingMode && editingNote" style="padding-top:100px">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div class="note-detail-back" @click="exitEditMode" style="margin-bottom:0">← 取消</div>
+    <div style="flex:1">
+      <input v-model="editingNote.title" placeholder="笔记标题..."
+        style="width:100%;font-size:20px;font-weight:500;border:none;border-bottom:2px solid var(--bc);padding:8px 0;background:transparent;outline:none">
+    </div>
+  </div>
+
+  <div class="tiptap-editor">
+    <div class="toolbar">
+      <button :class="{active: editor?.isActive('bold')}" @click="editor?.chain().focus().toggleBold().run()" title="粗体"><b>B</b></button>
+      <button :class="{active: editor?.isActive('italic')}" @click="editor?.chain().focus().toggleItalic().run()" title="斜体"><i>I</i></button>
+      <button :class="{active: editor?.isActive('underline')}" @click="editor?.chain().focus().toggleUnderline().run()" title="下划线"><u>U</u></button>
+      <button :class="{active: editor?.isActive('strike')}" @click="editor?.chain().focus().toggleStrike().run()" title="删除线"><s>S</s></button>
+      <div class="separator"></div>
+      <button :class="{active: editor?.isActive('heading',{level:1})}" @click="editor?.chain().focus().toggleHeading({level:1}).run()">H1</button>
+      <button :class="{active: editor?.isActive('heading',{level:2})}" @click="editor?.chain().focus().toggleHeading({level:2}).run()">H2</button>
+      <button :class="{active: editor?.isActive('heading',{level:3})}" @click="editor?.chain().focus().toggleHeading({level:3}).run()">H3</button>
+      <div class="separator"></div>
+      <button :class="{active: editor?.isActive('bulletList')}" @click="editor?.chain().focus().toggleBulletList().run()">• 列表</button>
+      <button :class="{active: editor?.isActive('orderedList')}" @click="editor?.chain().focus().toggleOrderedList().run()">1. 列表</button>
+      <button :class="{active: editor?.isActive('blockquote')}" @click="editor?.chain().focus().toggleBlockquote().run()">❝ 引用</button>
+      <button :class="{active: editor?.isActive('codeBlock')}" @click="editor?.chain().focus().toggleCodeBlock().run()">&lt;/&gt; 代码</button>
+      <div class="separator"></div>
+      <button @click="editor?.chain().focus().undo().run()">↶</button>
+      <button @click="editor?.chain().focus().redo().run()">↷</button>
+    </div>
+    <div ref="editorContent" id="editorContent"></div>
+  </div>
+
+  <!-- Tags Input -->
+  <div style="margin:16px 0">
+    <label style="font-size:13px;color:var(--og)">标签 (逗号分隔)</label>
+    <input v-model="editingTags" placeholder="例如: 技术, 读书, 笔记"
+      style="width:100%;padding:10px 14px;border:1px solid var(--bc);border-radius:8px;font-size:14px;margin-top:8px;outline:none">
+  </div>
+
+  <div class="edit-actions">
+    <button class="edit-btn primary" @click="saveNote" :disabled="saving">
+      {{ saving ? '保存中...' : (editingNote.id ? '保存修改' : '创建笔记') }}
+    </button>
+    <button class="edit-btn danger" v-if="editingNote.id" @click="deleteNote" :disabled="saving">删除</button>
+    <span style="font-size:12px;color:var(--sg);margin-left:auto">{{ saveStatus }}</span>
+  </div>
+</div>
+
+<!-- Floating edit button -->
+<button class="fab-edit" v-if="editingMode" @click="saveNote" title="保存">💾</button>
+
 <!-- Mobile floating back button -->
 <button class="fab-back" v-if="expanded" @click="closeNote()" title="返回列表">←</button>
 
 <script src="js/vue.global.prod.js"></script>
 <script src="js/marked.min.js"></script>
+<script src="https://unpkg.com/@tiptap/vue-3/dist/tiptap-vue-3.js"></script>
+<script src="https://unpkg.com/@tiptap/starter-kit/dist/tiptap-starter-kit.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-underline/dist/tiptap-extension-underline.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-link/dist/tiptap-extension-link.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-placeholder/dist/tiptap-extension-placeholder.js"></script>
 <script>
 (function() {
-var { createApp, ref, onMounted, computed, watch, nextTick } = Vue;
+ var { createApp, ref, onMounted, computed, watch, nextTick } = Vue;
+ var { useEditor, EditorContent } = TiptapVue;
+ var { StarterKit } = TiptapStarterKit;
+ var { Underline } = TiptapExtensionUnderline;
+ var { Link } = TiptapExtensionLink;
+ var { Placeholder } = TiptapExtensionPlaceholder;
 
 function fmt(d) {
   if (!d) return '';
@@ -371,6 +538,7 @@ var PER_PAGE = 15;
 var API = '/api';
 
 createApp({
+  components: { EditorContent },
   setup() {
     var notes = ref([]);
     var tagList = ref([]);
@@ -387,6 +555,34 @@ createApp({
     var showAllTags = ref(false);
     var tagLimit = 15;
     var returnScrollY = 0;           // remember scroll position
+
+    // Edit mode state
+    var editingMode = ref(false);
+    var editingNote = ref(null);
+    var editingTags = ref('');
+    var saving = ref(false);
+    var saveStatus = ref('');
+    var showAuthModal = ref(false);
+    var authPassword = ref('');
+    var authError = ref('');
+    var isAuthenticated = ref(false);
+    var editorContent = ref(null);
+
+    // TipTap editor
+    var editor = useEditor({
+      content: '',
+      extensions: [
+        StarterKit,
+        Underline,
+        Link,
+        Placeholder.configure({ placeholder: '开始写作...' }),
+      ],
+      onUpdate: function({ editor }) {
+        if (editingNote.value) {
+          editingNote.value.content = editor.getHTML();
+        }
+      },
+    });
 
     var currentNote = computed(function() {
       if (!expanded.value) return null;
@@ -581,6 +777,131 @@ createApp({
       }
     });
 
+    // ===== Edit Mode Functions =====
+
+    function enterEditMode() {
+      if (isAuthenticated.value) {
+        startNewNote();
+      } else {
+        showAuthModal.value = true;
+        authPassword.value = '';
+        authError.value = '';
+      }
+    }
+
+    function verifyAuth() {
+      // Verify password with backend
+      fetch(API + '/admin/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: authPassword.value})
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          isAuthenticated.value = true;
+          showAuthModal.value = false;
+          authPassword.value = '';
+          startNewNote();
+        } else {
+          authError.value = '密码错误';
+        }
+      })
+      .catch(function() { authError.value = '验证失败，请重试'; });
+    }
+
+    function startNewNote() {
+      editingNote.value = { id: null, title: '', content: '' };
+      editingTags.value = '';
+      editingMode.value = true;
+      saveStatus.value = '';
+      if (editor.value) {
+        editor.value.commands.setContent('');
+      }
+    }
+
+    function editExistingNote(note) {
+      if (!isAuthenticated.value) {
+        showAuthModal.value = true;
+        return;
+      }
+      editingNote.value = { id: note.id, title: note.title, content: note.content };
+      editingTags.value = (note.tags || []).join(', ');
+      editingMode.value = true;
+      saveStatus.value = '';
+      if (editor.value) {
+        editor.value.commands.setContent(note.content || '');
+      }
+    }
+
+    function exitEditMode() {
+      editingMode.value = false;
+      editingNote.value = null;
+      editingTags.value = '';
+      saveStatus.value = '';
+    }
+
+    function saveNote() {
+      if (!editingNote.value || saving.value) return;
+      saving.value = true;
+      saveStatus.value = '保存中...';
+
+      var tags = editingTags.value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+      var payload = {
+        title: editingNote.value.title || '无标题',
+        content: editor.value ? editor.value.getHTML() : editingNote.value.content,
+        tags: tags
+      };
+
+      var url = API + '/notes';
+      var method = 'POST';
+      if (editingNote.value.id) {
+        url = API + '/notes/' + editingNote.value.id;
+        method = 'PUT';
+      }
+
+      fetch(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        saving.value = false;
+        if (d.id) {
+          saveStatus.value = '保存成功!';
+          setTimeout(function() {
+            exitEditMode();
+            fetchPage();
+            fetchTags();
+          }, 800);
+        } else {
+          saveStatus.value = '保存失败';
+        }
+      })
+      .catch(function(e) {
+        saving.value = false;
+        saveStatus.value = '保存失败: ' + e;
+      });
+    }
+
+    function deleteNote() {
+      if (!editingNote.value || !editingNote.value.id) return;
+      if (!confirm('确定要删除这篇笔记吗？此操作不可恢复。')) return;
+
+      saving.value = true;
+      fetch(API + '/notes/' + editingNote.value.id, { method: 'DELETE' })
+      .then(function() {
+        exitEditMode();
+        fetchPage();
+        fetchTags();
+      })
+      .catch(function() {
+        saving.value = false;
+        saveStatus.value = '删除失败';
+      });
+    }
+
     onMounted(function() {
       fetchPage();
       fetchTags();
@@ -598,7 +919,13 @@ createApp({
       relatedNotes, loading, activeTag, searchQuery, showAllTags, tagLimit,
       totalPages, pageList, displayedTags,
       go, openNote, closeNote, filterByTag, clearTagFilter, onSearch,
-      currentNote, fmt, renderMd
+      currentNote, fmt, renderMd,
+      // Edit mode
+      editingMode, editingNote, editingTags, saving, saveStatus,
+      showAuthModal, authPassword, authError, isAuthenticated,
+      editor, editorContent,
+      enterEditMode, verifyAuth, startNewNote, editExistingNote,
+      exitEditMode, saveNote, deleteNote
     };
   }
 }).mount('#app');

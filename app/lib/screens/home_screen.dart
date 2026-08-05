@@ -514,7 +514,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
-      onLongPress: () => _showNoteMenu(note),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
@@ -629,58 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showNoteMenu(Note note) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: const Text('删除', style: TextStyle(color: Colors.redAccent)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (dCtx) => AlertDialog(
-                    title: const Text('确认删除'),
-                    content: Text('删除“${note.title}”?\n删除后将移到回收站。'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dCtx, false),
-                        child: const Text('取消'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(dCtx, true),
-                        child: const Text('删除', style: TextStyle(color: Colors.redAccent)),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  try {
-                    await ApiService.deleteNote(note.id);
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已删除')),
-                    );
-                    _loadData();
-                  } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('删除失败: $e')),
-                    );
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+    // 只读模式 - 菜单功能已移除
   }
 
   String _formatTimeAgo(DateTime? dateTime) {

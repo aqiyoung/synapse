@@ -95,66 +95,7 @@ class _FoldersScreenState extends State<FoldersScreen> {
   }
 
   void _showEditDialog(Folder folder) {
-    final nameCtrl = TextEditingController(text: folder.name);
-    String selectedColor = folder.color;
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('编辑分类'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: '分类名称'),
-                autofocus: true,
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                children: [
-                  '#c96442',
-                  '#4CAF50',
-                  '#2196F3',
-                  '#9C27B0',
-                  '#FF9800',
-                  '#607D8B'
-                ]
-                    .map((c) => GestureDetector(
-                          onTap: () => setDialogState(() => selectedColor = c),
-                          child: CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Color(
-                                int.parse(c.substring(1), radix: 16) +
-                                    0xFF000000),
-                            child: selectedColor == c
-                                ? const Icon(Icons.check,
-                                    size: 16, color: Colors.white)
-                                : null,
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-            TextButton(
-                onPressed: () async {
-                  if (nameCtrl.text.isNotEmpty) {
-                    await FolderService.updateFolder(folder.id,
-                        name: nameCtrl.text, color: selectedColor);
-                    if (ctx.mounted) Navigator.pop(ctx);
-                    _load();
-                  }
-                },
-                child: const Text('保存')),
-          ],
-        ),
-      ),
-    );
+    // 只读模式 - 编辑功能已移除
   }
 
   @override
@@ -179,37 +120,7 @@ class _FoldersScreenState extends State<FoldersScreen> {
                       ),
                       title: Text(f.name),
                       subtitle: Text('${f.noteCount} 篇笔记'),
-                      trailing: PopupMenuButton(
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                          const PopupMenuItem(
-                              value: 'delete', child: Text('删除')),
-                        ],
-                        onSelected: (v) async {
-                          if (v == 'edit') _showEditDialog(f);
-                          if (v == 'delete') {
-                            final ok = await showDialog<bool>(
-                              context: ctx,
-                              builder: (_) => AlertDialog(
-                                title: const Text('确认删除'),
-                                content: Text('删除分类 "${f.name}"？笔记将移到未分类。'),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () => Navigator.pop(_, false),
-                                      child: const Text('取消')),
-                                  TextButton(
-                                      onPressed: () => Navigator.pop(_, true),
-                                      child: const Text('删除')),
-                                ],
-                              ),
-                            );
-                            if (ok == true) {
-                              await FolderService.deleteFolder(f.id);
-                              _load();
-                            }
-                          }
-                        },
-                      ),
+
                       onTap: () async {
                         await Navigator.push(
                           context,

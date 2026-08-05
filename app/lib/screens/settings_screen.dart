@@ -32,11 +32,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _serverController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   bool _saved = false;
-  bool _showAdminLogin = false;
-  bool _isLoggedIn = false;
-  int _versionTapCount = 0;
   String _updateChannel = 'stable';
   bool _notificationsEnabled = true;
   int _unreadCount = 0;
@@ -247,7 +243,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 14)),
-                onTap: _onVersionTap,
               );
             },
           ),
@@ -360,10 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _checkLoginState() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isLoggedIn = prefs.getBool('admin_logged_in') ?? false;
-    });
+    // 只读模式 - 登录状态检查已移除
   }
 
   Future<void> _saveServer() async {
@@ -381,44 +373,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  void _onVersionTap() {
-    setState(() {
-      _versionTapCount++;
-      if (_versionTapCount >= 3) {
-        _showAdminLogin = !_showAdminLogin;
-        _versionTapCount = 0;
-      }
-    });
-  }
+
 
   void _showLoginDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('管理员登录'),
-        content: TextField(
-          controller: _passwordController,
-          obscureText: true,
-          decoration: InputDecoration(
-            hintText: '请输入管理员密码',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onSubmitted: (_) => _login(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: _login,
-            child: const Text('登录'),
-          ),
-        ],
-      ),
-    );
+    // 只读模式 - 管理员登录已禁用
   }
 
   void _showModelPicker(BuildContext ctx, ColorScheme cs) {
@@ -502,35 +460,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _login() async {
-    final ok = await ApiService.verifyAdmin(_passwordController.text);
-    if (!mounted) return;
-    if (ok) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('admin_logged_in', true);
-      setState(() => _isLoggedIn = true);
-      _passwordController.clear();
-      if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('登录成功')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('密码错误')),
-      );
-    }
-  }
 
-  Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('admin_logged_in', false);
-    if (!mounted) return;
-    setState(() => _isLoggedIn = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已退出登录')),
-    );
-  }
 
   Widget _buildThemeGrid(ColorScheme colorScheme) {
     return GridView.builder(
@@ -1182,51 +1112,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // 管理员区域（隐藏，点击三次版本号显示）
-          if (_showAdminLogin) ...[
-            GlassContainer(
-              margin: const EdgeInsets.only(bottom: 16),
-              borderRadius: BorderRadius.circular(20),
-              blur: 24,
-              tintOpacity: 0.4,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '管理员',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_isLoggedIn)
-                    ListTile(
-                      leading: Icon(Icons.admin_panel_settings,
-                          color: colorScheme.primary),
-                      title: const Text('管理员'),
-                      subtitle: const Text('已登录 · 可删除笔记'),
-                      trailing: TextButton(
-                        onPressed: _logout,
-                        child: const Text('退出'),
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                    )
-                  else
-                    ListTile(
-                      leading: Icon(Icons.lock_outline,
-                          color: colorScheme.onSurface.withValues(alpha: 0.5)),
-                      title: const Text('管理员登录'),
-                      subtitle: const Text('登录后可删除笔记'),
-                      onTap: _showLoginDialog,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                ],
-              ),
-            ),
-          ],
 
           const SizedBox(height: 24),
         ],
