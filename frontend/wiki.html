@@ -599,15 +599,15 @@ a:hover { color: var(--accent-hover); }
   var API = '/api';
   var PER_PAGE = 20;
 
-  // TipTap Editor
-  var editor = useEditor({
-    content: '',
-    extensions: [StarterKit, Underline, Link, Placeholder.configure({ placeholder: '开始写作...' })],
-  });
-
   createApp({
     components: { EditorContent },
     setup() {
+      // TipTap Editor
+      var editor = useEditor({
+        content: '',
+        extensions: [StarterKit, Underline, Link, Placeholder.configure({ placeholder: '开始写作...' })],
+      });
+
       // ===== State =====
       var notes = ref([]);
       var tagList = ref([]);
