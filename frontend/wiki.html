@@ -282,20 +282,21 @@ a:hover { color: var(--accent-hover); }
 .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
 .modal-actions .btn { flex: 1; justify-content: center; }
 
-/* ===== TipTap Editor ===== */
+/* ===== TipTap Editor (Full Page) ===== */
 .editor-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-  z-index: 150; display: flex; align-items: flex-start; justify-content: center;
-  padding: 70px 24px 40px; overflow-y: auto;
+  position: fixed; inset: 0; background: var(--bg);
+  z-index: 150; overflow-y: auto;
 }
 .editor-container {
-  width: 100%; max-width: 720px; background: var(--surface);
-  border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-  overflow: hidden;
+  width: 100%; max-width: 720px; margin: 0 auto;
+  background: var(--surface); min-height: 100vh;
+  border-left: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
 }
 .editor-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px; border-bottom: 1px solid var(--border-light);
+  padding: 14px 24px; border-bottom: 1px solid var(--border-light);
+  background: var(--surface); position: sticky; top: 0; z-index: 10;
 }
 .editor-header h3 { font-size: 15px; font-weight: 500; }
 .editor-header .actions { display: flex; gap: 8px; }
@@ -324,7 +325,7 @@ a:hover { color: var(--accent-hover); }
 .tiptap-toolbar .separator { width: 1px; background: var(--border-light); margin: 4px 4px; }
 
 /* TipTap editing area */
-.tiptap-editor { padding: 20px 24px; min-height: 400px; }
+.tiptap-editor { padding: 24px 24px 60px; min-height: calc(100vh - 200px); }
 .ProseMirror {
   outline: none; font-size: 16px; line-height: 1.9;
 }
@@ -386,9 +387,8 @@ a:hover { color: var(--accent-hover); }
   .main { padding: 72px 16px 32px; }
   .page-header h1 { font-size: 24px; }
   .note-title { font-size: 26px; }
-  .editor-overlay { padding: 60px 12px 20px; }
   .editor-title-input { font-size: 22px; padding: 14px 16px 12px; }
-  .tiptap-editor { padding: 14px 16px; }
+  .tiptap-editor { padding: 16px 16px 60px; }
 }
 </style>
 </head>
@@ -517,7 +517,7 @@ a:hover { color: var(--accent-hover); }
   </div>
 
   <!-- TipTap Editor Overlay -->
-  <div class="editor-overlay" v-if="editMode" @click.self="cancelEdit">
+  <div class="editor-overlay" v-if="editMode">
     <div class="editor-container">
       <div class="editor-header">
         <h3>{{ editingNote.id ? '编辑笔记' : '新建笔记' }}</h3>
