@@ -3,504 +3,614 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Synapse · 知识笔记</title>
+<title>Synapse · 知识库</title>
 <link rel="icon" href="/logo.png">
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
 <script src="https://unpkg.com/@tiptap/core/dist/tiptap-core.umd.js"></script>
 <script src="https://unpkg.com/@tiptap/starter-kit/dist/tiptap-starter-kit.umd.js"></script>
 <script src="https://unpkg.com/@tiptap/extension-image/dist/tiptap-extension-image.umd.js"></script>
 <script src="https://unpkg.com/@tiptap/extension-link/dist/tiptap-extension-link.umd.js"></script>
 <script src="https://unpkg.com/@tiptap/extension-placeholder/dist/tiptap-extension-placeholder.umd.js"></script>
 <script src="https://unpkg.com/@tiptap/extension-underline/dist/tiptap-extension-underline.umd.js"></script>
-<script src="https://unpkg.com/@tiptap/extension-code-block-lowlight/dist/tiptap-extension-code-block-lowlight.umd.js"></script>
+<script src="js/marked.min.js"></script>
 <style>
 :root {
-  --bg: #fbfbfa;
+  --bg: #f7f8fa;
   --surface: #ffffff;
-  --surface-hover: #f8f8f6;
-  --border: #e8e6e0;
-  --border-light: #f0eee8;
-  --text: #1a1917;
-  --text-secondary: #5c5a55;
-  --text-muted: #8a8780;
+  --sidebar-bg: #fafbfc;
+  --border: #e4e7ed;
+  --border-light: #ebeef5;
+  --text: #1f2937;
+  --text-secondary: #606266;
+  --text-muted: #909399;
+  --text-light: #c0c4cc;
   --accent: #c96442;
   --accent-light: rgba(201,100,66,0.08);
   --accent-hover: #b0553a;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --radius: 8px;
-  --radius-lg: 12px;
+  --success: #67c23a;
+  --warning: #e6a23c;
+  --danger: #f56c6c;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --radius: 6px;
+  --radius-lg: 10px;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
   --font-serif: 'Georgia', 'Noto Serif SC', serif;
+  --sidebar-width: 260px;
+  --header-height: 52px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html, body { height: 100%; }
 body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  font-size: 15px;
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-hover); }
+input, textarea, button { font-family: inherit; }
+[v-cloak] { display: none; }
 
-/* Navbar */
-.navbar {
-  position: fixed; top: 0; left: 0; right: 0;
-  height: 56px;
-  background: rgba(251,251,250,0.92);
-  backdrop-filter: blur(12px);
+/* ===== Layout ===== */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.sidebar-header {
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border-light);
-  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.navbar-inner {
-  max-width: 960px; margin: 0 auto; padding: 0 24px;
-  height: 100%;
-  display: flex; align-items: center; justify-content: space-between;
+.sidebar-header .logo {
+  width: 28px; height: 28px;
+  border-radius: 6px;
 }
-.nav-brand {
-  display: flex; align-items: center; gap: 10px;
-  font-family: var(--font-serif); font-weight: 600; font-size: 17px;
+.sidebar-header .brand {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 16px;
   color: var(--text);
 }
-.nav-brand img { width: 26px; height: 26px; border-radius: 6px; }
-.nav-brand span { color: var(--accent); }
-.nav-actions { display: flex; align-items: center; gap: 12px; }
+.sidebar-header .brand span { color: var(--accent); }
 
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 16px; border-radius: 6px;
-  font-size: 13px; font-weight: 500; cursor: pointer;
-  border: 1px solid transparent; transition: all 0.15s;
-  background: none; color: var(--text-secondary);
-}
-.btn:hover { background: var(--surface-hover); color: var(--text); }
-.btn-primary {
-  background: var(--accent); color: #fff; border-color: var(--accent);
-}
-.btn-primary:hover { background: var(--accent-hover); color: #fff; }
-.btn-ghost { border-color: var(--border); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-
-.user-badge {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 12px 5px 5px;
-  background: var(--accent-light); border-radius: 20px;
-  font-size: 13px; color: var(--accent); font-weight: 500;
-}
-.user-badge .avatar {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600;
-}
-
-/* Main */
-.main {
-  max-width: 960px; margin: 0 auto; padding: 80px 24px 40px;
-}
-
-/* Header */
-.page-header {
-  padding: 24px 0 32px;
+.sidebar-search {
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border-light);
-  margin-bottom: 32px;
 }
-.page-header h1 {
-  font-family: var(--font-serif);
-  font-size: 28px; font-weight: 600;
-  margin-bottom: 20px;
-}
-
-/* Search */
-.search-wrap { position: relative; }
-.search-wrap input {
-  width: 100%; padding: 12px 16px 12px 44px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); font-size: 14px;
-  outline: none; transition: all 0.2s;
-}
-.search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
-.search-wrap input::placeholder { color: var(--text-muted); }
-.search-icon {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-  color: var(--text-muted); font-size: 16px;
-}
-.search-status { font-size: 12px; color: var(--text-muted); margin-top: 8px; padding-left: 4px; }
-
-/* Note List */
-.note-list { display: flex; flex-direction: column; gap: 2px; }
-.note-card {
-  padding: 18px 20px;
+.sidebar-search input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  cursor: pointer; transition: all 0.15s;
-  border: 1px solid transparent;
+  background: var(--surface);
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23909399' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
 }
-.note-card:hover {
-  background: var(--surface); border-color: var(--border-light);
-  box-shadow: var(--shadow-sm);
-}
-.note-card-title {
-  font-size: 16px; font-weight: 500; margin-bottom: 6px;
-  color: var(--text); display: flex; align-items: center; gap: 10px;
-}
-.note-card-preview {
-  font-size: 14px; color: var(--text-secondary); line-height: 1.6;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; margin-bottom: 8px;
-}
-.note-card-meta {
-  display: flex; align-items: center; gap: 12px;
-  font-size: 12px; color: var(--text-muted);
-}
-.note-card-meta .tag {
-  padding: 2px 8px; border-radius: 4px;
-  background: var(--accent-light); color: var(--accent);
+.sidebar-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
 }
 
-/* Note Detail */
-.note-detail { max-width: 700px; margin: 0 auto; padding: 24px 0; }
-.note-detail-back {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 13px; color: var(--text-muted); cursor: pointer;
-  margin-bottom: 32px; padding: 6px 12px; border-radius: 6px;
+.sidebar-actions {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  gap: 8px;
+}
+.sidebar-actions button {
+  flex: 1;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
   transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
-.note-detail-back:hover { background: var(--surface); color: var(--text); }
+.sidebar-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.sidebar-actions button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.sidebar-actions button.primary:hover {
+  background: var(--accent-hover);
+}
 
-.note-title {
-  font-family: var(--font-serif);
-  font-size: 32px; font-weight: 600; line-height: 1.3;
-  margin-bottom: 16px;
-}
-.note-meta {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
-  font-size: 13px; color: var(--text-muted);
-  margin-bottom: 32px; padding-bottom: 24px;
+.sidebar-nav {
+  padding: 8px 0;
   border-bottom: 1px solid var(--border-light);
 }
-.note-meta .tag {
-  padding: 3px 10px; border-radius: 4px;
-  background: var(--accent-light); color: var(--accent); font-size: 12px;
-}
-
-/* Rendered note content (readonly) */
-.note-content {
-  font-size: 16px; line-height: 1.9; color: var(--text);
-}
-.note-content h1, .note-content h2, .note-content h3 {
-  font-family: var(--font-serif); font-weight: 600; margin: 32px 0 16px;
-}
-.note-content h1 { font-size: 24px; }
-.note-content h2 { font-size: 20px; }
-.note-content h3 { font-size: 17px; }
-.note-content p { margin: 12px 0; }
-.note-content ul, .note-content ol { padding-left: 24px; margin: 12px 0; }
-.note-content li { margin: 6px 0; }
-.note-content blockquote {
-  border-left: 3px solid var(--accent); padding: 8px 20px;
-  margin: 20px 0; color: var(--text-secondary);
-  background: var(--accent-light); border-radius: 0 var(--radius) var(--radius) 0;
-}
-.note-content code {
-  background: var(--border-light); padding: 2px 6px; border-radius: 4px;
-  font-size: 14px; font-family: 'SF Mono', Monaco, monospace;
-}
-.note-content pre {
-  background: #1e1e2e; color: #cdd6f4; padding: 20px;
-  border-radius: var(--radius); overflow-x: auto; margin: 20px 0;
-  font-size: 13px; line-height: 1.7;
-}
-.note-content pre code { background: none; padding: 0; color: inherit; }
-.note-content a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-.note-content img { max-width: 100%; border-radius: var(--radius); margin: 16px 0; }
-.note-content hr { border: none; border-top: 1px solid var(--border-light); margin: 32px 0; }
-.note-content table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
-.note-content th, .note-content td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; }
-.note-content th { background: var(--surface); font-weight: 500; }
-
-/* Pagination */
-.pagination {
-  display: flex; gap: 6px; justify-content: center; align-items: center;
-  margin: 40px 0 32px; flex-wrap: wrap;
-}
-.pagination button {
-  min-width: 36px; height: 36px; padding: 0 12px;
-  border: 1px solid var(--border); border-radius: 6px;
-  background: var(--surface); color: var(--text-secondary);
-  font-size: 13px; cursor: pointer; transition: all 0.15s;
-}
-.pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.pagination button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-.pagination .info { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
-
-/* Tags */
-.tags-section { margin: 24px 0; }
-.tags-section h4 { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
-.tags-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
-.tag-pill {
-  padding: 5px 14px; border-radius: 16px;
-  border: 1px solid var(--border); background: var(--surface);
-  font-size: 12px; color: var(--text-secondary); cursor: pointer;
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
   transition: all 0.15s;
 }
-.tag-pill:hover { border-color: var(--accent); color: var(--accent); }
-.tag-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sidebar-nav a:hover { background: var(--surface); color: var(--text); }
+.sidebar-nav a.active { background: var(--accent-light); color: var(--accent); }
+.sidebar-nav a .icon { font-size: 14px; }
 
-/* Loading & Empty */
-.loading { display: flex; justify-content: center; padding: 40px; }
-.spinner {
-  width: 24px; height: 24px; border: 2px solid var(--border);
-  border-top-color: var(--accent); border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.empty { text-align: center; padding: 60px 0; color: var(--text-muted); font-size: 14px; }
 
-/* Modal */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-  display: flex; align-items: center; justify-content: center; z-index: 200;
+.sidebar-section-title {
+  padding: 12px 20px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.modal {
-  background: var(--surface); border-radius: var(--radius-lg);
-  padding: 36px; width: 90%; max-width: 380px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-}
-.modal h3 { font-family: var(--font-serif); font-size: 20px; margin-bottom: 8px; }
-.modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
-.modal input {
-  width: 100%; padding: 12px 16px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  font-size: 14px; outline: none; transition: border-color 0.2s;
-}
-.modal input:focus { border-color: var(--accent); }
-.modal .error { color: #e74c3c; font-size: 12px; margin-top: 8px; }
-.modal-actions { display: flex; gap: 10px; margin-top: 24px; }
-.modal-actions .btn { flex: 1; justify-content: center; }
 
-/* ===== TipTap Editor (Full Page) ===== */
-.editor-overlay {
-  position: fixed; inset: 0; background: var(--bg);
-  z-index: 150; overflow-y: auto;
+.note-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 20px 7px 24px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.editor-container {
-  width: 100%; max-width: 720px; margin: 0 auto;
-  background: var(--surface); min-height: 100vh;
-  border-left: 1px solid var(--border-light);
-  border-right: 1px solid var(--border-light);
+.note-tree-item:hover { background: var(--surface); color: var(--text); }
+.note-tree-item.active { background: var(--accent-light); color: var(--accent); }
+.note-tree-item .pin { font-size: 10px; }
+.note-tree-item .title { overflow: hidden; text-overflow: ellipsis; }
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-light);
+}
+.sidebar-footer .user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.sidebar-footer .avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* Header bar */
+.content-header {
+  height: var(--header-height);
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-left .breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.header-left .breadcrumb span { color: var(--text); }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Content body */
+.content-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+}
+.content-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* Note reading view */
+.note-view { animation: fadeIn 0.2s; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.note-header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+.note-header h1 {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+.note-header .meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+.note-header .meta .tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+/* Rendered content */
+.note-body {
+  font-size: 16px;
+  line-height: 1.85;
+  color: var(--text);
+}
+.note-body h1, .note-body h2, .note-body h3 {
+  font-weight: 600;
+  margin: 2em 0 0.8em;
+  line-height: 1.3;
+}
+.note-body h1 { font-size: 1.6em; border-bottom: 1px solid var(--border-light); padding-bottom: 0.3em; }
+.note-body h2 { font-size: 1.35em; }
+.note-body h3 { font-size: 1.15em; }
+.note-body p { margin: 0.8em 0; }
+.note-body ul, .note-body ol { padding-left: 1.5em; margin: 0.8em 0; }
+.note-body li { margin: 0.4em 0; }
+.note-body blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 0.5em 1em;
+  margin: 1em 0;
+  color: var(--text-secondary);
+  background: var(--accent-light);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.note-body code {
+  background: var(--border-light);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+.note-body pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 1.2em;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin: 1em 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.note-body pre code { background: none; padding: 0; color: inherit; border-radius: 0; }
+.note-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.note-body img { max-width: 100%; border-radius: var(--radius); margin: 1em 0; box-shadow: var(--shadow-sm); }
+.note-body hr { border: none; border-top: 1px solid var(--border-light); margin: 2em 0; }
+.note-body table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 14px; }
+.note-body th, .note-body td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; }
+.note-body th { background: var(--bg); font-weight: 500; }
+
+/* ===== Editor View ===== */
+.editor-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 .editor-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 24px; border-bottom: 1px solid var(--border-light);
-  background: var(--surface); position: sticky; top: 0; z-index: 10;
-}
-.editor-header h3 { font-size: 15px; font-weight: 500; }
-.editor-header .actions { display: flex; gap: 8px; }
-
-.editor-title-input {
-  width: 100%; padding: 18px 24px 14px;
-  font-family: var(--font-serif); font-size: 26px; font-weight: 600;
-  border: none; outline: none; background: transparent;
-}
-
-/* Toolbar */
-.tiptap-toolbar {
-  display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 16px;
+  height: var(--header-height);
+  padding: 0 24px;
   border-bottom: 1px solid var(--border-light);
-  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
 }
-.tiptap-toolbar button {
-  min-width: 32px; height: 32px; padding: 0 8px;
-  border: none; border-radius: 4px;
-  background: none; color: var(--text-secondary); font-size: 13px;
-  cursor: pointer; transition: all 0.15s;
+.editor-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.editor-header .back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.editor-header .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+.editor-header .title-preview {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-header .actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.editor-header .save-status {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-right: 8px;
+}
+
+.editor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.editor-title-wrap {
+  padding: 24px 32px 0;
+}
+.editor-title-input {
+  width: 100%;
+  padding: 8px 0;
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 600;
+  border: none;
+  border-bottom: 2px solid var(--border-light);
+  outline: none;
+  background: transparent;
+  transition: border-color 0.2s;
+}
+.editor-title-input:focus { border-color: var(--accent); }
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 32px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.editor-toolbar button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.editor-toolbar button:hover { background: var(--bg); color: var(--text); }
+.editor-toolbar button.active { background: var(--accent); color: #fff; }
+.editor-toolbar .separator { width: 1px; height: 20px; background: var(--border-light); margin: 0 6px; }
+
+.editor-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px 60px;
+}
+.editor-content .ProseMirror {
+  outline: none;
+  font-size: 16px;
+  line-height: 1.85;
+  min-height: 400px;
+}
+.editor-content .ProseMirror p { margin: 0.8em 0; }
+.editor-content .ProseMirror h1 { font-size: 1.6em; font-weight: 600; margin: 1.5em 0 0.6em; }
+.editor-content .ProseMirror h2 { font-size: 1.35em; font-weight: 600; margin: 1.3em 0 0.5em; }
+.editor-content .ProseMirror h3 { font-size: 1.15em; font-weight: 600; margin: 1.1em 0 0.4em; }
+.editor-content .ProseMirror ul, .editor-content .ProseMirror ol { padding-left: 1.5em; margin: 0.8em 0; }
+.editor-content .ProseMirror blockquote { border-left: 3px solid var(--accent); padding: 0.5em 1em; margin: 1em 0; color: var(--text-secondary); background: var(--accent-light); }
+.editor-content .ProseMirror code { background: var(--border-light); padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', Monaco, monospace; }
+.editor-content .ProseMirror pre { background: #1e1e2e; color: #cdd6f4; padding: 1.2em; border-radius: var(--radius); overflow-x: auto; margin: 1em 0; font-size: 13px; line-height: 1.7; }
+.editor-content .ProseMirror pre code { background: none; padding: 0; color: inherit; }
+.editor-content .ProseMirror a { color: var(--accent); text-decoration: underline; }
+.editor-content .ProseMirror img { max-width: 100%; border-radius: var(--radius); margin: 1em 0; }
+.editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  pointer-events: none;
+  height: 0;
+}
+
+.editor-footer {
+  padding: 12px 32px;
+  border-top: 1px solid var(--border-light);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.editor-footer label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.editor-footer .tags-input {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); color: #fff; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
   display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
 }
-.tiptap-toolbar button:hover { background: var(--surface-hover); color: var(--text); }
-.tiptap-toolbar button.active { background: var(--accent); color: #fff; }
-.tiptap-toolbar .separator { width: 1px; background: var(--border-light); margin: 4px 4px; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: var(--shadow-lg);
+}
+.modal h3 { font-size: 18px; margin-bottom: 6px; }
+.modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+.modal input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  outline: none;
+}
+.modal input:focus { border-color: var(--accent); }
+.modal .error { color: var(--danger); font-size: 12px; margin-top: 6px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.modal-actions .btn { flex: 1; justify-content: center; }
 
-/* TipTap editing area */
-.tiptap-editor { padding: 24px 24px 60px; min-height: calc(100vh - 200px); }
-.ProseMirror {
-  outline: none; font-size: 16px; line-height: 1.9;
+/* ===== Utilities ===== */
+.loading-full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
 }
-.ProseMirror p { margin: 10px 0; }
-.ProseMirror h1 { font-size: 24px; font-weight: 600; margin: 24px 0 12px; font-family: var(--font-serif); }
-.ProseMirror h2 { font-size: 20px; font-weight: 600; margin: 20px 0 10px; font-family: var(--font-serif); }
-.ProseMirror h3 { font-size: 17px; font-weight: 600; margin: 16px 0 8px; font-family: var(--font-serif); }
-.ProseMirror ul, .ProseMirror ol { padding-left: 24px; margin: 10px 0; }
-.ProseMirror li { margin: 4px 0; }
-.ProseMirror blockquote {
-  border-left: 3px solid var(--accent); padding: 8px 20px;
-  margin: 16px 0; color: var(--text-secondary); background: var(--accent-light);
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 8px;
 }
-.ProseMirror code {
-  background: var(--border-light); padding: 2px 6px; border-radius: 4px;
-  font-size: 14px; font-family: 'SF Mono', Monaco, monospace;
-}
-.ProseMirror pre {
-  background: #1e1e2e; color: #cdd6f4; padding: 16px;
-  border-radius: var(--radius); overflow-x: auto; margin: 16px 0;
-  font-size: 13px; line-height: 1.7;
-}
-.ProseMirror pre code { background: none; padding: 0; color: inherit; }
-.ProseMirror a { color: var(--accent); text-decoration: underline; }
-.ProseMirror img { max-width: 100%; border-radius: var(--radius); margin: 12px 0; }
-.ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder); float: left; color: var(--text-muted); pointer-events: none; height: 0;
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Tags & bottom */
-.editor-tags { padding: 0 24px 16px; }
-.editor-tags label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; }
-.editor-tags input {
-  width: 100%; padding: 10px 14px; border: 1px solid var(--border);
-  border-radius: var(--radius); font-size: 14px; outline: none;
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
 }
-.editor-tags input:focus { border-color: var(--accent); }
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
 
-/* Related */
-.related { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-light); }
-.related h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
-.related-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-  border-radius: var(--radius); cursor: pointer; transition: all 0.15s;
-}
-.related-item:hover { background: var(--surface); }
-.related-item .title { font-size: 14px; color: var(--text); }
-
-/* Footer */
-.footer {
-  text-align: center; padding: 32px 0; margin-top: 48px;
-  font-size: 12px; color: var(--text-muted);
-  border-top: 1px solid var(--border-light);
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-  .navbar-inner { padding: 0 16px; }
-  .main { padding: 72px 16px 32px; }
-  .page-header h1 { font-size: 24px; }
-  .note-title { font-size: 26px; }
-  .editor-title-input { font-size: 22px; padding: 14px 16px 12px; }
-  .tiptap-editor { padding: 16px 16px 60px; }
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 200;
+    transform: translateX(-100%);
+  }
+  .sidebar.open { transform: none; }
+  .content-header { padding: 0 16px; }
+  .content-body { padding: 20px 16px; }
+  .editor-title-wrap { padding: 16px 16px 0; }
+  .editor-toolbar { padding: 8px 16px; overflow-x: auto; }
+  .editor-content { padding: 16px 16px 40px; }
 }
 </style>
 </head>
 <body>
-<div id="app">
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="navbar-inner">
-      <a href="/" class="nav-brand">
-        <img src="/logo.png" alt="">
-        Syn<span>apse</span>
-      </a>
-      <div class="nav-actions">
-        <template v-if="!isAuthenticated">
-          <button class="btn btn-ghost" @click="showLogin = true">登录</button>
-        </template>
-        <template v-if="isAuthenticated">
-          <button class="btn btn-primary" @click="startNewNote">+ 新建</button>
-          <div class="user-badge">
-            <div class="avatar">{{ userInitial }}</div>
-            编辑模式
-          </div>
-          <button class="btn btn-ghost" @click="logout" title="退出登录">退出</button>
-        </template>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Main -->
-  <main class="main">
-    <!-- List View -->
-    <template v-if="!expanded">
-      <header class="page-header">
-        <h1>知识笔记</h1>
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input type="text" v-model="searchQuery" @input="onSearch" placeholder="搜索笔记...">
-          <div class="search-status" v-if="searchQuery.trim()">
-            搜索 "{{ searchQuery.trim() }}" · 找到 {{ totalNotes }} 条
-          </div>
-        </div>
-      </header>
-
-      <div class="note-list" v-if="notes.length">
-        <div class="note-card" v-for="n in notes" :key="n.id" @click="openNote(n.id)">
-          <div class="note-card-title">
-            <span v-if="n.is_pinned">📌</span>
-            {{ n.title }}
-          </div>
-          <div class="note-card-preview" v-if="n.snippet" v-html="n.snippet"></div>
-          <div class="note-card-preview" v-else>{{ stripMd(n.content).substring(0, 150) }}...</div>
-          <div class="note-card-meta">
-            <span>{{ fmt(n.source_created_at || n.created_at) }}</span>
-            <span class="tag" v-for="t in (n.tags || []).slice(0, 3)" :key="t">{{ t }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="loading" v-if="loading && !notes.length"><div class="spinner"></div></div>
-      <div class="empty" v-if="!notes.length && !expanded && !loading">
-        <span v-if="searchQuery.trim()">没有找到匹配的笔记</span>
-        <span v-else>暂无笔记</span>
-      </div>
-
-      <div class="pagination" v-if="totalPages > 1 && !searchQuery.trim()">
-        <button :disabled="page === 1" @click="go(page - 1)">‹</button>
-        <template v-for="p in pageList" :key="p">
-          <span v-if="p === '...'" style="padding: 0 4px;">...</span>
-          <button v-else :class="{active: p === page}" @click="go(p)">{{ p }}</button>
-        </template>
-        <button :disabled="page === totalPages" @click="go(page + 1)">›</button>
-        <span class="info">{{ page }} / {{ totalPages }}</span>
-      </div>
-
-      <section class="tags-section" v-if="tagList.length">
-        <h4>标签</h4>
-        <div class="tags-cloud">
-          <span class="tag-pill" :class="{active: activeTag === t.name}"
-            v-for="t in displayedTags" :key="t.name" @click="filterByTag(t.name)">
-            {{ t.name }} <small style="opacity:0.6">{{ t.note_count }}</small>
-          </span>
-        </div>
-      </section>
-    </template>
-
-    <!-- Detail View -->
-    <template v-if="expanded">
-      <article class="note-detail">
-        <div class="note-detail-back" @click="closeNote">← 返回</div>
-        <div class="loading" v-if="detailLoading"><div class="spinner"></div></div>
-        <template v-else-if="currentNote">
-          <h1 class="note-title">{{ currentNote.title }}</h1>
-          <div class="note-meta">
-            <span>{{ fmt(currentNote.source_created_at || currentNote.created_at) }}</span>
-            <span class="tag" v-for="t in (currentNote.tags || [])" :key="t">{{ t }}</span>
-            <template v-if="isAuthenticated">
-              <button class="btn btn-ghost" style="margin-left:auto" @click="startEdit">✏️ 编辑</button>
-            </template>
-          </div>
-          <div class="note-content" v-html="renderMd(currentNote.content)"></div>
-          <div class="related" v-if="relatedNotes.length">
-            <h4>📎 相关笔记</h4>
-            <div class="related-item" v-for="r in relatedNotes" :key="r.id" @click="openNote(r.id)">
-              <span>›</span><span class="title">{{ r.title }}</span>
-            </div>
-          </div>
-        </template>
-      </article>
-    </template>
-
-    <footer class="footer">Synapse · 私人知识库</footer>
-  </main>
+<div id="app" v-cloak>
+  <router-view></router-view>
 
   <!-- Login Modal -->
   <div class="modal-overlay" v-if="showLogin" @click.self="showLogin = false">
@@ -510,68 +620,17 @@ a:hover { color: var(--accent-hover); }
       <input type="password" v-model="loginPassword" @keyup.enter="login" placeholder="请输入密码" autofocus>
       <div class="error" v-if="loginError">{{ loginError }}</div>
       <div class="modal-actions">
-        <button class="btn btn-ghost" @click="showLogin = false">取消</button>
+        <button class="btn" @click="showLogin = false">取消</button>
         <button class="btn btn-primary" @click="login">确认</button>
       </div>
     </div>
   </div>
-
-  <!-- TipTap Editor Overlay -->
-  <div class="editor-overlay" v-if="editMode">
-    <div class="editor-container">
-      <div class="editor-header">
-        <h3>{{ editingNote.id ? '编辑笔记' : '新建笔记' }}</h3>
-        <div class="actions">
-          <button class="btn btn-ghost" @click="cancelEdit">取消</button>
-          <button class="btn btn-primary" @click="saveNote" :disabled="saving">
-            {{ saving ? '保存中...' : '保存' }}
-          </button>
-        </div>
-      </div>
-
-      <input class="editor-title-input" v-model="editingNote.title" placeholder="无标题">
-
-      <div class="tiptap-toolbar">
-        <button :class="{active: editor?.isActive('bold')}" @click="editor.chain().focus().toggleBold().run()" title="粗体"><b>B</b></button>
-        <button :class="{active: editor?.isActive('italic')}" @click="editor.chain().focus().toggleItalic().run()" title="斜体"><i>I</i></button>
-        <button :class="{active: editor?.isActive('underline')}" @click="editor.chain().focus().toggleUnderline().run()" title="下划线"><u>U</u></button>
-        <button :class="{active: editor?.isActive('strike')}" @click="editor.chain().focus().toggleStrike().run()" title="删除线"><s>S</s></button>
-        <div class="separator"></div>
-        <button :class="{active: editor?.isActive('heading',{level:1})}" @click="editor.chain().focus().toggleHeading({level:1}).run()">H1</button>
-        <button :class="{active: editor?.isActive('heading',{level:2})}" @click="editor.chain().focus().toggleHeading({level:2}).run()">H2</button>
-        <button :class="{active: editor?.isActive('heading',{level:3})}" @click="editor.chain().focus().toggleHeading({level:3}).run()">H3</button>
-        <div class="separator"></div>
-        <button :class="{active: editor?.isActive('bulletList')}" @click="editor.chain().focus().toggleBulletList().run()">• 列表</button>
-        <button :class="{active: editor?.isActive('orderedList')}" @click="editor.chain().focus().toggleOrderedList().run()">1. 列表</button>
-        <button :class="{active: editor?.isActive('blockquote')}" @click="editor.chain().focus().toggleBlockquote().run()">❝ 引用</button>
-        <button :class="{active: editor?.isActive('codeBlock')}" @click="editor.chain().focus().toggleCodeBlock().run()">&lt;/&gt; 代码</button>
-        <div class="separator"></div>
-        <button @click="insertImage" title="插入图片">🖼️ 图片</button>
-        <button @click="insertLink" title="插入链接">🔗 链接</button>
-        <div class="separator"></div>
-        <button @click="editor.chain().focus().undo().run()" title="撤销">↶</button>
-        <button @click="editor.chain().focus().redo().run()" title="重做">↷</button>
-      </div>
-
-      <div class="tiptap-editor">
-        <div id="tiptap-editor"></div>
-      </div>
-
-      <div class="editor-tags">
-        <label>标签（逗号分隔）</label>
-        <input v-model="editingTags" placeholder="例如：技术, 读书笔记">
-      </div>
-    </div>
-  </div>
-
-  <!-- Hidden file input for image upload -->
-  <input type="file" id="imageUploadInput" accept="image/*" style="display:none" @change="handleImageUpload">
 </div>
 
-<script src="js/marked.min.js"></script>
 <script>
 (function() {
-  var { createApp, ref, computed, onMounted, nextTick, onBeforeUnmount } = Vue;
+  var { createApp, ref, computed, onMounted, nextTick, onBeforeUnmount, watch } = Vue;
+  var { createRouter, createWebHashHistory, useRouter, useRoute } = VueRouter;
   var { Editor } = TiptapCore;
   var { StarterKit } = TiptapStarterKit;
   var { Image } = TiptapExtensionImage;
@@ -580,246 +639,323 @@ a:hover { color: var(--accent-hover); }
   var { Underline } = TiptapExtensionUnderline;
 
   var API = '/api';
-  var PER_PAGE = 20;
-  var editor = null;
 
-  createApp({
+  // ===== Shared State =====
+  var isAuthenticated = ref(false);
+  var showLogin = ref(false);
+  var loginPassword = ref('');
+  var loginError = ref('');
+  var notesCache = ref([]);
+  var tagsCache = ref([]);
+  var editorInstance = null;
+
+  // ===== Helpers =====
+  function fmt(d) {
+    if (!d) return '';
+    var date = new Date(d);
+    var now = new Date();
+    var diff = now - date;
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+    return date.toLocaleDateString('zh-CN');
+  }
+
+  function stripMd(text) {
+    if (!text) return '';
+    return text.replace(/^#+\s/gm, '').replace(/[*_~`\[\]]/g, '').substring(0, 200);
+  }
+
+  function renderMd(text) {
+    if (typeof marked === 'undefined') return text || '';
+    return marked.parse(text || '');
+  }
+
+  // ===== API =====
+  function apiGet(url) {
+    return fetch(API + url).then(function(r) { return r.json(); });
+  }
+
+  function apiPost(url, data) {
+    return fetch(API + url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); });
+  }
+
+  function apiPut(url, data) {
+    return fetch(API + url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); });
+  }
+
+  // ===== Login =====
+  function login() {
+    loginError.value = '';
+    apiPost('/admin/verify', { password: loginPassword.value })
+      .then(function(d) {
+        if (d.ok) {
+          isAuthenticated.value = true;
+          showLogin.value = false;
+          loginPassword.value = '';
+          var router = window.__router;
+          if (router) router.push('/note/new');
+        } else {
+          loginError.value = '密码错误';
+        }
+      })
+      .catch(function() { loginError.value = '验证失败'; });
+  }
+
+  function logout() {
+    isAuthenticated.value = false;
+    window.__router.push('/');
+  }
+
+  function requireAuth() {
+    if (!isAuthenticated.value) {
+      showLogin.value = true;
+      return false;
+    }
+    return true;
+  }
+
+  // ===== Components =====
+
+  // Home / Reading View
+  var HomeView = {
+    template: `
+      <div class="app-layout">
+        <aside class="sidebar">
+          <div class="sidebar-header">
+            <img class="logo" src="/logo.png" alt="">
+            <span class="brand">Syn<span>apse</span></span>
+          </div>
+          <div class="sidebar-search">
+            <input type="text" v-model="searchQuery" @input="onSearch" placeholder="搜索笔记...">
+          </div>
+          <div class="sidebar-actions">
+            <button v-if="isAuthenticated" @click="createNote">+ 新建</button>
+            <button v-if="!isAuthenticated" @click="showLogin = true">登录</button>
+          </div>
+          <nav class="sidebar-nav">
+            <router-link to="/" exact-active-class="active">
+              <span class="icon">📚</span> 全部笔记
+            </router-link>
+          </nav>
+          <div class="sidebar-content">
+            <div v-if="loading" class="loading-full"><div class="spinner"></div></div>
+            <template v-else>
+              <div class="sidebar-section-title">笔记列表</div>
+              <div v-for="note in filteredNotes" :key="note.id"
+                class="note-tree-item" :class="{active: currentNoteId === note.id}"
+                @click="openNote(note.id)">
+                <span class="pin" v-if="note.is_pinned">📌</span>
+                <span class="title">{{ note.title }}</span>
+              </div>
+            </template>
+          </div>
+          <div class="sidebar-footer" v-if="isAuthenticated">
+            <div class="user-info">
+              <div class="avatar">编</div>
+              <span>编辑模式</span>
+              <button class="btn btn-sm" style="margin-left:auto" @click="logout">退出</button>
+            </div>
+          </div>
+        </aside>
+
+        <main class="main-content">
+          <header class="content-header">
+            <div class="header-left">
+              <div class="breadcrumb">
+                <span>知识库</span> / <span>{{ currentNote ? currentNote.title : '选择笔记' }}</span>
+              </div>
+            </div>
+            <div class="header-actions" v-if="currentNote && isAuthenticated">
+              <button class="btn btn-sm" @click="editNote">✏️ 编辑</button>
+            </div>
+          </header>
+          <div class="content-body">
+            <div class="content-inner">
+              <div v-if="loading" class="loading-full"><div class="spinner"></div></div>
+              <div v-else-if="!currentNote" class="empty-state">
+                <div class="icon">📝</div>
+                <h3>选择一篇笔记开始阅读</h3>
+              </div>
+              <article v-else class="note-view">
+                <header class="note-header">
+                  <h1>{{ currentNote.title }}</h1>
+                  <div class="meta">
+                    <span>{{ fmt(currentNote.source_created_at || currentNote.created_at) }}</span>
+                    <span class="tag" v-for="t in (currentNote.tags || [])" :key="t">{{ t }}</span>
+                  </div>
+                </header>
+                <div class="note-body" v-html="renderMd(currentNote.content)"></div>
+              </article>
+            </div>
+          </div>
+        </main>
+      </div>
+    `,
     setup() {
-      // State
+      var router = useRouter();
+      var route = useRoute();
+      var loading = ref(true);
       var notes = ref([]);
-      var tagList = ref([]);
-      var totalNotes = ref(0);
-      var page = ref(1);
-      var expanded = ref(null);
-      var detailLoading = ref(false);
-      var detailNote = ref(null);
-      var relatedNotes = ref([]);
-      var loading = ref(false);
-      var activeTag = ref(null);
       var searchQuery = ref('');
       var searchTimeout = null;
-      var showAllTags = ref(false);
-      var tagLimit = 20;
-      var returnScrollY = 0;
 
-      // Auth
-      var isAuthenticated = ref(false);
-      var showLogin = ref(false);
-      var loginPassword = ref('');
-      var loginError = ref('');
+      var filteredNotes = computed(function() {
+        var q = searchQuery.value.trim().toLowerCase();
+        var list = notes.value;
+        if (q) {
+          list = list.filter(function(n) {
+            return n.title.toLowerCase().indexOf(q) > -1;
+          });
+        }
+        return list;
+      });
 
-      // Edit
-      var editMode = ref(false);
-      var editingNote = ref(null);
-      var editingTags = ref('');
-      var saving = ref(false);
+      var currentNoteId = computed(function() {
+        var id = route.params.id;
+        return id ? parseInt(id) : null;
+      });
 
-      // Computed
       var currentNote = computed(function() {
-        if (!expanded.value) return null;
-        if (detailNote.value && detailNote.value.id === expanded.value) return detailNote.value;
+        var id = currentNoteId.value;
+        if (!id) return null;
         for (var i = 0; i < notes.value.length; i++) {
-          if (notes.value[i].id === expanded.value) return notes.value[i];
+          if (notes.value[i].id === id) return notes.value[i];
         }
         return null;
       });
 
-      var userInitial = computed(function() { return '编'; });
-
-      var displayedTags = computed(function() {
-        return showAllTags.value ? tagList.value : tagList.value.slice(0, tagLimit);
-      });
-
-      var totalPages = computed(function() {
-        if (searchQuery.value.trim()) return 1;
-        return Math.ceil(totalNotes.value / PER_PAGE);
-      });
-
-      var pageList = computed(function() {
-        var pages = [];
-        var total = totalPages.value;
-        var current = page.value;
-        if (total <= 7) {
-          for (var i = 1; i <= total; i++) pages.push(i);
-        } else {
-          pages.push(1);
-          if (current > 3) pages.push('...');
-          var start = Math.max(2, current - 1);
-          var end = Math.min(total - 1, current + 1);
-          for (var i = start; i <= end; i++) pages.push(i);
-          if (current < total - 2) pages.push('...');
-          pages.push(total);
-        }
-        return pages;
-      });
-
-      // Helpers
-      function fmt(d) {
-        if (!d) return '';
-        var diff = Date.now() - new Date(d);
-        if (diff < 86400000) return '今天';
-        if (diff < 172800000) return '昨天';
-        if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
-        return new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-      }
-
-      function stripMd(text) {
-        if (!text) return '';
-        return text.replace(/^#+\s/gm, '').replace(/[*_~`\[\]]/g, '').substring(0, 200);
-      }
-
-      function renderMd(text) {
-        if (typeof marked === 'undefined') return text || '';
-        return marked.parse(text || '');
-      }
-
-      function highlightSnippet(text) {
-        if (!text) return '';
-        return text
-          .replace(/\*\*(.*?)\*\*/g, '<mark style="background:rgba(201,100,66,0.2);padding:0 2px;border-radius:2px">$1</mark>')
-          .replace(/</g, '&lt;').replace(/>/g, '&gt;')
-          .replace(/&lt;mark/g, '<mark').replace(/mark&gt;/g, 'mark>');
-      }
-
-      // Data fetch
-      function fetchPage() {
+      function loadNotes() {
         loading.value = true;
-        var q = searchQuery.value.trim();
-        var url;
-        if (q) {
-          url = API + '/search?q=' + encodeURIComponent(q) + '&limit=' + (PER_PAGE * 3);
-        } else {
-          var skip = (page.value - 1) * PER_PAGE;
-          url = API + '/notes?skip=' + skip + '&limit=' + PER_PAGE;
-          if (activeTag.value) url += '&tag=' + encodeURIComponent(activeTag.value);
-        }
-        fetch(url)
-          .then(function(r) { return r.json(); })
+        apiGet('/notes?limit=200')
           .then(function(d) {
-            if (q) {
-              var results = Array.isArray(d) ? d : (d.notes || []);
-              notes.value = results.map(function(r) {
-                return {
-                  id: r.id, title: r.title || '(无标题)',
-                  content: r.snippet || '',
-                  snippet: r.snippet ? highlightSnippet(r.snippet) : '',
-                  tags: r.tags || [],
-                  source_created_at: r.source_created_at || r.created_at,
-                  created_at: r.created_at, is_pinned: r.is_pinned
-                };
-              });
-              totalNotes.value = notes.value.length;
-            } else {
-              notes.value = d.notes || [];
-              totalNotes.value = d.total || 0;
-            }
+            notes.value = (d.notes || []).sort(function(a, b) {
+              if (a.is_pinned && !b.is_pinned) return -1;
+              if (!a.is_pinned && b.is_pinned) return 1;
+              return new Date(b.updated_at) - new Date(a.updated_at);
+            });
             loading.value = false;
+            // Auto-open first note if none selected
+            if (!currentNoteId.value && notes.value.length) {
+              router.replace('/note/' + notes.value[0].id);
+            }
           })
           .catch(function() { loading.value = false; });
       }
 
-      function fetchTags() {
-        fetch(API + '/tags')
-          .then(function(r) { return r.json(); })
-          .then(function(d) {
-            tagList.value = d.filter(function(t) { return t.note_count > 0; })
-              .sort(function(a, b) { return b.note_count - a.note_count; });
-          });
-      }
-
       function openNote(id) {
-        expanded.value = id;
-        returnScrollY = window.scrollY;
-        detailLoading.value = true;
-        relatedNotes.value = [];
-        window.scrollTo({ top: 0 });
-        history.pushState(null, '', '#note-' + id);
-
-        fetch(API + '/notes/' + id)
-          .then(function(r) { return r.json(); })
-          .then(function(d) {
-            detailNote.value = d;
-            detailLoading.value = false;
-          })
-          .catch(function() { detailLoading.value = false; });
-
-        fetch(API + '/notes/' + id + '/relations')
-          .then(function(r) { return r.json(); })
-          .then(function(d) {
-            var all = [];
-            if (d.outgoing) all = all.concat(d.outgoing);
-            if (d.incoming) all = all.concat(d.incoming);
-            var seen = {};
-            relatedNotes.value = all.filter(function(r) {
-              if (seen[r.id]) return false;
-              seen[r.id] = true;
-              return true;
-            });
-          })
-          .catch(function() {});
+        router.push('/note/' + id);
       }
 
-      function closeNote() {
-        expanded.value = null;
-        detailNote.value = null;
-        relatedNotes.value = [];
-        history.pushState(null, '', window.location.pathname);
-        nextTick(function() { window.scrollTo({ top: returnScrollY }); });
+      function editNote() {
+        if (currentNoteId.value) {
+          router.push('/note/' + currentNoteId.value + '/edit');
+        }
       }
 
-      function go(p) {
-        if (searchQuery.value.trim()) return;
-        var total = Math.ceil(totalNotes.value / PER_PAGE);
-        if (p < 1 || p > total) return;
-        page.value = p;
-        fetchPage();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      function createNote() {
+        if (!requireAuth()) return;
+        router.push('/note/new');
       }
 
       function onSearch() {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(function() {
-          page.value = 1;
-          fetchPage();
-        }, 300);
+          // Already reactive via computed
+        }, 200);
       }
 
-      function filterByTag(tag) {
-        activeTag.value = activeTag.value === tag ? null : tag;
-        searchQuery.value = '';
-        page.value = 1;
-        fetchPage();
-      }
+      onMounted(function() {
+        loadNotes();
+      });
 
-      // Auth
-      function login() {
-        loginError.value = '';
-        fetch(API + '/admin/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: loginPassword.value })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          if (d.ok) {
-            isAuthenticated.value = true;
-            showLogin.value = false;
-            loginPassword.value = '';
-          } else {
-            loginError.value = '密码错误';
-          }
-        })
-        .catch(function() { loginError.value = '验证失败'; });
-      }
+      return {
+        loading, notes, searchQuery, filteredNotes,
+        currentNote, currentNoteId,
+        openNote, editNote, createNote, onSearch,
+        isAuthenticated, showLogin, fmt, renderMd
+      };
+    }
+  };
 
-      function logout() {
-        isAuthenticated.value = false;
-      }
+  // Editor View
+  var EditorView = {
+    template: `
+      <div class="editor-layout">
+        <header class="editor-header">
+          <div class="header-left">
+            <button class="back-btn" @click="goBack">← 返回</button>
+            <span class="title-preview">{{ editingNote.title || '新建笔记' }}</span>
+          </div>
+          <div class="actions">
+            <span class="save-status">{{ saveStatus }}</span>
+            <button class="btn" @click="goBack">取消</button>
+            <button class="btn btn-primary" @click="saveNote" :disabled="saving">
+              {{ saving ? '保存中...' : '保存' }}
+            </button>
+          </div>
+        </header>
 
-      // Editor
+        <div class="editor-main">
+          <div class="editor-title-wrap">
+            <input class="editor-title-input" v-model="editingNote.title" placeholder="无标题">
+          </div>
+
+          <div class="editor-toolbar">
+            <button :class="{active: editor?.isActive('bold')}" @click="editor.chain().focus().toggleBold().run()" title="粗体"><b>B</b></button>
+            <button :class="{active: editor?.isActive('italic')}" @click="editor.chain().focus().toggleItalic().run()" title="斜体"><i>I</i></button>
+            <button :class="{active: editor?.isActive('underline')}" @click="editor.chain().focus().toggleUnderline().run()" title="下划线"><u>U</u></button>
+            <button :class="{active: editor?.isActive('strike')}" @click="editor.chain().focus().toggleStrike().run()" title="删除线"><s>S</s></button>
+            <div class="separator"></div>
+            <button :class="{active: editor?.isActive('heading',{level:1})}" @click="editor.chain().focus().toggleHeading({level:1}).run()">H1</button>
+            <button :class="{active: editor?.isActive('heading',{level:2})}" @click="editor.chain().focus().toggleHeading({level:2}).run()">H2</button>
+            <button :class="{active: editor?.isActive('heading',{level:3})}" @click="editor.chain().focus().toggleHeading({level:3}).run()">H3</button>
+            <div class="separator"></div>
+            <button :class="{active: editor?.isActive('bulletList')}" @click="editor.chain().focus().toggleBulletList().run()">•</button>
+            <button :class="{active: editor?.isActive('orderedList')}" @click="editor.chain().focus().toggleOrderedList().run()">1.</button>
+            <button :class="{active: editor?.isActive('blockquote')}" @click="editor.chain().focus().toggleBlockquote().run()">❝</button>
+            <button :class="{active: editor?.isActive('codeBlock')}" @click="editor.chain().focus().toggleCodeBlock().run()">&lt;/&gt;</button>
+            <div class="separator"></div>
+            <button @click="insertImage" title="图片">🖼️</button>
+            <button @click="insertLink" title="链接">🔗</button>
+            <div class="separator"></div>
+            <button @click="editor.chain().focus().undo().run()" title="撤销">↶</button>
+            <button @click="editor.chain().focus().redo().run()" title="重做">↷</button>
+          </div>
+
+          <div class="editor-content">
+            <div id="tiptap-editor"></div>
+          </div>
+        </div>
+
+        <footer class="editor-footer">
+          <label>标签</label>
+          <input class="tags-input" v-model="editingTags" placeholder="用逗号分隔，如：技术, 笔记">
+        </footer>
+      </div>
+      <input type="file" id="imageUploadInput" accept="image/*" style="display:none" @change="handleImageUpload">
+    `,
+    setup() {
+      var router = useRouter();
+      var route = useRoute();
+      var editingNote = ref({ id: null, title: '', content: '' });
+      var editingTags = ref('');
+      var saving = ref(false);
+      var saveStatus = ref('');
+      var isNew = ref(true);
+
       function initEditor(content) {
-        if (editor) editor.destroy();
-        editor = new Editor({
+        if (editorInstance) editorInstance.destroy();
+        editorInstance = new Editor({
           element: document.getElementById('tiptap-editor'),
           content: content || '',
           extensions: [
@@ -832,34 +968,62 @@ a:hover { color: var(--accent-hover); }
         });
       }
 
-      function startNewNote() {
-        if (!isAuthenticated.value) { showLogin.value = true; return; }
-        editingNote.value = { id: null, title: '', content: '' };
-        editingTags.value = '';
-        editMode.value = true;
-        nextTick(function() { initEditor(''); });
+      onMounted(function() {
+        var noteId = route.params.id;
+        if (noteId && noteId !== 'new') {
+          isNew.value = false;
+          apiGet('/notes/' + noteId).then(function(d) {
+            editingNote.value = d;
+            editingTags.value = (d.tags || []).join(', ');
+            nextTick(function() { initEditor(d.content || ''); });
+          });
+        } else {
+          isNew.value = true;
+          nextTick(function() { initEditor(''); });
+        }
+      });
+
+      onBeforeUnmount(function() {
+        if (editorInstance) { editorInstance.destroy(); editorInstance = null; }
+      });
+
+      function goBack() {
+        if (editingNote.value.id) {
+          router.push('/note/' + editingNote.value.id);
+        } else {
+          router.push('/');
+        }
       }
 
-      function startEdit() {
-        if (!isAuthenticated.value) { showLogin.value = true; return; }
-        editingNote.value = {
-          id: currentNote.value.id,
-          title: currentNote.value.title,
-          content: currentNote.value.content
+      function saveNote() {
+        if (saving.value) return;
+        saving.value = true;
+        saveStatus.value = '保存中...';
+
+        var tags = editingTags.value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+        var payload = {
+          title: editingNote.value.title || '无标题',
+          content: editorInstance ? editorInstance.getHTML() : '',
+          tags: tags
         };
-        editingTags.value = (currentNote.value.tags || []).join(', ');
-        editMode.value = true;
-        nextTick(function() { initEditor(currentNote.value.content || ''); });
-      }
 
-      function cancelEdit() {
-        editMode.value = false;
-        editingNote.value = null;
-        if (editor) { editor.destroy(); editor = null; }
-      }
+        var promise = isNew.value
+          ? apiPost('/notes', payload)
+          : apiPut('/notes/' + editingNote.value.id, payload);
 
-      function getEditorHTML() {
-        return editor ? editor.getHTML() : '';
+        promise.then(function(d) {
+          saving.value = false;
+          if (d.id) {
+            saveStatus.value = '已保存';
+            editingNote.value.id = d.id;
+            setTimeout(function() { router.push('/note/' + d.id); }, 500);
+          } else {
+            saveStatus.value = '保存失败';
+          }
+        }).catch(function() {
+          saving.value = false;
+          saveStatus.value = '保存失败';
+        });
       }
 
       function insertImage() {
@@ -875,8 +1039,8 @@ a:hover { color: var(--accent-hover); }
         fetch(API + '/upload', { method: 'POST', body: formData })
           .then(function(r) { return r.json(); })
           .then(function(d) {
-            if (d.url) {
-              editor.chain().focus().setImage({ src: d.url }).run();
+            if (d.url && editorInstance) {
+              editorInstance.chain().focus().setImage({ src: d.url }).run();
             }
           })
           .catch(function() { alert('上传失败'); });
@@ -885,90 +1049,50 @@ a:hover { color: var(--accent-hover); }
 
       function insertLink() {
         var url = prompt('输入链接地址：');
-        if (url) {
-          editor.chain().focus().setLink({ href: url }).run();
+        if (url && editorInstance) {
+          editorInstance.chain().focus().setLink({ href: url }).run();
         }
       }
-
-      function saveNote() {
-        if (!editingNote.value || saving.value) return;
-        saving.value = true;
-
-        var tags = editingTags.value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
-        var payload = {
-          title: editingNote.value.title || '无标题',
-          content: getEditorHTML(),
-          tags: tags
-        };
-
-        var url = API + '/notes';
-        var method = 'POST';
-        if (editingNote.value.id) {
-          url = API + '/notes/' + editingNote.value.id;
-          method = 'PUT';
-        }
-
-        fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          saving.value = false;
-          if (d.id) {
-            cancelEdit();
-            fetchPage();
-            fetchTags();
-          }
-        })
-        .catch(function() { saving.value = false; });
-      }
-
-      // Keyboard
-      function onKeydown(e) {
-        if (e.key === 'Escape') {
-          if (editMode.value) cancelEdit();
-          else if (expanded.value) closeNote();
-        }
-      }
-
-      window.addEventListener('popstate', function() {
-        if (!window.location.hash && expanded.value) {
-          expanded.value = null;
-          detailNote.value = null;
-          relatedNotes.value = [];
-        }
-      });
-
-      onMounted(function() {
-        fetchPage();
-        fetchTags();
-        document.addEventListener('keydown', onKeydown);
-        if (window.location.hash) {
-          var m = window.location.hash.match(/#note-(\d+)/);
-          if (m) openNote(parseInt(m[1]));
-        }
-      });
-
-      onBeforeUnmount(function() {
-        if (editor) editor.destroy();
-      });
 
       return {
-        notes, tagList, totalNotes, page, expanded, detailLoading, detailNote,
-        relatedNotes, loading, activeTag, searchQuery, showAllTags, tagLimit,
-        totalPages, pageList, displayedTags,
-        go, openNote, closeNote, filterByTag, onSearch,
-        currentNote, fmt, renderMd, stripMd,
-        isAuthenticated, showLogin, loginPassword, loginError, userInitial,
-        login, logout,
-        editMode, editingNote, editingTags, saving,
-        startNewNote, startEdit, cancelEdit, saveNote, editor,
-        insertImage, handleImageUpload, insertLink
+        editingNote, editingTags, saving, saveStatus,
+        goBack, saveNote, insertImage, handleImageUpload, insertLink,
+        editor: editorInstance
       };
     }
-  }).mount('#app');
+  };
+
+  // ===== Router =====
+  var routes = [
+    { path: '/', component: HomeView },
+    { path: '/note/:id', component: HomeView },
+    { path: '/note/:id/edit', component: EditorView },
+    { path: '/note/new', component: EditorView }
+  ];
+
+  var router = createRouter({
+    history: createWebHashHistory(),
+    routes: routes
+  });
+
+  window.__router = router;
+
+  // ===== App =====
+  var app = createApp({
+    setup() {
+      return {
+        isAuthenticated,
+        showLogin,
+        loginPassword,
+        loginError,
+        login,
+        logout
+      };
+    }
+  });
+
+  app.use(router);
+  app.mount('#app');
 })();
 </script>
 </body>
