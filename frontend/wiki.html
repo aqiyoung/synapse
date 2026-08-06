@@ -747,7 +747,7 @@ a:hover { color: var(--accent-hover); }
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
-          if (d.success) {
+          if (d.ok) {
             isAuthenticated.value = true;
             showLogin.value = false;
             loginPassword.value = '';
