@@ -6,6 +6,13 @@
 <title>Synapse · 知识笔记</title>
 <link rel="icon" href="/logo.png">
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/@tiptap/core/dist/tiptap-core.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/starter-kit/dist/tiptap-starter-kit.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-image/dist/tiptap-extension-image.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-link/dist/tiptap-extension-link.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-placeholder/dist/tiptap-extension-placeholder.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-underline/dist/tiptap-extension-underline.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-code-block-lowlight/dist/tiptap-extension-code-block-lowlight.umd.js"></script>
 <style>
 :root {
   --bg: #fbfbfa;
@@ -43,7 +50,7 @@ a:hover { color: var(--accent-hover); }
 .navbar {
   position: fixed; top: 0; left: 0; right: 0;
   height: 56px;
-  background: rgba(251,251,250,0.85);
+  background: rgba(251,251,250,0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-light);
   z-index: 100;
@@ -76,11 +83,6 @@ a:hover { color: var(--accent-hover); }
 .btn-primary:hover { background: var(--accent-hover); color: #fff; }
 .btn-ghost { border-color: var(--border); }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-.btn-icon {
-  width: 34px; height: 34px; padding: 0;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 6px; font-size: 16px;
-}
 
 .user-badge {
   display: flex; align-items: center; gap: 8px;
@@ -144,7 +146,6 @@ a:hover { color: var(--accent-hover); }
   font-size: 16px; font-weight: 500; margin-bottom: 6px;
   color: var(--text); display: flex; align-items: center; gap: 10px;
 }
-.note-card-title .pin { font-size: 12px; }
 .note-card-preview {
   font-size: 14px; color: var(--text-secondary); line-height: 1.6;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -185,6 +186,7 @@ a:hover { color: var(--accent-hover); }
   background: var(--accent-light); color: var(--accent); font-size: 12px;
 }
 
+/* Rendered note content (readonly) */
 .note-content {
   font-size: 16px; line-height: 1.9; color: var(--text);
 }
@@ -213,16 +215,11 @@ a:hover { color: var(--accent-hover); }
 }
 .note-content pre code { background: none; padding: 0; color: inherit; }
 .note-content a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-.note-content img { max-width: 100%; border-radius: var(--radius); margin: 20px 0; }
+.note-content img { max-width: 100%; border-radius: var(--radius); margin: 16px 0; }
 .note-content hr { border: none; border-top: 1px solid var(--border-light); margin: 32px 0; }
 .note-content table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
 .note-content th, .note-content td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; }
 .note-content th { background: var(--surface); font-weight: 500; }
-
-/* Edit button in detail */
-.note-edit-btn {
-  margin-left: auto;
-}
 
 /* Pagination */
 .pagination {
@@ -273,10 +270,7 @@ a:hover { color: var(--accent-hover); }
   padding: 36px; width: 90%; max-width: 380px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
 }
-.modal h3 {
-  font-family: var(--font-serif); font-size: 20px;
-  margin-bottom: 8px;
-}
+.modal h3 { font-family: var(--font-serif); font-size: 20px; margin-bottom: 8px; }
 .modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
 .modal input {
   width: 100%; padding: 12px 16px;
@@ -288,46 +282,86 @@ a:hover { color: var(--accent-hover); }
 .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
 .modal-actions .btn { flex: 1; justify-content: center; }
 
-/* Edit Panel */
-.edit-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+/* ===== TipTap Editor ===== */
+.editor-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
   z-index: 150; display: flex; align-items: flex-start; justify-content: center;
-  padding: 80px 24px 40px; overflow-y: auto;
+  padding: 70px 24px 40px; overflow-y: auto;
 }
-.edit-container {
-  width: 100%; max-width: 700px; background: var(--surface);
-  border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+.editor-container {
+  width: 100%; max-width: 720px; background: var(--surface);
+  border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   overflow: hidden;
 }
-.edit-header {
+.editor-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 24px; border-bottom: 1px solid var(--border-light);
+  padding: 14px 20px; border-bottom: 1px solid var(--border-light);
 }
-.edit-header h3 { font-size: 15px; font-weight: 500; }
-.edit-header .actions { display: flex; gap: 8px; }
+.editor-header h3 { font-size: 15px; font-weight: 500; }
+.editor-header .actions { display: flex; gap: 8px; }
 
-.title-input {
-  width: 100%; padding: 20px 24px 16px;
-  font-family: var(--font-serif); font-size: 28px; font-weight: 600;
+.editor-title-input {
+  width: 100%; padding: 18px 24px 14px;
+  font-family: var(--font-serif); font-size: 26px; font-weight: 600;
   border: none; outline: none; background: transparent;
 }
 
-.editor-wrap { padding: 0 24px 24px; }
-.editor-wrap textarea {
-  width: 100%; min-height: 400px; padding: 16px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  font-family: var(--font); font-size: 15px; line-height: 1.8;
-  outline: none; resize: vertical;
+/* Toolbar */
+.tiptap-toolbar {
+  display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 16px;
+  border-bottom: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-light);
 }
-.editor-wrap textarea:focus { border-color: var(--accent); }
+.tiptap-toolbar button {
+  min-width: 32px; height: 32px; padding: 0 8px;
+  border: none; border-radius: 4px;
+  background: none; color: var(--text-secondary); font-size: 13px;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.tiptap-toolbar button:hover { background: var(--surface-hover); color: var(--text); }
+.tiptap-toolbar button.active { background: var(--accent); color: #fff; }
+.tiptap-toolbar .separator { width: 1px; background: var(--border-light); margin: 4px 4px; }
 
-.tags-input-wrap { padding: 0 24px 20px; }
-.tags-input-wrap label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; }
-.tags-input-wrap input {
+/* TipTap editing area */
+.tiptap-editor { padding: 20px 24px; min-height: 400px; }
+.ProseMirror {
+  outline: none; font-size: 16px; line-height: 1.9;
+}
+.ProseMirror p { margin: 10px 0; }
+.ProseMirror h1 { font-size: 24px; font-weight: 600; margin: 24px 0 12px; font-family: var(--font-serif); }
+.ProseMirror h2 { font-size: 20px; font-weight: 600; margin: 20px 0 10px; font-family: var(--font-serif); }
+.ProseMirror h3 { font-size: 17px; font-weight: 600; margin: 16px 0 8px; font-family: var(--font-serif); }
+.ProseMirror ul, .ProseMirror ol { padding-left: 24px; margin: 10px 0; }
+.ProseMirror li { margin: 4px 0; }
+.ProseMirror blockquote {
+  border-left: 3px solid var(--accent); padding: 8px 20px;
+  margin: 16px 0; color: var(--text-secondary); background: var(--accent-light);
+}
+.ProseMirror code {
+  background: var(--border-light); padding: 2px 6px; border-radius: 4px;
+  font-size: 14px; font-family: 'SF Mono', Monaco, monospace;
+}
+.ProseMirror pre {
+  background: #1e1e2e; color: #cdd6f4; padding: 16px;
+  border-radius: var(--radius); overflow-x: auto; margin: 16px 0;
+  font-size: 13px; line-height: 1.7;
+}
+.ProseMirror pre code { background: none; padding: 0; color: inherit; }
+.ProseMirror a { color: var(--accent); text-decoration: underline; }
+.ProseMirror img { max-width: 100%; border-radius: var(--radius); margin: 12px 0; }
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder); float: left; color: var(--text-muted); pointer-events: none; height: 0;
+}
+
+/* Tags & bottom */
+.editor-tags { padding: 0 24px 16px; }
+.editor-tags label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; }
+.editor-tags input {
   width: 100%; padding: 10px 14px; border: 1px solid var(--border);
   border-radius: var(--radius); font-size: 14px; outline: none;
 }
-.tags-input-wrap input:focus { border-color: var(--accent); }
+.editor-tags input:focus { border-color: var(--accent); }
 
 /* Related */
 .related { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-light); }
@@ -337,7 +371,6 @@ a:hover { color: var(--accent-hover); }
   border-radius: var(--radius); cursor: pointer; transition: all 0.15s;
 }
 .related-item:hover { background: var(--surface); }
-.related-item .icon { font-size: 14px; }
 .related-item .title { font-size: 14px; color: var(--text); }
 
 /* Footer */
@@ -353,10 +386,9 @@ a:hover { color: var(--accent-hover); }
   .main { padding: 72px 16px 32px; }
   .page-header h1 { font-size: 24px; }
   .note-title { font-size: 26px; }
-  .note-detail { padding: 16px 0; }
-  .edit-overlay { padding: 60px 12px 20px; }
-  .title-input { font-size: 22px; padding: 16px 16px 12px; }
-  .editor-wrap { padding: 0 16px 16px; }
+  .editor-overlay { padding: 60px 12px 20px; }
+  .editor-title-input { font-size: 22px; padding: 14px 16px 12px; }
+  .tiptap-editor { padding: 14px 16px; }
 }
 </style>
 </head>
@@ -379,7 +411,7 @@ a:hover { color: var(--accent-hover); }
             <div class="avatar">{{ userInitial }}</div>
             编辑模式
           </div>
-          <button class="btn btn-icon" @click="logout" title="退出">⟳</button>
+          <button class="btn btn-ghost" @click="logout" title="退出登录">退出</button>
         </template>
       </div>
     </div>
@@ -403,7 +435,7 @@ a:hover { color: var(--accent-hover); }
       <div class="note-list" v-if="notes.length">
         <div class="note-card" v-for="n in notes" :key="n.id" @click="openNote(n.id)">
           <div class="note-card-title">
-            <span class="pin" v-if="n.is_pinned">📌</span>
+            <span v-if="n.is_pinned">📌</span>
             {{ n.title }}
           </div>
           <div class="note-card-preview" v-if="n.snippet" v-html="n.snippet"></div>
@@ -415,10 +447,7 @@ a:hover { color: var(--accent-hover); }
         </div>
       </div>
 
-      <div class="loading" v-if="loading && !notes.length">
-        <div class="spinner"></div>
-      </div>
-
+      <div class="loading" v-if="loading && !notes.length"><div class="spinner"></div></div>
       <div class="empty" v-if="!notes.length && !expanded && !loading">
         <span v-if="searchQuery.trim()">没有找到匹配的笔记</span>
         <span v-else>暂无笔记</span>
@@ -449,27 +478,21 @@ a:hover { color: var(--accent-hover); }
     <template v-if="expanded">
       <article class="note-detail">
         <div class="note-detail-back" @click="closeNote">← 返回</div>
-
-        <div class="loading" v-if="detailLoading">
-          <div class="spinner"></div>
-        </div>
-
+        <div class="loading" v-if="detailLoading"><div class="spinner"></div></div>
         <template v-else-if="currentNote">
           <h1 class="note-title">{{ currentNote.title }}</h1>
           <div class="note-meta">
             <span>{{ fmt(currentNote.source_created_at || currentNote.created_at) }}</span>
             <span class="tag" v-for="t in (currentNote.tags || [])" :key="t">{{ t }}</span>
             <template v-if="isAuthenticated">
-              <button class="btn btn-ghost note-edit-btn" @click="startEdit">✏️ 编辑</button>
+              <button class="btn btn-ghost" style="margin-left:auto" @click="startEdit">✏️ 编辑</button>
             </template>
           </div>
           <div class="note-content" v-html="renderMd(currentNote.content)"></div>
-
           <div class="related" v-if="relatedNotes.length">
             <h4>📎 相关笔记</h4>
             <div class="related-item" v-for="r in relatedNotes" :key="r.id" @click="openNote(r.id)">
-              <span class="icon">›</span>
-              <span class="title">{{ r.title }}</span>
+              <span>›</span><span class="title">{{ r.title }}</span>
             </div>
           </div>
         </template>
@@ -493,10 +516,10 @@ a:hover { color: var(--accent-hover); }
     </div>
   </div>
 
-  <!-- Edit Panel -->
-  <div class="edit-overlay" v-if="editMode" @click.self="cancelEdit">
-    <div class="edit-container">
-      <div class="edit-header">
+  <!-- TipTap Editor Overlay -->
+  <div class="editor-overlay" v-if="editMode" @click.self="cancelEdit">
+    <div class="editor-container">
+      <div class="editor-header">
         <h3>{{ editingNote.id ? '编辑笔记' : '新建笔记' }}</h3>
         <div class="actions">
           <button class="btn btn-ghost" @click="cancelEdit">取消</button>
@@ -506,27 +529,59 @@ a:hover { color: var(--accent-hover); }
         </div>
       </div>
 
-      <input class="title-input" v-model="editingNote.title" placeholder="无标题">
+      <input class="editor-title-input" v-model="editingNote.title" placeholder="无标题">
 
-      <div class="editor-wrap">
-        <textarea v-model="editingContent" placeholder="开始写作...支持 Markdown 语法"></textarea>
+      <div class="tiptap-toolbar">
+        <button :class="{active: editor?.isActive('bold')}" @click="editor.chain().focus().toggleBold().run()" title="粗体"><b>B</b></button>
+        <button :class="{active: editor?.isActive('italic')}" @click="editor.chain().focus().toggleItalic().run()" title="斜体"><i>I</i></button>
+        <button :class="{active: editor?.isActive('underline')}" @click="editor.chain().focus().toggleUnderline().run()" title="下划线"><u>U</u></button>
+        <button :class="{active: editor?.isActive('strike')}" @click="editor.chain().focus().toggleStrike().run()" title="删除线"><s>S</s></button>
+        <div class="separator"></div>
+        <button :class="{active: editor?.isActive('heading',{level:1})}" @click="editor.chain().focus().toggleHeading({level:1}).run()">H1</button>
+        <button :class="{active: editor?.isActive('heading',{level:2})}" @click="editor.chain().focus().toggleHeading({level:2}).run()">H2</button>
+        <button :class="{active: editor?.isActive('heading',{level:3})}" @click="editor.chain().focus().toggleHeading({level:3}).run()">H3</button>
+        <div class="separator"></div>
+        <button :class="{active: editor?.isActive('bulletList')}" @click="editor.chain().focus().toggleBulletList().run()">• 列表</button>
+        <button :class="{active: editor?.isActive('orderedList')}" @click="editor.chain().focus().toggleOrderedList().run()">1. 列表</button>
+        <button :class="{active: editor?.isActive('blockquote')}" @click="editor.chain().focus().toggleBlockquote().run()">❝ 引用</button>
+        <button :class="{active: editor?.isActive('codeBlock')}" @click="editor.chain().focus().toggleCodeBlock().run()">&lt;/&gt; 代码</button>
+        <div class="separator"></div>
+        <button @click="insertImage" title="插入图片">🖼️ 图片</button>
+        <button @click="insertLink" title="插入链接">🔗 链接</button>
+        <div class="separator"></div>
+        <button @click="editor.chain().focus().undo().run()" title="撤销">↶</button>
+        <button @click="editor.chain().focus().redo().run()" title="重做">↷</button>
       </div>
 
-      <div class="tags-input-wrap">
+      <div class="tiptap-editor">
+        <div id="tiptap-editor"></div>
+      </div>
+
+      <div class="editor-tags">
         <label>标签（逗号分隔）</label>
         <input v-model="editingTags" placeholder="例如：技术, 读书笔记">
       </div>
     </div>
   </div>
+
+  <!-- Hidden file input for image upload -->
+  <input type="file" id="imageUploadInput" accept="image/*" style="display:none" @change="handleImageUpload">
 </div>
 
 <script src="js/marked.min.js"></script>
 <script>
 (function() {
-  var { createApp, ref, computed, onMounted, nextTick } = Vue;
+  var { createApp, ref, computed, onMounted, nextTick, onBeforeUnmount } = Vue;
+  var { Editor } = TiptapCore;
+  var { StarterKit } = TiptapStarterKit;
+  var { Image } = TiptapExtensionImage;
+  var { Link } = TiptapExtensionLink;
+  var { Placeholder } = TiptapExtensionPlaceholder;
+  var { Underline } = TiptapExtensionUnderline;
 
   var API = '/api';
   var PER_PAGE = 20;
+  var editor = null;
 
   createApp({
     setup() {
@@ -556,7 +611,6 @@ a:hover { color: var(--accent-hover); }
       // Edit
       var editMode = ref(false);
       var editingNote = ref(null);
-      var editingContent = ref('');
       var editingTags = ref('');
       var saving = ref(false);
 
@@ -627,7 +681,7 @@ a:hover { color: var(--accent-hover); }
           .replace(/&lt;mark/g, '<mark').replace(/mark&gt;/g, 'mark>');
       }
 
-      // Data
+      // Data fetch
       function fetchPage() {
         loading.value = true;
         var q = searchQuery.value.trim();
@@ -762,12 +816,28 @@ a:hover { color: var(--accent-hover); }
         isAuthenticated.value = false;
       }
 
-      // Edit
+      // Editor
+      function initEditor(content) {
+        if (editor) editor.destroy();
+        editor = new Editor({
+          element: document.getElementById('tiptap-editor'),
+          content: content || '',
+          extensions: [
+            StarterKit,
+            Underline,
+            Link.configure({ openOnClick: false }),
+            Image,
+            Placeholder.configure({ placeholder: '开始写作...' }),
+          ],
+        });
+      }
+
       function startNewNote() {
+        if (!isAuthenticated.value) { showLogin.value = true; return; }
         editingNote.value = { id: null, title: '', content: '' };
-        editingContent.value = '';
         editingTags.value = '';
         editMode.value = true;
+        nextTick(function() { initEditor(''); });
       }
 
       function startEdit() {
@@ -777,15 +847,47 @@ a:hover { color: var(--accent-hover); }
           title: currentNote.value.title,
           content: currentNote.value.content
         };
-        editingContent.value = currentNote.value.content;
         editingTags.value = (currentNote.value.tags || []).join(', ');
         editMode.value = true;
+        nextTick(function() { initEditor(currentNote.value.content || ''); });
       }
 
       function cancelEdit() {
         editMode.value = false;
         editingNote.value = null;
-        editingContent.value = '';
+        if (editor) { editor.destroy(); editor = null; }
+      }
+
+      function getEditorHTML() {
+        return editor ? editor.getHTML() : '';
+      }
+
+      function insertImage() {
+        var input = document.getElementById('imageUploadInput');
+        input.click();
+      }
+
+      function handleImageUpload(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var formData = new FormData();
+        formData.append('file', file);
+        fetch(API + '/upload', { method: 'POST', body: formData })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.url) {
+              editor.chain().focus().setImage({ src: d.url }).run();
+            }
+          })
+          .catch(function() { alert('上传失败'); });
+        e.target.value = '';
+      }
+
+      function insertLink() {
+        var url = prompt('输入链接地址：');
+        if (url) {
+          editor.chain().focus().setLink({ href: url }).run();
+        }
       }
 
       function saveNote() {
@@ -795,7 +897,7 @@ a:hover { color: var(--accent-hover); }
         var tags = editingTags.value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
         var payload = {
           title: editingNote.value.title || '无标题',
-          content: editingContent.value,
+          content: getEditorHTML(),
           tags: tags
         };
 
@@ -815,8 +917,7 @@ a:hover { color: var(--accent-hover); }
         .then(function(d) {
           saving.value = false;
           if (d.id) {
-            editMode.value = false;
-            editingNote.value = null;
+            cancelEdit();
             fetchPage();
             fetchTags();
           }
@@ -844,11 +945,14 @@ a:hover { color: var(--accent-hover); }
         fetchPage();
         fetchTags();
         document.addEventListener('keydown', onKeydown);
-
         if (window.location.hash) {
           var m = window.location.hash.match(/#note-(\d+)/);
           if (m) openNote(parseInt(m[1]));
         }
+      });
+
+      onBeforeUnmount(function() {
+        if (editor) editor.destroy();
       });
 
       return {
@@ -859,8 +963,9 @@ a:hover { color: var(--accent-hover); }
         currentNote, fmt, renderMd, stripMd,
         isAuthenticated, showLogin, loginPassword, loginError, userInitial,
         login, logout,
-        editMode, editingNote, editingContent, editingTags, saving,
-        startNewNote, startEdit, cancelEdit, saveNote
+        editMode, editingNote, editingTags, saving,
+        startNewNote, startEdit, cancelEdit, saveNote, editor,
+        insertImage, handleImageUpload, insertLink
       };
     }
   }).mount('#app');
