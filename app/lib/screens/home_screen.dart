@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedTag = '';
   String _searchQuery = '';
   bool _loading = true;
-  bool _loadingMore = false;
+  final bool _loadingMore = false;
   bool _hasMore = true;
   int _skip = 0;
   int _totalCount = 0; // v0.3.10.23: 服务端返回的笔记总数
