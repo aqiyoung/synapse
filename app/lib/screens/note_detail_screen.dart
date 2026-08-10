@@ -49,9 +49,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加载失败: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('加载失败: $e')));
     }
   }
 
@@ -63,10 +63,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   Future<void> _shareLink() async {
     if (_note == null) return;
-    await Share.share(
-      '${_note!.title}\n$_noteUrl',
-      subject: _note!.title,
-    );
+    await Share.share('${_note!.title}\n$_noteUrl', subject: _note!.title);
   }
 
   @override
@@ -92,10 +89,12 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             ),
           ],
         ),
-        body: _loading
-            ? Center(
-                child: CircularProgressIndicator(color: colorScheme.primary))
-            : _note == null
+        body:
+            _loading
+                ? Center(
+                  child: CircularProgressIndicator(color: colorScheme.primary),
+                )
+                : _note == null
                 ? const Center(child: Text('笔记不存在'))
                 : _buildContent(colorScheme),
       ),
@@ -126,21 +125,22 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              ..._note!.tags.map((tag) => Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      tag,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  )),
+              ..._note!.tags.map(
+                (tag) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    tag,
+                    style: TextStyle(fontSize: 11, color: colorScheme.primary),
+                  ),
+                ),
+              ),
               if (_note!.sourceCreatedAt != null)
                 Text(
                   '撰写 ${_formatDate(_note!.sourceCreatedAt!)}',
@@ -257,9 +257,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Row(
             children: [
-              Icon(icon,
-                  size: 12,
-                  color: colorScheme.onSurface.withValues(alpha: 0.5)),
+              Icon(
+                icon,
+                size: 12,
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
               const SizedBox(width: 4),
               Text(
                 '$label · ${notes.length}',
@@ -278,7 +280,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   }
 
   Widget _buildRelationTile(
-      Map<String, dynamic> note, ColorScheme colorScheme) {
+    Map<String, dynamic> note,
+    ColorScheme colorScheme,
+  ) {
     final id = note['id'] as int?;
     final title = (note['title'] as String?) ?? '未命名';
     if (id == null) return const SizedBox.shrink();
@@ -288,9 +292,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => NoteDetailScreen(noteId: id),
-            ),
+            MaterialPageRoute(builder: (_) => NoteDetailScreen(noteId: id)),
           );
         },
         borderRadius: BorderRadius.circular(12),
@@ -345,10 +347,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
     // Split by code blocks: ```lang\n...code...\n```
     final parts = content.split(RegExp(r'```\w*\n[\s\S]*?\n```'));
-    final codeBlocks = RegExp(r'```(\w*)\n([\s\S]*?)\n```')
-        .allMatches(content)
-        .map((m) => {'lang': m.group(1) ?? '', 'code': m.group(2) ?? ''})
-        .toList();
+    final codeBlocks =
+        RegExp(r'```(\w*)\n([\s\S]*?)\n```')
+            .allMatches(content)
+            .map((m) => {'lang': m.group(1) ?? '', 'code': m.group(2) ?? ''})
+            .toList();
 
     final children = <Widget>[];
     for (int i = 0; i < parts.length; i++) {
@@ -396,14 +399,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ),
                     blockquoteDecoration: BoxDecoration(
                       border: Border(
-                        left: BorderSide(
-                          color: colorScheme.primary,
-                          width: 3,
-                        ),
+                        left: BorderSide(color: colorScheme.primary, width: 3),
                       ),
                     ),
-                    blockquotePadding:
-                        const EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                    blockquotePadding: const EdgeInsets.only(
+                      left: 16,
+                      top: 8,
+                      bottom: 8,
+                    ),
                   ),
                 ),
               ),
@@ -411,23 +414,27 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           }
           // Insert a divider between segments (not after the last one)
           if (si < mdSegments.length - 1) {
-            children.add(Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Divider(
-                height: 1,
-                color: colorScheme.outline.withValues(alpha: 0.15),
+            children.add(
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Divider(
+                  height: 1,
+                  color: colorScheme.outline.withValues(alpha: 0.15),
+                ),
               ),
-            ));
+            );
           }
         }
       }
       // Add code block
       if (i < codeBlocks.length) {
-        children.add(_buildCodeBlock(
-          codeBlocks[i]['lang']!,
-          codeBlocks[i]['code']!,
-          colorScheme,
-        ));
+        children.add(
+          _buildCodeBlock(
+            codeBlocks[i]['lang']!,
+            codeBlocks[i]['code']!,
+            colorScheme,
+          ),
+        );
       }
     }
 
@@ -443,9 +450,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -489,8 +494,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                   },
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -539,4 +546,3 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     return '${date.month}月${date.day}日 ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
-

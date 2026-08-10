@@ -94,23 +94,28 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      final msg = e.toString().contains('SocketException')
-          ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
-          : '加载失败: $e';
+      final msg =
+          e.toString().contains('SocketException')
+              ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
+              : '加载失败: $e';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg),
           action: SnackBarAction(
             label: '设置',
-            onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => SettingsScreen(
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (_) => SettingsScreen(
                           onToggleTheme: widget.onToggleTheme,
                           isDark: widget.isDark,
                           themeIndex: widget.themeIndex,
                           onThemeChanged: widget.onThemeChanged,
-                        ))),
+                        ),
+                  ),
+                ),
           ),
         ),
       );
@@ -183,16 +188,22 @@ class _HomeScreenState extends State<HomeScreen> {
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
             NavigationDestination(
-              icon: Icon(Icons.hub_outlined,
-                  color: colorScheme.onSurface.withValues(alpha: 0.6)),
+              icon: Icon(
+                Icons.hub_outlined,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
               selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
               label: _isChinese ? '图谱' : 'Graph',
             ),
             NavigationDestination(
-              icon: Icon(Icons.library_books_outlined,
-                  color: colorScheme.onSurface.withValues(alpha: 0.6)),
-              selectedIcon:
-                  Icon(Icons.library_books, color: colorScheme.primary),
+              icon: Icon(
+                Icons.library_books_outlined,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              selectedIcon: Icon(
+                Icons.library_books,
+                color: colorScheme.primary,
+              ),
               label: _isChinese ? '笔记' : 'Notes',
             ),
             NavigationDestination(
@@ -203,8 +214,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      Icon(Icons.person_outline,
-                          color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                      Icon(
+                        Icons.person_outline,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
                       if (count > 0)
                         Positioned(
                           right: -6,
@@ -212,13 +225,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(2),
                             decoration: const BoxDecoration(
-                                color: Colors.red, shape: BoxShape.circle),
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
                             constraints: const BoxConstraints(
-                                minWidth: 14, minHeight: 14),
-                            child: Text('$count',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 8),
-                                textAlign: TextAlign.center),
+                              minWidth: 14,
+                              minHeight: 14,
+                            ),
+                            child: Text(
+                              '$count',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                     ],
@@ -260,7 +281,11 @@ class _HomeScreenState extends State<HomeScreen> {
             // 液态玻璃 Header（包含 title + search + tags + update banner）
             GlassContainer(
               margin: EdgeInsets.fromLTRB(
-                  8, MediaQuery.of(context).padding.top + 8, 8, 8),
+                8,
+                MediaQuery.of(context).padding.top + 8,
+                8,
+                8,
+              ),
               borderRadius: BorderRadius.circular(20),
               blur: 24,
               tintOpacity: 0.45,
@@ -310,37 +335,47 @@ class _HomeScreenState extends State<HomeScreen> {
                       hintStyle: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
-                      prefixIcon: Icon(Icons.search,
-                          color: colorScheme.onSurface.withValues(alpha: 0.4)),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(Icons.clear,
-                                  color: colorScheme.onSurface
-                                      .withValues(alpha: 0.4)),
-                              onPressed: () {
-                                _searchController.clear();
-                                _onSearch('');
-                              },
-                            )
-                          : null,
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      suffixIcon:
+                          _searchQuery.isNotEmpty
+                              ? IconButton(
+                                icon: Icon(
+                                  Icons.clear,
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _onSearch('');
+                                },
+                              )
+                              : null,
                       filled: true,
                       fillColor: colorScheme.surface.withValues(alpha: 0.6),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.2)),
+                          color: colorScheme.outline.withValues(alpha: 0.2),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.2)),
+                          color: colorScheme.outline.withValues(alpha: 0.2),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: colorScheme.primary),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                     ),
                   ),
                   // 标签栏（过滤日期和无意义标签，按热度排序，随机显示5个热门标签）
@@ -361,15 +396,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 onTap: () => _onTagSelected(''),
                               ),
                             ),
-                            ..._getPopularTags().map((tag) => Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: TagChip(
-                                    label: tag.name,
-                                    selected: _selectedTag == tag.name,
-                                    count: tag.noteCount,
-                                    onTap: () => _onTagSelected(tag.name),
-                                  ),
-                                )),
+                            ..._getPopularTags().map(
+                              (tag) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: TagChip(
+                                  label: tag.name,
+                                  selected: _selectedTag == tag.name,
+                                  count: tag.noteCount,
+                                  onTap: () => _onTagSelected(tag.name),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -379,56 +416,64 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             // 笔记列表
             Expanded(
-              child: _loading
-                  ? Center(
-                      child:
-                          CircularProgressIndicator(color: colorScheme.primary))
-                  : _notes.isEmpty
+              child:
+                  _loading
                       ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
-                                style: TextStyle(
-                                  color: colorScheme.onSurface
-                                      .withValues(alpha: 0.4),
+                        child: CircularProgressIndicator(
+                          color: colorScheme.primary,
+                        ),
+                      )
+                      : _notes.isEmpty
+                      ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              ApiService.isConfigured ? '暂无笔记' : '请先配置服务器',
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.4,
                                 ),
                               ),
-                              if (!ApiService.isConfigured) ...[
-                                const SizedBox(height: 12),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => SettingsScreen(
-                                        onToggleTheme: widget.onToggleTheme,
-                                        isDark: widget.isDark,
-                                        themeIndex: widget.themeIndex,
-                                        onThemeChanged: widget.onThemeChanged,
+                            ),
+                            if (!ApiService.isConfigured) ...[
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed:
+                                    () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => SettingsScreen(
+                                              onToggleTheme:
+                                                  widget.onToggleTheme,
+                                              isDark: widget.isDark,
+                                              themeIndex: widget.themeIndex,
+                                              onThemeChanged:
+                                                  widget.onThemeChanged,
+                                            ),
                                       ),
-                                    ),
-                                  ).then((_) => _loadData()),
-                                  child: const Text('前往设置'),
-                                ),
-                              ],
+                                    ).then((_) => _loadData()),
+                                child: const Text('前往设置'),
+                              ),
                             ],
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: _loadData,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.only(top: 8, bottom: 80),
-                            cacheExtent: 600,
-                            itemCount: _notes.length + (_hasMore ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index >= _notes.length) {
-                                return _buildLoadMoreItem(colorScheme);
-                              }
-                              return _buildNoteItem(_notes[index], colorScheme);
-                            },
-                          ),
+                          ],
                         ),
+                      )
+                      : RefreshIndicator(
+                        onRefresh: _loadData,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.only(top: 8, bottom: 80),
+                          cacheExtent: 600,
+                          itemCount: _notes.length + (_hasMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= _notes.length) {
+                              return _buildLoadMoreItem(colorScheme);
+                            }
+                            return _buildNoteItem(_notes[index], colorScheme);
+                          },
+                        ),
+                      ),
             ),
           ],
         ),
@@ -438,7 +483,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Build highlighted text spans for a string, matching [_searchQuery] keywords.
   List<TextSpan> _highlightText(
-      String text, TextStyle baseStyle, ColorScheme colorScheme) {
+    String text,
+    TextStyle baseStyle,
+    ColorScheme colorScheme,
+  ) {
     if (_searchQuery.isEmpty || text.isEmpty) {
       return [TextSpan(text: text, style: baseStyle)];
     }
@@ -452,13 +500,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (idx > start) {
         spans.add(TextSpan(text: text.substring(start, idx), style: baseStyle));
       }
-      spans.add(TextSpan(
-        text: text.substring(idx, idx + _searchQuery.length),
-        style: baseStyle.copyWith(
-          color: colorScheme.primary,
-          fontWeight: FontWeight.w600,
+      spans.add(
+        TextSpan(
+          text: text.substring(idx, idx + _searchQuery.length),
+          style: baseStyle.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ));
+      );
       start = idx + _searchQuery.length;
     }
     if (start < text.length) {
@@ -475,9 +525,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => NoteDetailScreen(noteId: note.id),
-          ),
+          MaterialPageRoute(builder: (_) => NoteDetailScreen(noteId: note.id)),
         );
       },
       child: Container(
@@ -501,32 +549,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 6),
                 ],
                 Expanded(
-                  child: hasHighlight
-                      ? RichText(
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          text: TextSpan(
-                            children: _highlightText(
-                              note.title,
-                              TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: colorScheme.onSurface,
+                  child:
+                      hasHighlight
+                          ? RichText(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            text: TextSpan(
+                              children: _highlightText(
+                                note.title,
+                                TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: colorScheme.onSurface,
+                                ),
+                                colorScheme,
                               ),
-                              colorScheme,
                             ),
+                          )
+                          : Text(
+                            note.title,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        )
-                      : Text(
-                          note.title,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurface,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
                 ),
               ],
             ),
@@ -534,36 +583,38 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 2),
               hasHighlight
                   ? RichText(
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      text: TextSpan(
-                        children: _highlightText(
-                          note.summary,
-                          TextStyle(
-                            fontSize: 12,
-                            color: colorScheme.onSurface.withValues(alpha: 0.5),
-                          ),
-                          colorScheme,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      children: _highlightText(
+                        note.summary,
+                        TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
+                        colorScheme,
                       ),
-                    )
-                  : Text(
-                      note.summary,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
+                  )
+                  : Text(
+                    note.summary,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
             ],
             const SizedBox(height: 6),
             Row(
               children: [
                 if (note.tags.isNotEmpty) ...[
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -608,28 +659,38 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 获取热门标签（过滤日期和无意义标签，按热度排序，随机选择5个）
   List<Tag> _getPopularTags() {
     // 过滤掉日期格式和无意义标签
-    final filteredTags = _tags.where((tag) {
-      final name = tag.name.trim();
+    final filteredTags =
+        _tags.where((tag) {
+          final name = tag.name.trim();
 
-      // 过滤日期格式：2026、2026-04、2026-05 等
-      if (RegExp(r'^\d{4}(-\d{2})?$').hasMatch(name)) return false;
+          // 过滤日期格式：2026、2026-04、2026-05 等
+          if (RegExp(r'^\d{4}(-\d{2})?$').hasMatch(name)) return false;
 
-      // 过滤无意义标签（太短或明显无意义）
-      if (name.length <= 1) {
-        return false;
-      }
-      if (['了什么', '的工', '的工作', '入十几', '入十几万', '什么', '现在', '需要', '全天']
-          .contains(name)) {
-        return false;
-      }
+          // 过滤无意义标签（太短或明显无意义）
+          if (name.length <= 1) {
+            return false;
+          }
+          if ([
+            '了什么',
+            '的工',
+            '的工作',
+            '入十几',
+            '入十几万',
+            '什么',
+            '现在',
+            '需要',
+            '全天',
+          ].contains(name)) {
+            return false;
+          }
 
-      // 过滤note_count为0的标签
-      if (tag.noteCount <= 0) {
-        return false;
-      }
+          // 过滤note_count为0的标签
+          if (tag.noteCount <= 0) {
+            return false;
+          }
 
-      return true;
-    }).toList();
+          return true;
+        }).toList();
 
     // 按热度排序（note_count降序）
     filteredTags.sort((a, b) => b.noteCount.compareTo(a.noteCount));
@@ -674,40 +735,39 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(width: 8),
           // Page numbers
-          ...List.generate(
-            _currentPage + (_hasMore ? 1 : 0),
-            (index) {
-              final page = index + 1;
-              final isCurrent = page == _currentPage;
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: InkWell(
-                  onTap: () => _goToPage(page),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: isCurrent ? colorScheme.primary : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isCurrent ? colorScheme.primary : colorScheme.outline,
-                      ),
+          ...List.generate(_currentPage + (_hasMore ? 1 : 0), (index) {
+            final page = index + 1;
+            final isCurrent = page == _currentPage;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: InkWell(
+                onTap: () => _goToPage(page),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isCurrent ? colorScheme.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color:
+                          isCurrent ? colorScheme.primary : colorScheme.outline,
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '$page',
-                      style: TextStyle(
-                        color: isCurrent ? Colors.white : colorScheme.onSurface,
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 13,
-                      ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$page',
+                    style: TextStyle(
+                      color: isCurrent ? Colors.white : colorScheme.onSurface,
+                      fontWeight:
+                          isCurrent ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 13,
                     ),
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          }),
           const SizedBox(width: 8),
           // Next button
           IconButton(

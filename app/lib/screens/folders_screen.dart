@@ -36,61 +36,79 @@ class _FoldersScreenState extends State<FoldersScreen> {
     String selectedColor = '#c96442';
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('新建分类'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: '分类名称'),
-                autofocus: true,
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                children: [
-                  '#c96442',
-                  '#4CAF50',
-                  '#2196F3',
-                  '#9C27B0',
-                  '#FF9800',
-                  '#607D8B'
-                ]
-                    .map((c) => GestureDetector(
-                          onTap: () => setDialogState(() => selectedColor = c),
-                          child: CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Color(
-                                int.parse(c.substring(1), radix: 16) +
-                                    0xFF000000),
-                            child: selectedColor == c
-                                ? const Icon(Icons.check,
-                                    size: 16, color: Colors.white)
-                                : null,
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ],
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, setDialogState) => AlertDialog(
+                  title: const Text('新建分类'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameCtrl,
+                        decoration: const InputDecoration(labelText: '分类名称'),
+                        autofocus: true,
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        children:
+                            [
+                                  '#c96442',
+                                  '#4CAF50',
+                                  '#2196F3',
+                                  '#9C27B0',
+                                  '#FF9800',
+                                  '#607D8B',
+                                ]
+                                .map(
+                                  (c) => GestureDetector(
+                                    onTap:
+                                        () => setDialogState(
+                                          () => selectedColor = c,
+                                        ),
+                                    child: CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Color(
+                                        int.parse(c.substring(1), radix: 16) +
+                                            0xFF000000,
+                                      ),
+                                      child:
+                                          selectedColor == c
+                                              ? const Icon(
+                                                Icons.check,
+                                                size: 16,
+                                                color: Colors.white,
+                                              )
+                                              : null,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        if (nameCtrl.text.isNotEmpty) {
+                          await FolderService.createFolder(
+                            name: nameCtrl.text,
+                            color: selectedColor,
+                          );
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _load();
+                        }
+                      },
+                      child: const Text('创建'),
+                    ),
+                  ],
+                ),
           ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-            TextButton(
-                onPressed: () async {
-                  if (nameCtrl.text.isNotEmpty) {
-                    await FolderService.createFolder(
-                        name: nameCtrl.text, color: selectedColor);
-                    if (ctx.mounted) Navigator.pop(ctx);
-                    _load();
-                  }
-                },
-                child: const Text('创建')),
-          ],
-        ),
-      ),
     );
   }
 
@@ -98,38 +116,42 @@ class _FoldersScreenState extends State<FoldersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('分类管理')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _folders.isEmpty
+      body:
+          _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _folders.isEmpty
               ? const Center(child: Text('暂无分类，点击 + 创建'))
               : ListView.builder(
-                  itemCount: _folders.length,
-                  itemBuilder: (ctx, i) {
-                    final f = _folders[i];
-                    final color = Color(
-                        int.parse(f.color.substring(1), radix: 16) +
-                            0xFF000000);
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: color,
-                        child: const Icon(Icons.folder, color: Colors.white),
-                      ),
-                      title: Text(f.name),
-                      subtitle: Text('${f.noteCount} 篇笔记'),
+                itemCount: _folders.length,
+                itemBuilder: (ctx, i) {
+                  final f = _folders[i];
+                  final color = Color(
+                    int.parse(f.color.substring(1), radix: 16) + 0xFF000000,
+                  );
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: color,
+                      child: const Icon(Icons.folder, color: Colors.white),
+                    ),
+                    title: Text(f.name),
+                    subtitle: Text('${f.noteCount} 篇笔记'),
 
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FolderNotesScreen(
-                                folder: f, themeIndex: widget.themeIndex),
-                          ),
-                        );
-                        _load();
-                      },
-                    );
-                  },
-                ),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => FolderNotesScreen(
+                                folder: f,
+                                themeIndex: widget.themeIndex,
+                              ),
+                        ),
+                      );
+                      _load();
+                    },
+                  );
+                },
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateDialog,
         child: const Icon(Icons.add),
@@ -141,8 +163,11 @@ class _FoldersScreenState extends State<FoldersScreen> {
 class FolderNotesScreen extends StatefulWidget {
   final Folder folder;
   final int themeIndex;
-  const FolderNotesScreen(
-      {super.key, required this.folder, required this.themeIndex});
+  const FolderNotesScreen({
+    super.key,
+    required this.folder,
+    required this.themeIndex,
+  });
   @override
   State<FolderNotesScreen> createState() => _FolderNotesScreenState();
 }
@@ -171,46 +196,55 @@ class _FolderNotesScreenState extends State<FolderNotesScreen> {
   @override
   Widget build(BuildContext context) {
     final color = Color(
-        int.parse(widget.folder.color.substring(1), radix: 16) + 0xFF000000);
+      int.parse(widget.folder.color.substring(1), radix: 16) + 0xFF000000,
+    );
     return Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
             CircleAvatar(
-                radius: 12,
-                backgroundColor: color,
-                child: const Icon(Icons.folder, size: 14, color: Colors.white)),
+              radius: 12,
+              backgroundColor: color,
+              child: const Icon(Icons.folder, size: 14, color: Colors.white),
+            ),
             const SizedBox(width: 8),
             Text(widget.folder.name),
           ],
         ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _notes.isEmpty
+      body:
+          _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _notes.isEmpty
               ? const Center(child: Text('暂无笔记'))
               : ListView.builder(
-                  itemCount: _notes.length,
-                  itemBuilder: (ctx, i) {
-                    final n = _notes[i];
-                    return ListTile(
-                      title: Text(n.title,
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      subtitle: Text(n.summary,
-                          maxLines: 2, overflow: TextOverflow.ellipsis),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => NoteDetailScreen(noteId: n.id),
-                          ),
-                        );
-                        _load();
-                      },
-                    );
-                  },
-                ),
+                itemCount: _notes.length,
+                itemBuilder: (ctx, i) {
+                  final n = _notes[i];
+                  return ListTile(
+                    title: Text(
+                      n.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      n.summary,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => NoteDetailScreen(noteId: n.id),
+                        ),
+                      );
+                      _load();
+                    },
+                  );
+                },
+              ),
     );
   }
 }
