@@ -117,32 +117,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadMore() async {
-    if (_loadingMore || !_hasMore) return;
-    setState(() => _loadingMore = true);
-    try {
-      final (notes, total) = await ApiService.getNotes(
-        tag: _selectedTag.isEmpty ? null : _selectedTag,
-        search: _searchQuery.isEmpty ? null : _searchQuery,
-        limit: _pageSize,
-        skip: _skip + _pageSize,
-      );
-      setState(() {
-        _notes.addAll(notes);
-        _skip += _pageSize;
-        _totalCount = total;
-        _hasMore = notes.length >= _pageSize;
-        _loadingMore = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _loadingMore = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加载更多失败: $e')),
-      );
-    }
-  }
-
   void _onTagSelected(String tag) {
     setState(() {
       _selectedTag = tag == _selectedTag ? '' : tag;
@@ -617,10 +591,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  void _showNoteMenu(Note note) {
-    // 只读模式 - 菜单功能已移除
   }
 
   String _formatTimeAgo(DateTime? dateTime) {

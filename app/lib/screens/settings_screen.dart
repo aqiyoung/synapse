@@ -306,10 +306,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  void _showLoginDialog() {
-    // 只读模式 - 管理员登录已禁用
-  }
-
   Widget _buildThemeGrid(ColorScheme colorScheme) {
     return GridView.builder(
       shrinkWrap: true,

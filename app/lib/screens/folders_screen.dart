@@ -94,10 +94,6 @@ class _FoldersScreenState extends State<FoldersScreen> {
     );
   }
 
-  void _showEditDialog(Folder folder) {
-    // 只读模式 - 编辑功能已移除
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
