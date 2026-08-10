@@ -56,8 +56,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  static const _modelKey = 'preferred_model';
-
   Future<void> _loadUpdateChannel() async {
     await UpdateService().loadChannel();
     if (!mounted) return;
@@ -646,8 +644,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // ── AI 功能 ──
-          activeColor: colorScheme.primary,
+          // ── 更新通道 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '更新通道',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildChannelOption(
+                        colorScheme,
+                        title: '稳定版',
+                        subtitle: '推荐，经过充分测试',
+                        value: 'stable',
+                        icon: Icons.shield_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildChannelOption(
+                        colorScheme,
+                        title: '测试版',
+                        subtitle: '抢先体验新功能',
+                        value: 'beta',
+                        icon: Icons.science_outlined,
+                      ),
                     ),
                   ],
                 ),
@@ -655,7 +690,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-                  ) {
+          // ── 检查更新 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '应用更新',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildUpdateSection(colorScheme),
+              ],
+            ),
+          ),
+
+          // ── 服务器配置 ──
+          GlassContainer(
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: BorderRadius.circular(20),
+            blur: 24,
+            tintOpacity: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '服务器',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _serverController,
+                  decoration: InputDecoration(
+                    hintText: 'https://your-server.com',
+                    labelText: '服务器地址',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saveServer,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(_saved ? '已保存 ✓' : '保存'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChannelOption(
+    ColorScheme colorScheme, {
+    required String title,
+    required String subtitle,
+    required String value,
+    required IconData icon,
+  }) {
     final selected = _updateChannel == value;
     return GestureDetector(
       onTap: () => _setUpdateChannel(value),
