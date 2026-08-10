@@ -33,15 +33,18 @@ class Note {
       content: json['content'] ?? '',
       summary: json['summary'] ?? '',
       tags: List<String>.from(json['tags'] ?? []),
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'])
-          : null,
-      sourceCreatedAt: json['source_created_at'] != null
-          ? DateTime.tryParse(json['source_created_at'])
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'])
-          : null,
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'])
+              : null,
+      sourceCreatedAt:
+          json['source_created_at'] != null
+              ? DateTime.tryParse(json['source_created_at'])
+              : null,
+      updatedAt:
+          json['updated_at'] != null
+              ? DateTime.tryParse(json['updated_at'])
+              : null,
       isPinned: json['is_pinned'] ?? false,
       folderId: json['folder_id'],
     );

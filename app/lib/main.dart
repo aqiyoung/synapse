@@ -75,15 +75,15 @@ class _KnowledgeBaseAppState extends State<KnowledgeBaseApp> {
     SystemChrome.setSystemUIOverlayStyle(
       _themeMode == ThemeMode.dark
           ? const SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              statusBarIconBrightness: Brightness.light,
-              statusBarBrightness: Brightness.dark,
-            )
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+          )
           : const SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              statusBarIconBrightness: Brightness.dark,
-              statusBarBrightness: Brightness.light,
-            ),
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+          ),
     );
   }
 

@@ -5,8 +5,10 @@ import 'api_service.dart';
 
 class StatsService {
   static Future<OverallStats> getOverall() async {
-    final r = await http.get(Uri.parse('${ApiService.baseUrl}/stats'),
-        headers: ApiService.headers);
+    final r = await http.get(
+      Uri.parse('${ApiService.baseUrl}/stats'),
+      headers: ApiService.headers,
+    );
     if (r.statusCode == 200) {
       return OverallStats.fromJson(json.decode(r.body));
     }
@@ -15,8 +17,9 @@ class StatsService {
 
   static Future<ReadingStats> getNoteStats(int noteId) async {
     final r = await http.get(
-        Uri.parse('${ApiService.baseUrl}/stats/note/$noteId'),
-        headers: ApiService.headers);
+      Uri.parse('${ApiService.baseUrl}/stats/note/$noteId'),
+      headers: ApiService.headers,
+    );
     if (r.statusCode == 200) {
       return ReadingStats.fromJson(json.decode(r.body));
     }
@@ -24,7 +27,9 @@ class StatsService {
   }
 
   static Future<void> recordRead(int noteId) async {
-    await http.post(Uri.parse('${ApiService.baseUrl}/stats/note/$noteId/read'),
-        headers: ApiService.headers);
+    await http.post(
+      Uri.parse('${ApiService.baseUrl}/stats/note/$noteId/read'),
+      headers: ApiService.headers,
+    );
   }
 }

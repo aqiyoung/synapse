@@ -6,8 +6,10 @@ import 'api_service.dart';
 
 class FolderService {
   static Future<List<Folder>> getFolders() async {
-    final r = await http.get(Uri.parse('${ApiService.baseUrl}/folders'),
-        headers: ApiService.headers);
+    final r = await http.get(
+      Uri.parse('${ApiService.baseUrl}/folders'),
+      headers: ApiService.headers,
+    );
     if (r.statusCode == 200) {
       return (json.decode(r.body) as List)
           .map((e) => Folder.fromJson(e))
@@ -16,27 +18,34 @@ class FolderService {
     return [];
   }
 
-  static Future<Folder?> createFolder(
-      {required String name,
-      String icon = 'folder',
-      String color = '#c96442',
-      int? parentId}) async {
+  static Future<Folder?> createFolder({
+    required String name,
+    String icon = 'folder',
+    String color = '#c96442',
+    int? parentId,
+  }) async {
     final r = await http.post(
       Uri.parse('${ApiService.baseUrl}/folders'),
       headers: ApiService.headers,
-      body: json.encode(
-          {'name': name, 'icon': icon, 'color': color, 'parent_id': parentId}),
+      body: json.encode({
+        'name': name,
+        'icon': icon,
+        'color': color,
+        'parent_id': parentId,
+      }),
     );
     if (r.statusCode == 200) return Folder.fromJson(json.decode(r.body));
     return null;
   }
 
-  static Future<bool> updateFolder(int id,
-      {String? name,
-      String? icon,
-      String? color,
-      int? parentId,
-      int? sortOrder}) async {
+  static Future<bool> updateFolder(
+    int id, {
+    String? name,
+    String? icon,
+    String? color,
+    int? parentId,
+    int? sortOrder,
+  }) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (icon != null) body['icon'] = icon;
@@ -52,15 +61,18 @@ class FolderService {
   }
 
   static Future<bool> deleteFolder(int id) async {
-    final r = await http.delete(Uri.parse('${ApiService.baseUrl}/folders/$id'),
-        headers: ApiService.headers);
+    final r = await http.delete(
+      Uri.parse('${ApiService.baseUrl}/folders/$id'),
+      headers: ApiService.headers,
+    );
     return r.statusCode == 200;
   }
 
   static Future<List<Note>> getFolderNotes(int folderId) async {
     final r = await http.get(
-        Uri.parse('${ApiService.baseUrl}/folders/$folderId/notes'),
-        headers: ApiService.headers);
+      Uri.parse('${ApiService.baseUrl}/folders/$folderId/notes'),
+      headers: ApiService.headers,
+    );
     if (r.statusCode == 200) {
       final data = json.decode(r.body);
       return (data['notes'] as List).map((n) => Note.fromJson(n)).toList();

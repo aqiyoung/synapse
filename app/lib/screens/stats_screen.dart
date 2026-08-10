@@ -48,28 +48,33 @@ class _StatsScreenState extends State<StatsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('阅读统计')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
+      body:
+          _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
               ? Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text('加载失败: $_error'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(onPressed: _load, child: const Text('重试')),
-                ]))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _buildOverviewCards(accentColor),
-                      const SizedBox(height: 16),
-                      _buildTrendChart(accentColor),
-                      const SizedBox(height: 16),
-                      _buildHotNotes(),
-                    ],
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('加载失败: $_error'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(onPressed: _load, child: const Text('重试')),
+                  ],
                 ),
+              )
+              : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _buildOverviewCards(accentColor),
+                    const SizedBox(height: 16),
+                    _buildTrendChart(accentColor),
+                    const SizedBox(height: 16),
+                    _buildHotNotes(),
+                  ],
+                ),
+              ),
     );
   }
 
@@ -87,16 +92,21 @@ class _StatsScreenState extends State<StatsScreen> {
         _statCard('🏷️', '总标签', '${_stats!.totalTags}', accentColor),
         _statCard('📖', '总阅读', '${_stats!.totalReads}', accentColor),
         _statCard(
-            '⏱️',
-            '阅读时长',
-            '${(_stats!.totalReadTime / 3600).toStringAsFixed(1)}h',
-            accentColor),
+          '⏱️',
+          '阅读时长',
+          '${(_stats!.totalReadTime / 3600).toStringAsFixed(1)}h',
+          accentColor,
+        ),
       ],
     );
   }
 
   Widget _statCard(
-      String emoji, String label, String value, Color accentColor) {
+    String emoji,
+    String label,
+    String value,
+    Color accentColor,
+  ) {
     return Card(
       elevation: 2,
       child: Padding(
@@ -106,14 +116,19 @@ class _StatsScreenState extends State<StatsScreen> {
           children: [
             Text(emoji, style: const TextStyle(fontSize: 24)),
             const SizedBox(height: 8),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: accentColor)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: accentColor,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(label,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            Text(
+              label,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
           ],
         ),
       ),
@@ -134,36 +149,43 @@ class _StatsScreenState extends State<StatsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('最近 30 天阅读趋势',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: accentColor)),
+            Text(
+              '最近 30 天阅读趋势',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: accentColor,
+              ),
+            ),
             const SizedBox(height: 16),
             SizedBox(
               height: 120,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: data.map((d) {
-                  final count = (d['count'] as num).toInt();
-                  final height =
-                      maxCount > 0 ? (count / maxCount * 100).toDouble() : 0.0;
-                  final date = d['date'].toString();
-                  return Expanded(
-                    child: Tooltip(
-                      message: '$date: $count 次',
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 1),
-                        height: height,
-                        decoration: BoxDecoration(
-                          color: accentColor,
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4)),
+                children:
+                    data.map((d) {
+                      final count = (d['count'] as num).toInt();
+                      final height =
+                          maxCount > 0
+                              ? (count / maxCount * 100).toDouble()
+                              : 0.0;
+                      final date = d['date'].toString();
+                      return Expanded(
+                        child: Tooltip(
+                          message: '$date: $count 次',
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            height: height,
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(4),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList(),
               ),
             ),
           ],
@@ -181,30 +203,36 @@ class _StatsScreenState extends State<StatsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('🔥 热门笔记 Top 10',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme
-                        .presets[widget.themeIndex].colorScheme.primary)),
-            const SizedBox(height: 12),
-            ...List.generate(
-              _stats!.hotNotes.length,
-              (i) {
-                final note = _stats!.hotNotes[i];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.orange,
-                    child: Text('${i + 1}',
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                  title: Text(note['title'] ?? '',
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: Chip(label: Text('${note['reads'] ?? 0} 次')),
-                );
-              },
+            Text(
+              '🔥 热门笔记 Top 10',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.presets[widget.themeIndex].colorScheme.primary,
+              ),
             ),
+            const SizedBox(height: 12),
+            ...List.generate(_stats!.hotNotes.length, (i) {
+              final note = _stats!.hotNotes[i];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.orange,
+                  child: Text(
+                    '${i + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  note['title'] ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: Chip(label: Text('${note['reads'] ?? 0} 次')),
+              );
+            }),
           ],
         ),
       ),

@@ -40,11 +40,13 @@ class _LintScreenState extends State<LintScreen> {
         _lintData = null;
       });
       if (mounted) {
-        final msg = e.toString().contains('SocketException')
-            ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
-            : '加载检查数据失败';
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(msg)));
+        final msg =
+            e.toString().contains('SocketException')
+                ? '无法连接服务器，请检查网络或在设置中修改服务器地址'
+                : '加载检查数据失败';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
@@ -70,24 +72,25 @@ class _LintScreenState extends State<LintScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('确认$fixLabel'),
-        content: Text('确定要执行「$fixLabel」操作吗？此操作不可撤销。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+      builder:
+          (context) => AlertDialog(
+            title: Text('确认$fixLabel'),
+            content: Text('确定要执行「$fixLabel」操作吗？此操作不可撤销。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('取消'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(fixLabel),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(fixLabel),
-          ),
-        ],
-      ),
     );
 
     if (confirmed != true) return;
@@ -105,9 +108,9 @@ class _LintScreenState extends State<LintScreen> {
       await _loadLint();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('修复失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('修复失败: $e')));
       }
     } finally {
       if (mounted) setState(() => _fixing.remove(type));
@@ -122,24 +125,24 @@ class _LintScreenState extends State<LintScreen> {
       appBar: AppBar(
         title: const Text('健康检查'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadLint,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadLint),
         ],
       ),
-      body: _loading
-          ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
-          : _lintData == null
+      body:
+          _loading
               ? Center(
-                  child: Text(
-                    ApiService.isConfigured ? '加载失败' : '请先在设置中配置服务器',
-                    style: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha: 0.4),
-                      decoration: TextDecoration.none,
-                    ),
+                child: CircularProgressIndicator(color: colorScheme.primary),
+              )
+              : _lintData == null
+              ? Center(
+                child: Text(
+                  ApiService.isConfigured ? '加载失败' : '请先在设置中配置服务器',
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                    decoration: TextDecoration.none,
                   ),
-                )
+                ),
+              )
               : _buildContent(colorScheme),
     );
   }
@@ -159,19 +162,32 @@ class _LintScreenState extends State<LintScreen> {
           crossAxisSpacing: 12,
           childAspectRatio: 1.8,
           children: [
-            _buildStatCard('笔记总数', '${stats['total_notes'] ?? 0}',
-                Icons.library_books, colorScheme),
             _buildStatCard(
-                '链接密度',
-                '${((stats['link_density'] ?? 0) * 100).toInt()}%',
-                Icons.link,
-                colorScheme),
-            _buildStatCard('孤立笔记', '${stats['orphan_count'] ?? 0}',
-                Icons.warning_amber, colorScheme,
-                isWarning: (stats['orphan_count'] ?? 0) > 0),
-            _buildStatCard('断链', '${stats['broken_link_count'] ?? 0}',
-                Icons.link_off, colorScheme,
-                isError: (stats['broken_link_count'] ?? 0) > 0),
+              '笔记总数',
+              '${stats['total_notes'] ?? 0}',
+              Icons.library_books,
+              colorScheme,
+            ),
+            _buildStatCard(
+              '链接密度',
+              '${((stats['link_density'] ?? 0) * 100).toInt()}%',
+              Icons.link,
+              colorScheme,
+            ),
+            _buildStatCard(
+              '孤立笔记',
+              '${stats['orphan_count'] ?? 0}',
+              Icons.warning_amber,
+              colorScheme,
+              isWarning: (stats['orphan_count'] ?? 0) > 0,
+            ),
+            _buildStatCard(
+              '断链',
+              '${stats['broken_link_count'] ?? 0}',
+              Icons.link_off,
+              colorScheme,
+              isError: (stats['broken_link_count'] ?? 0) > 0,
+            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -192,8 +208,11 @@ class _LintScreenState extends State<LintScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 40),
-                const Icon(Icons.check_circle_outline,
-                    size: 48, color: Colors.green),
+                const Icon(
+                  Icons.check_circle_outline,
+                  size: 48,
+                  color: Colors.green,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   '一切正常',
@@ -343,31 +362,39 @@ class _LintScreenState extends State<LintScreen> {
           ),
           if (issue['notes'] != null) ...[
             const SizedBox(height: 8),
-            ...(issue['notes'] as List).take(5).map((n) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '• ${n['title'] ?? ''}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      decoration: TextDecoration.none,
+            ...(issue['notes'] as List)
+                .take(5)
+                .map(
+                  (n) => Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '• ${n['title'] ?? ''}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        decoration: TextDecoration.none,
+                      ),
                     ),
                   ),
-                )),
+                ),
           ],
           if (issue['links'] != null) ...[
             const SizedBox(height: 8),
-            ...(issue['links'] as List).take(5).map((l) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '• ${l['from']} → ${l['to']}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      decoration: TextDecoration.none,
+            ...(issue['links'] as List)
+                .take(5)
+                .map(
+                  (l) => Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '• ${l['from']} → ${l['to']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        decoration: TextDecoration.none,
+                      ),
                     ),
                   ),
-                )),
+                ),
           ],
           if (isFixable) ...[
             const SizedBox(height: 12),
@@ -376,25 +403,30 @@ class _LintScreenState extends State<LintScreen> {
               children: [
                 TextButton.icon(
                   onPressed: isFixing ? null : () => _fixIssue(type),
-                  icon: isFixing
-                      ? SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.primary,
-                          ),
-                        )
-                      : Icon(fixIcon, size: 16),
+                  icon:
+                      isFixing
+                          ? SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.primary,
+                            ),
+                          )
+                          : Icon(fixIcon, size: 16),
                   label: Text(
                     isFixing ? '修复中...' : fixLabel,
                     style: const TextStyle(
-                        fontSize: 12, decoration: TextDecoration.none),
+                      fontSize: 12,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: colorScheme.primary,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                   ),
                 ),
               ],

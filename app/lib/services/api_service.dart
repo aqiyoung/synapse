@@ -34,9 +34,9 @@ class ApiService {
   }
 
   static Map<String, String> get headers => {
-        'Content-Type': 'application/json',
-        if (_token.isNotEmpty) 'Authorization': 'Bearer $_token',
-      };
+    'Content-Type': 'application/json',
+    if (_token.isNotEmpty) 'Authorization': 'Bearer $_token',
+  };
 
   // 获取笔记列表
   // summary: 列表只展示元数据,content 不需要 → 节省 ~80% 响应体积
@@ -45,8 +45,12 @@ class ApiService {
 
   // v0.3.10.23 (6/27): 返回 (notes, total) — 后端 API 有 total 字段, 用于
   // 首页显示笔记总数, 不再用 _notes.length (只显示当前页数).
-  static Future<(List<Note>, int)> getNotes(
-      {String? tag, String? search, int limit = 200, int skip = 0}) async {
+  static Future<(List<Note>, int)> getNotes({
+    String? tag,
+    String? search,
+    int limit = 200,
+    int skip = 0,
+  }) async {
     // 限制 200 是后端 list_notes 允许的最大值(api.py le=200);超过需后端加 cursor 分页
     var url =
         '$baseUrl/notes?limit=$limit&skip=$skip&fields=${Uri.encodeQueryComponent(_listFields)}';
@@ -70,8 +74,10 @@ class ApiService {
 
   // 获取笔记详情(需要完整 content)
   static Future<Note> getNoteFull(int id) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/notes/$id'), headers: headers);
+    final response = await http.get(
+      Uri.parse('$baseUrl/notes/$id'),
+      headers: headers,
+    );
     if (response.statusCode == 200) {
       return Note.fromJson(json.decode(response.body));
     }
@@ -86,8 +92,12 @@ class ApiService {
   }
 
   // 更新笔记
-  static Future<bool> updateNote(int id,
-      {String? title, String? content, List<String>? tags}) async {
+  static Future<bool> updateNote(
+    int id, {
+    String? title,
+    String? content,
+    List<String>? tags,
+  }) async {
     final body = <String, dynamic>{};
     if (title != null) body['title'] = title;
     if (content != null) body['content'] = content;
@@ -153,8 +163,10 @@ class ApiService {
       }
     }
 
-    final response =
-        await http.get(Uri.parse('$baseUrl/tags'), headers: headers);
+    final response = await http.get(
+      Uri.parse('$baseUrl/tags'),
+      headers: headers,
+    );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final tags = (data as List).map((t) => Tag.fromJson(t)).toList();
@@ -175,8 +187,10 @@ class ApiService {
 
   // 获取图谱数据
   static Future<Map<String, dynamic>> getGraph() async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/graph'), headers: headers);
+    final response = await http.get(
+      Uri.parse('$baseUrl/graph'),
+      headers: headers,
+    );
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -305,8 +319,10 @@ class ApiService {
   }
 
   /// AI 对话(RAG)
-  static Future<Map<String, dynamic>> chat(String question,
-      {int limit = 5}) async {
+  static Future<Map<String, dynamic>> chat(
+    String question, {
+    int limit = 5,
+  }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/ai/chat'),
       headers: headers,
@@ -316,13 +332,16 @@ class ApiService {
       final data = json.decode(response.body);
       // 确保 references 中包含 summary 字段
       if (data['references'] != null) {
-        data['references'] = (data['references'] as List)
-            .map((r) => {
-                  'id': r['id'],
-                  'title': r['title'] ?? '',
-                  'summary': r['summary'] ?? '',
-                })
-            .toList();
+        data['references'] =
+            (data['references'] as List)
+                .map(
+                  (r) => {
+                    'id': r['id'],
+                    'title': r['title'] ?? '',
+                    'summary': r['summary'] ?? '',
+                  },
+                )
+                .toList();
       }
       return data;
     }

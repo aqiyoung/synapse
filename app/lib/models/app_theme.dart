@@ -105,14 +105,14 @@ class AppTheme {
   ];
 
   ColorScheme get colorScheme => ColorScheme(
-        brightness: Brightness.light,
-        primary: lightPrimary,
-        secondary: lightPrimary.withValues(alpha: 0.7),
-        surface: lightSurface,
-        error: const Color(0xFFB00020),
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: const Color(0xFF1C1B1F),
-        onError: Colors.white,
-      );
+    brightness: Brightness.light,
+    primary: lightPrimary,
+    secondary: lightPrimary.withValues(alpha: 0.7),
+    surface: lightSurface,
+    error: const Color(0xFFB00020),
+    onPrimary: Colors.white,
+    onSecondary: Colors.white,
+    onSurface: const Color(0xFF1C1B1F),
+    onError: Colors.white,
+  );
 }

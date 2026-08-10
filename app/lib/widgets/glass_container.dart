@@ -66,18 +66,21 @@ class GlassContainer extends StatelessWidget {
 
     // 默认 tint：暗色主题用白色，亮色主题用白色（带较高 alpha）
     // iOS 26 的做法是：亮色用半透明白，暗色用半透明白+一点灰
-    final effectiveTint = tint ??
+    final effectiveTint =
+        tint ??
         (isDark
             ? const Color(0xFF1c1c1e).withValues(alpha: 0.3) // 暗色：深灰玻璃
             : const Color(0xFFFFFFFF).withValues(alpha: 0.5)); // 亮色：白玻璃
 
-    final effectiveBorder = borderColor ??
+    final effectiveBorder =
+        borderColor ??
         (isDark
             ? const Color(0xFFFFFFFF).withValues(alpha: 0.12) // 暗色：白色细线
             : const Color(0xFF000000).withValues(alpha: 0.08)); // 亮色：黑色细线
 
     // 形状（borderRadius 或 shape）
-    final effectiveShape = shape ??
+    final effectiveShape =
+        shape ??
         RoundedRectangleBorder(
           borderRadius: borderRadius ?? BorderRadius.circular(20),
         );
@@ -98,9 +101,10 @@ class GlassContainer extends StatelessWidget {
               highlightStrength: highlightStrength,
               isDark: isDark,
             ),
-            child: padding != null
-                ? Padding(padding: padding!, child: child)
-                : child,
+            child:
+                padding != null
+                    ? Padding(padding: padding!, child: child)
+                    : child,
           ),
         ),
       ),
@@ -142,25 +146,27 @@ class _GlassPainter extends CustomPainter {
       // 用形状的 path.getBounds() 作为 shader 范围，
       // 这样渐变在边角处也是沿着形状的。
       final shaderRect = path.getBounds();
-      final highlightPaint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0.25 * highlightStrength),
-            Colors.transparent,
-          ],
-          stops: const [0.0, 0.5],
-        ).createShader(shaderRect);
+      final highlightPaint =
+          Paint()
+            ..shader = LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: 0.25 * highlightStrength),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.5],
+            ).createShader(shaderRect);
       canvas.drawPath(path, highlightPaint);
     }
 
     // 3. 边框（1px 描边）
     if (borderWidth > 0) {
-      final borderPaint = Paint()
-        ..color = borderColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = borderWidth;
+      final borderPaint =
+          Paint()
+            ..color = borderColor
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = borderWidth;
       canvas.drawPath(path, borderPaint);
     }
   }

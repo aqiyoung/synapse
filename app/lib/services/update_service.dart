@@ -140,10 +140,15 @@ class UpdateService {
           if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
 
           final uri = Uri.parse('$base/api/update/check?channel=$_channel');
-          final resp = await http.get(uri, headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'Synapse',
-          }).timeout(const Duration(seconds: 10));
+          final resp = await http
+              .get(
+                uri,
+                headers: {
+                  'Accept': 'application/json',
+                  'User-Agent': 'Synapse',
+                },
+              )
+              .timeout(const Duration(seconds: 10));
 
           if (resp.statusCode == 200) {
             data = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -159,16 +164,23 @@ class UpdateService {
           Uri uri;
           if (_channel == 'beta') {
             uri = Uri.parse(
-                'https://api.github.com/repos/aqiyoung/synapse/releases');
+              'https://api.github.com/repos/aqiyoung/synapse/releases',
+            );
           } else {
             uri = Uri.parse(
-                'https://api.github.com/repos/aqiyoung/synapse/releases/latest');
+              'https://api.github.com/repos/aqiyoung/synapse/releases/latest',
+            );
           }
 
-          final resp = await http.get(uri, headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'Synapse',
-          }).timeout(const Duration(seconds: 15));
+          final resp = await http
+              .get(
+                uri,
+                headers: {
+                  'Accept': 'application/vnd.github.v3+json',
+                  'User-Agent': 'Synapse',
+                },
+              )
+              .timeout(const Duration(seconds: 15));
 
           if (resp.statusCode == 200) {
             final body = jsonDecode(resp.body);
@@ -281,8 +293,9 @@ class UpdateService {
       try {
         final request = http.Request('GET', Uri.parse(downloadUrl));
         request.headers['User-Agent'] = 'Synapse';
-        final response =
-            await client.send(request).timeout(const Duration(seconds: 30));
+        final response = await client
+            .send(request)
+            .timeout(const Duration(seconds: 30));
 
         if (response.statusCode != 200) {
           throw Exception('服务器返回 ${response.statusCode}');
