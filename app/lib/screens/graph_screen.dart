@@ -179,7 +179,7 @@ class _GraphWidgetState extends State<_GraphWidget>
   Offset _pan = Offset.zero;
   double _scale = 1.0;
   _GraphNode? _dragNode;
-  bool _moved = false;
+  bool _dragMoved = false; // 区分「点击」与「拖拽」，避免拖拽松手误跳转
   _GraphNode? _hoveredNode;
   Offset _panStart = Offset.zero;
   Offset _lastFocal = Offset.zero;
@@ -372,16 +372,23 @@ class _GraphWidgetState extends State<_GraphWidget>
         return Stack(
           children: [
             GestureDetector(
+              onTap: () {
+                if (_dragNode != null && !_dragMoved) {
+                  widget.onNodeTap(_dragNode!.id);
+                }
+                _dragNode = null;
+                _dragMoved = false;
+              },
               onTapDown: (details) {
                 _dragNode = _findNode(details.localPosition, widgetSize);
+                _dragMoved = false;
                 if (_dragNode != null) {
                   _hoveredNode = _dragNode;
                 }
-                _moved = false;
               },
               onTapCancel: () {
                 _dragNode = null;
-                _moved = false;
+                _dragMoved = false;
               },
               onScaleStart: (details) {
                 _resumeTimer?.cancel();
@@ -393,16 +400,15 @@ class _GraphWidgetState extends State<_GraphWidget>
                 setState(() {
                   if (_dragNode != null && details.pointerCount == 1) {
                     final delta = (details.focalPoint - _lastFocal) / _scale;
-                    // 超过阈值才视为拖拽, 否则保持为"点击"以便打开笔记
-                    if (delta.distance > 2.0) {
-                      _dragNode!.x += delta.dx;
-                      _dragNode!.y += delta.dy;
-                      _dragNode!.vx = 0;
-                      _dragNode!.vy = 0;
-                      _moved = true;
-                    }
+                    // 移动超过阈值才判定为拖拽，防止轻微手抖误判
+                    if (delta.distance > 2.0) _dragMoved = true;
+                    _dragNode!.x += delta.dx;
+                    _dragNode!.y += delta.dy;
+                    _dragNode!.vx = 0;
+                    _dragNode!.vy = 0;
                   } else {
                     _dragNode = null;
+                    _dragMoved = true; // 平移/缩放一定是非点击，禁止跳转
                     _pan = details.focalPoint - _panStart;
                     if (details.scale != 1.0) {
                       _scale = (_scale * details.scale).clamp(0.3, 3.0);
@@ -412,13 +418,7 @@ class _GraphWidgetState extends State<_GraphWidget>
                 });
               },
               onScaleEnd: (details) {
-                // 仅当"抓到节点且几乎没有移动"时才跳转笔记;
-                // 拖动过程中不跳转, 避免误操作
-                if (_dragNode != null && !_moved) {
-                  widget.onNodeTap(_dragNode!.id);
-                }
-                _dragNode = null;
-                _moved = false;
+                // 注意：不能在这里重置 _dragNode，否则纯点击会被提前清空而无法跳转
                 _resumeTimer?.cancel();
                 // 立即恢复 ticker，不再延迟
                 _ensureTickerRunning();
