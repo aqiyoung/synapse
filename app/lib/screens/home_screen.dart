@@ -162,8 +162,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          const GraphScreen(),
           _buildNoteList(colorScheme),
+          const GraphScreen(),
           MineScreen(
             onToggleTheme: widget.onToggleTheme,
             isDark: widget.isDark,
@@ -189,14 +189,6 @@ class _HomeScreenState extends State<HomeScreen> {
           destinations: [
             NavigationDestination(
               icon: Icon(
-                Icons.hub_outlined,
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-              selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
-              label: _isChinese ? '图谱' : 'Graph',
-            ),
-            NavigationDestination(
-              icon: Icon(
                 Icons.library_books_outlined,
                 color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
@@ -205,6 +197,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: colorScheme.primary,
               ),
               label: _isChinese ? '笔记' : 'Notes',
+            ),
+            NavigationDestination(
+              icon: Icon(
+                Icons.hub_outlined,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
+              label: _isChinese ? '图谱' : 'Graph',
             ),
             NavigationDestination(
               icon: FutureBuilder<int>(
