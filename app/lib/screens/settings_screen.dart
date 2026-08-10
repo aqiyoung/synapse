@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
 import '../services/update_service.dart';
 import '../services/notification_service.dart';
-import '../services/ai_service.dart';
 import 'notifications_screen.dart';
 import '../models/app_theme.dart';
 import '../widgets/glass_container.dart';
@@ -36,10 +34,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _updateChannel = 'stable';
   bool _notificationsEnabled = true;
   int _unreadCount = 0;
-  bool _aiEnabled = true;
-  String _aiModel = '';
-  String _currentModel = '';
-  List<String> _availableModels = [];
 
   bool get _isDark => widget.isDark;
 
@@ -50,8 +44,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _checkLoginState();
     _loadUpdateChannel();
     _loadNotificationState();
-    _loadAiState();
-    _loadModelConfig();
   }
 
   Future<void> _loadNotificationState() async {
@@ -64,63 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  Future<void> _loadAiState() async {
-    final enabled = await AiService.isEnabled();
-    // 后台异步查 LLM 状态, 不阻塞 UI
-    unawaited(_refreshAiServerStatus());
-    if (!mounted) return;
-    setState(() {
-      _aiEnabled = enabled;
-    });
-  }
-
-  Future<void> _refreshAiServerStatus() async {
-    await AiService.checkServerStatus();
-    if (!mounted) return;
-    setState(() {
-      _aiModel = AiService.model;
-    });
-  }
-
-  // ── 模型配置 ──
   static const _modelKey = 'preferred_model';
-
-  Future<void> _loadModelConfig() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_modelKey) ?? '';
-    // 可用模型列表 (与 openclaw.json providers 对应)
-    const models = [
-      'longcat/LongCat-2.0-Preview',
-      'lyclaude/gpt-5.5',
-      'lyclaude/gpt-5.4',
-      'b-ai/gpt-5.4',
-      'xiaomi-mimo-2/mimo-v2.5-pro',
-      'minimax-m3/MiniMax-M3',
-      'kiro/claude-sonnet-4.6',
-      'nvidia/meta/llama-3.3-70b-instruct',
-      'tokenrouter/MiniMax-M3',
-    ];
-    if (!mounted) return;
-    setState(() {
-      _availableModels = models;
-      _currentModel = saved.isNotEmpty && models.contains(saved)
-          ? saved
-          : 'longcat/LongCat-2.0-Preview';
-    });
-  }
-
-  Future<void> _setModel(String model) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_modelKey, model);
-    // 同时写入 OpenClaw 配置 (通过后端代理)
-    try {
-      await ApiService.setModel(model);
-    } catch (_) {
-      // 后端可能没配 /api/config/model 端点, 本地 SharedPreferences 已保存
-    }
-    if (!mounted) return;
-    setState(() => _currentModel = model);
-  }
 
   Future<void> _loadUpdateChannel() async {
     await UpdateService().loadChannel();
@@ -373,94 +309,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-
-
   void _showLoginDialog() {
     // 只读模式 - 管理员登录已禁用
   }
-
-  void _showModelPicker(BuildContext ctx, ColorScheme cs) {
-    showModalBottomSheet(
-      context: ctx,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: cs.onSurface.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-              child: Row(
-                children: [
-                  Icon(Icons.psychology_outlined, color: cs.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text('选择模型',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface)),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: cs.outline.withValues(alpha: 0.1)),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _availableModels.length,
-                itemBuilder: (context, index) {
-                  final m = _availableModels[index];
-                  final selected = m == _currentModel;
-                  return ListTile(
-                    dense: true,
-                    leading: Icon(
-                      selected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_off,
-                      color: selected
-                          ? cs.primary
-                          : cs.onSurface.withValues(alpha: 0.4),
-                      size: 18,
-                    ),
-                    title: Text(
-                      m,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight:
-                            selected ? FontWeight.w600 : FontWeight.normal,
-                        color: selected ? cs.primary : cs.onSurface,
-                      ),
-                    ),
-                    trailing: selected
-                        ? Icon(Icons.check, color: cs.primary, size: 16)
-                        : null,
-                    onTap: () {
-                      _setModel(m);
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              ),
-            ),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-
 
   Widget _buildThemeGrid(ColorScheme colorScheme) {
     return GridView.builder(
@@ -796,113 +647,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // ── AI 功能 ──
-          GlassContainer(
-            margin: const EdgeInsets.only(bottom: 16),
-            borderRadius: BorderRadius.circular(20),
-            blur: 24,
-            tintOpacity: 0.4,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'AI',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (AiService.llmEnabled)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          _aiModel.isNotEmpty ? _aiModel : '已连接',
-                          style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.green,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      )
-                    else
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          '未配置',
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.orange,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome,
-                        color: colorScheme.primary,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '启用 AI 摘要',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          Text(
-                            AiService.llmEnabled
-                                ? '笔记详情页可使用 AI 一键摘要'
-                                : '后端未配置 LLM，开启后暂不可用',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: _aiEnabled,
-                      onChanged: (v) async {
-                        await AiService.setEnabled(v);
-                        setState(() => _aiEnabled = v);
-                        if (v) {
-                          // 打开时立即查一次 server status
-                          _refreshAiServerStatus();
-                        }
-                      },
-                      activeColor: colorScheme.primary,
+          activeColor: colorScheme.primary,
                     ),
                   ],
                 ),
@@ -910,222 +655,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // ── 模型配置 ──
-          GlassContainer(
-            margin: const EdgeInsets.only(bottom: 16),
-            borderRadius: BorderRadius.circular(20),
-            blur: 24,
-            tintOpacity: 0.4,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '模型配置',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.psychology_outlined,
-                        color: colorScheme.primary,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'AI 模型',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          Text(
-                            _currentModel,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right,
-                        color: colorScheme.onSurface.withValues(alpha: 0.3)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // 模型选择器 (BottomSheet)
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _showModelPicker(context, colorScheme),
-                    icon: const Icon(Icons.tune, size: 16),
-                    label: const Text('切换模型'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── 更新通道 ──
-          GlassContainer(
-            margin: const EdgeInsets.only(bottom: 16),
-            borderRadius: BorderRadius.circular(20),
-            blur: 24,
-            tintOpacity: 0.4,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '更新通道',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildChannelOption(
-                        colorScheme,
-                        title: '稳定版',
-                        subtitle: '推荐，经过充分测试',
-                        value: 'stable',
-                        icon: Icons.shield_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildChannelOption(
-                        colorScheme,
-                        title: '测试版',
-                        subtitle: '抢先体验新功能',
-                        value: 'beta',
-                        icon: Icons.science_outlined,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // ── 检查更新 ──
-          GlassContainer(
-            margin: const EdgeInsets.only(bottom: 16),
-            borderRadius: BorderRadius.circular(20),
-            blur: 24,
-            tintOpacity: 0.4,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '应用更新',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildUpdateSection(colorScheme),
-              ],
-            ),
-          ),
-
-          // ── 服务器配置 ──
-          GlassContainer(
-            margin: const EdgeInsets.only(bottom: 16),
-            borderRadius: BorderRadius.circular(20),
-            blur: 24,
-            tintOpacity: 0.4,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '服务器',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _serverController,
-                  decoration: InputDecoration(
-                    hintText: 'https://your-server.com',
-                    labelText: '服务器地址',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saveServer,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(_saved ? '已保存 ✓' : '保存'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChannelOption(
-    ColorScheme colorScheme, {
-    required String title,
-    required String subtitle,
-    required String value,
-    required IconData icon,
-  }) {
+                  ) {
     final selected = _updateChannel == value;
     return GestureDetector(
       onTap: () => _setUpdateChannel(value),

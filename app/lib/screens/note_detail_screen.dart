@@ -4,7 +4,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/note.dart';
 import '../services/api_service.dart';
-import '../services/ai_service.dart';
 
 class NoteDetailScreen extends StatefulWidget {
   final int noteId;
@@ -19,23 +18,12 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Note? _note;
   Relations? _relations;
   bool _loading = true;
-  bool _aiEnabled = true;
 
   @override
   void initState() {
     super.initState();
     _loadNote();
     _loadRelations();
-    _loadAiEnabled();
-  }
-
-  Future<void> _loadAiEnabled() async {
-    final enabled = await AiService.isEnabled();
-    if (mounted) {
-      setState(() {
-        _aiEnabled = enabled;
-      });
-    }
   }
 
   Future<void> _loadRelations() async {
@@ -81,8 +69,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -100,12 +86,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           ),
           title: Text(_note?.title ?? '笔记详情'),
           actions: [
-            if (_aiEnabled)
-              IconButton(
-                icon: const Icon(Icons.auto_awesome),
-                onPressed: _note != null ? _showAiSummarize : null,
-                tooltip: 'AI 摘要',
-              ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
               onPressed: _note != null ? _shareLink : null,
@@ -555,265 +535,8 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
-  void _showAiSummarize() async {
-    if (_note == null) return;
-    final noteId = _note!.id;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) =>
-          _AiSummarySheet(noteId: noteId, noteTitle: _note!.title),
-    );
-  }
-
   String _formatDate(DateTime date) {
     return '${date.month}月${date.day}日 ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
 
-/// AI 摘要底部弹窗
-/// 流式展示后端 /api/ai/summarize/{noteId} 返回的 token
-class _AiSummarySheet extends StatefulWidget {
-  final int noteId;
-  final String noteTitle;
-
-  const _AiSummarySheet({required this.noteId, required this.noteTitle});
-
-  @override
-  State<_AiSummarySheet> createState() => _AiSummarySheetState();
-}
-
-class _AiSummarySheetState extends State<_AiSummarySheet> {
-  final StringBuffer _buffer = StringBuffer();
-  bool _loading = true;
-  bool _done = false;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _start();
-  }
-
-  Future<void> _start() async {
-    await AiService.summarize(
-      noteId: widget.noteId,
-      onChunk: (chunk) {
-        if (!mounted) return;
-        setState(() {
-          _buffer.write(chunk);
-        });
-      },
-      onDone: () {
-        if (!mounted) return;
-        setState(() {
-          _loading = false;
-          _done = true;
-        });
-      },
-      onError: (err) {
-        if (!mounted) return;
-        setState(() {
-          _loading = false;
-          _error = err;
-        });
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // drag handle
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.onSurface.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // title
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_awesome,
-                        color: colorScheme.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'AI 摘要',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    if (_loading)
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colorScheme.primary,
-                        ),
-                      )
-                    else
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                        iconSize: 20,
-                      ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: Text(
-                  widget.noteTitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Divider(
-                  height: 1, color: colorScheme.outline.withValues(alpha: 0.1)),
-              // body
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(20),
-                  child: _error != null
-                      ? _buildError(colorScheme)
-                      : _buildContent(colorScheme),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildContent(ColorScheme colorScheme) {
-    if (_buffer.isEmpty && _loading) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: colorScheme.primary),
-            const SizedBox(height: 12),
-            Text(
-              '正在生成摘要...',
-              style: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SelectableText(
-          _buffer.toString(),
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.7,
-            color: colorScheme.onSurface,
-            fontFamily: 'MiSans',
-          ),
-        ),
-        if (_loading) ...[
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '生成中...',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
-              ),
-            ],
-          ),
-        ],
-        if (_done) ...[
-          const SizedBox(height: 12),
-          Text(
-            '✨ AI 摘要完成',
-            style: TextStyle(
-              fontSize: 11,
-              color: colorScheme.primary.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildError(ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.orange, size: 48),
-          const SizedBox(height: 12),
-          Text(
-            _error!,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextButton.icon(
-            onPressed: () {
-              setState(() {
-                _buffer.clear();
-                _loading = true;
-                _done = false;
-                _error = null;
-              });
-              _start();
-            },
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('重试'),
-          ),
-        ],
-      ),
-    );
-  }
-}

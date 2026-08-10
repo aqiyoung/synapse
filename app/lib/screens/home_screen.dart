@@ -8,7 +8,6 @@ import 'note_detail_screen.dart';
 import 'graph_screen.dart';
 import 'settings_screen.dart';
 import 'mine_screen.dart';
-import 'chat_screen.dart';
 import '../widgets/tag_chip.dart';
 import '../widgets/glass_container.dart';
 import '../services/update_service.dart';
@@ -184,9 +183,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          _buildNoteList(colorScheme),
           const GraphScreen(),
-          const ChatScreen(),
+          _buildNoteList(colorScheme),
           MineScreen(
             onToggleTheme: widget.onToggleTheme,
             isDark: widget.isDark,
@@ -211,23 +209,17 @@ class _HomeScreenState extends State<HomeScreen> {
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
             NavigationDestination(
-              icon: Icon(Icons.library_books_outlined,
-                  color: colorScheme.onSurface.withValues(alpha: 0.6)),
-              selectedIcon:
-                  Icon(Icons.library_books, color: colorScheme.primary),
-              label: _isChinese ? '笔记' : 'Notes',
-            ),
-            NavigationDestination(
               icon: Icon(Icons.hub_outlined,
                   color: colorScheme.onSurface.withValues(alpha: 0.6)),
               selectedIcon: Icon(Icons.hub, color: colorScheme.primary),
               label: _isChinese ? '图谱' : 'Graph',
             ),
             NavigationDestination(
-              icon: Icon(Icons.chat_bubble_outline,
+              icon: Icon(Icons.library_books_outlined,
                   color: colorScheme.onSurface.withValues(alpha: 0.6)),
-              selectedIcon: Icon(Icons.chat_bubble, color: colorScheme.primary),
-              label: _isChinese ? 'AI' : 'AI',
+              selectedIcon:
+                  Icon(Icons.library_books, color: colorScheme.primary),
+              label: _isChinese ? '笔记' : 'Notes',
             ),
             NavigationDestination(
               icon: FutureBuilder<int>(

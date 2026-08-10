@@ -240,9 +240,9 @@ class _MineScreenState extends State<MineScreen> {
                 ),
                 _buildInfoRow(
                   colorScheme,
-                  icon: Icons.auto_awesome_rounded,
-                  label: 'AI 能力',
-                  value: '自动标签 · 自动关联 · 智能问答',
+                  icon: Icons.hub_outlined,
+                  label: '知识图谱',
+                  value: '自动关联 · 可视化 · 关系探索',
                 ),
                 _buildInfoRow(
                   colorScheme,
