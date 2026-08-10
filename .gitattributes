@@ -1,3 +1,6 @@
-# Adjust GitHub language statistics
+# 统一 Dart 源文件为 LF 行尾, 避免 Windows/CRLF 在跨平台 dart format 下误判
+*.dart text eol=lf
+
+# 仅用于 GitHub 语言统计, 不影响构建
 frontend/index.html linguist-language=JavaScript
 frontend/index_optimized.html linguist-language=JavaScript
