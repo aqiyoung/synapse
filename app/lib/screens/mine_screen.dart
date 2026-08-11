@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/app_update_core.dart';
 import '../services/update_service.dart';
 import 'settings_screen.dart';
 import 'lint_screen.dart';
@@ -458,13 +459,16 @@ class _MineScreenState extends State<MineScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  final url = UpdateService().getGitHubDownloadUrl();
-                  launchUrl(
-                    Uri.parse(url),
-                    mode: LaunchMode.externalApplication,
-                  );
+                  final messenger = ScaffoldMessenger.of(context);
+                  // GitHub App 优先, 未安装回退浏览器, 再失败复制链接.
+                  final result = await UpdateService().openReleasePage(context);
+                  if (result == OpenReleaseResult.copied) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('无法打开 GitHub，链接已复制')),
+                    );
+                  }
                 },
                 child: const Text('GitHub下载'),
               ),

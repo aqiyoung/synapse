@@ -8,22 +8,51 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_update_core.dart';
+
+/// synapse 的仓库配置. 没有 meta 分支, 所以关掉 jsDelivr 兜底.
+const AppUpdateConfig kUpdateConfig = AppUpdateConfig(
+  owner: 'aqiyoung',
+  repo: 'synapse',
+  useMetaFallback: false,
+);
+
 class UpdateInfo {
   final String latestVersion;
   final String? releaseNotes;
   final String? publishedAt;
 
+  /// 带前导 v 的 tag, 如 "v0.3.8"; 服务器代理没给时回落 "v$latestVersion".
+  final String tagName;
+
+  /// 该版本 Release 页面地址 (跳转用).
+  final String releaseUrl;
+
+  /// GitHub 资产里的 APK 直链 (arm64-v8a 优先), 服务器代理路径下为 null.
+  final String? apkDownloadUrl;
+
+  /// release 正文首行标了 **P0** / **critical** → 建议强制升级.
+  final bool isCritical;
+
   UpdateInfo({
     required this.latestVersion,
     this.releaseNotes,
     this.publishedAt,
-  });
+    String? tag,
+    String? url,
+    this.apkDownloadUrl,
+    this.isCritical = false,
+  })  : tagName = tag ?? 'v$latestVersion',
+        releaseUrl = url ?? kUpdateConfig.releaseTagUrl(tag ?? 'v$latestVersion');
 }
 
 class UpdateService {
   static final UpdateService _instance = UpdateService._();
   factory UpdateService() => _instance;
   UpdateService._();
+
+  /// 三仓共用的更新引擎 (sanyelive / FeiNiuMusic / synapse).
+  static final AppUpdateCore core = AppUpdateCore(kUpdateConfig);
 
   UpdateInfo? _cachedUpdate;
   bool _checked = false;
@@ -63,6 +92,20 @@ class UpdateService {
   // Status change callback
   VoidCallback? onStatusChange;
 
+  /// package:http 版的引擎适配器 —— 引擎只要状态码 + 原始 body.
+  static Future<AppUpdateHttpResponse> _fetch(
+    String url,
+    Map<String, String> headers,
+  ) async {
+    final resp = await http
+        .get(Uri.parse(url), headers: headers)
+        .timeout(const Duration(seconds: 15));
+    return AppUpdateHttpResponse(
+      resp.statusCode,
+      utf8.decode(resp.bodyBytes, allowMalformed: true),
+    );
+  }
+
   Future<String> _getCurrentVersion() async {
     try {
       final info = await PackageInfo.fromPlatform();
@@ -72,6 +115,8 @@ class UpdateService {
     }
   }
 
+  /// synapse 自己的版本比较 —— 比引擎的 [AppUpdateCore.compareVersions] 多一层
+  /// beta 语义: `-beta.N` 之间按 N 比, 且 beta ↔ stable 互不打扰.
   bool _isNewer(String latest, String current) {
     var l = latest.startsWith('v') ? latest.substring(1) : latest;
     var c = current.startsWith('v') ? current.substring(1) : current;
@@ -117,7 +162,12 @@ class UpdateService {
     return false;
   }
 
-  /// 检查更新
+  /// 检查更新.
+  ///
+  /// 数据源顺序:
+  ///   1. 自建服务器代理 `/api/update/check` (配置了 server 才走, 局域网最快);
+  ///   2. [AppUpdateCore] —— GitHub API, 依次 gh-proxy.com 代理 → 直连.
+  /// 全部失败时置 [errorMessage], 绝不误报"已是最新".
   Future<void> check() async {
     if (_checking) return;
 
@@ -128,7 +178,7 @@ class UpdateService {
     if (_channel.isEmpty) await loadChannel();
 
     try {
-      Map<String, dynamic>? data;
+      UpdateInfo? candidate;
 
       // 方式1：通过服务器代理检查
       final prefs = await SharedPreferences.getInstance();
@@ -151,99 +201,54 @@ class UpdateService {
               .timeout(const Duration(seconds: 10));
 
           if (resp.statusCode == 200) {
-            data = jsonDecode(resp.body) as Map<String, dynamic>;
+            final data = jsonDecode(resp.body) as Map<String, dynamic>;
+            var version = (data['latest_version'] as String? ?? '').trim();
+            if (version.startsWith('v')) version = version.substring(1);
+            if (version.isNotEmpty) {
+              final notes = data['release_notes'] as String? ?? '';
+              candidate = UpdateInfo(
+                latestVersion: version,
+                releaseNotes: notes,
+                publishedAt: data['published_at'] as String?,
+                isCritical: AppUpdateCore.isCritical(notes),
+              );
+            }
           }
         } catch (e) {
           debugPrint('Server update check failed, trying GitHub directly: $e');
         }
       }
 
-      // 方式2：直接访问 GitHub API（备选）
-      if (data == null) {
-        try {
-          Uri uri;
-          if (_channel == 'beta') {
-            uri = Uri.parse(
-              'https://api.github.com/repos/aqiyoung/synapse/releases',
-            );
-          } else {
-            uri = Uri.parse(
-              'https://api.github.com/repos/aqiyoung/synapse/releases/latest',
-            );
-          }
-
-          final resp = await http
-              .get(
-                uri,
-                headers: {
-                  'Accept': 'application/vnd.github.v3+json',
-                  'User-Agent': 'Synapse',
-                },
-              )
-              .timeout(const Duration(seconds: 15));
-
-          if (resp.statusCode == 200) {
-            final body = jsonDecode(resp.body);
-            Map<String, dynamic>? release;
-
-            if (_channel == 'beta') {
-              final releases = body as List<dynamic>;
-              for (final r in releases) {
-                if (r['prerelease'] == true) {
-                  release = r as Map<String, dynamic>;
-                  break;
-                }
-              }
-            } else {
-              release = body as Map<String, dynamic>;
-            }
-
-            if (release != null) {
-              final tag = release['tag_name'] as String? ?? '';
-              data = {
-                'latest_version': tag.replaceFirst('v', ''),
-                'release_notes': release['body'] ?? '',
-                'published_at': release['published_at'] ?? '',
-              };
-            }
-          }
-        } catch (e) {
-          debugPrint('GitHub API update check failed: $e');
+      // 方式2：统一引擎查 GitHub（代理链 → 直连）
+      if (candidate == null) {
+        final current = await _getCurrentVersion();
+        final result = await core.check(_fetch, current, channel: _channel);
+        if (result == null) {
+          _checking = false;
+          _errorMessage = '无法检查更新，请检查网络';
+          _notifyListeners();
+          return;
         }
-      }
-
-      if (data == null) {
-        _checking = false;
-        _errorMessage = '无法检查更新';
-        _notifyListeners();
-        return;
-      }
-
-      var latestVersion = data['latest_version'] as String? ?? '';
-      if (latestVersion.isEmpty) {
-        _checking = false;
-        _notifyListeners();
-        return;
-      }
-
-      if (latestVersion.startsWith('v')) {
-        latestVersion = latestVersion.substring(1);
+        candidate = UpdateInfo(
+          latestVersion: result.latestVersion,
+          releaseNotes: result.releaseNotes,
+          tag: result.tagName,
+          url: result.releaseUrl,
+          apkDownloadUrl: result.apkDownloadUrl,
+          isCritical: result.isCritical,
+        );
       }
 
       final currentVersion = await _getCurrentVersion();
-      if (!_isNewer(latestVersion, currentVersion)) {
+      _checked = true;
+      if (!_isNewer(candidate.latestVersion, currentVersion)) {
+        _cachedUpdate = null;
         _checking = false;
         _notifyListeners();
         return;
       }
 
-      _cachedUpdate = UpdateInfo(
-        latestVersion: latestVersion,
-        releaseNotes: data['release_notes'] as String?,
-        publishedAt: data['published_at'] as String?,
-      );
-
-      _checked = true;
+      _cachedUpdate = candidate;
       _checking = false;
     } catch (e) {
       _checking = false;
@@ -253,12 +258,16 @@ class UpdateService {
     _notifyListeners();
   }
 
-  /// 获取GitHub下载链接
-  String getGitHubDownloadUrl() {
-    final version = _cachedUpdate?.latestVersion ?? '';
-    if (version.isEmpty) return 'https://github.com/aqiyoung/synapse/releases';
-    return 'https://github.com/aqiyoung/synapse/releases/tag/v$version';
-  }
+  /// 获取GitHub下载链接（Release 页面）
+  String getGitHubDownloadUrl() =>
+      _cachedUpdate?.releaseUrl ?? kUpdateConfig.releasePageUrl;
+
+  /// 跳转发布页: GitHub App 优先 → 系统浏览器 → 复制链接.
+  Future<OpenReleaseResult> openReleasePage(BuildContext context) =>
+      core.openRelease(context, getGitHubDownloadUrl());
+
+  /// 用 gh-proxy 包一层的下载地址, 给直连 GitHub 打不开的用户.
+  String proxyDownloadUrl() => core.proxyUrl(getGitHubDownloadUrl());
 
   /// 下载更新并安装
   Future<void> downloadUpdate() async {
@@ -276,7 +285,7 @@ class UpdateService {
           '${dir.path}/synapse-v${_cachedUpdate!.latestVersion}.apk';
       final file = File(filePath);
 
-      // 构建下载 URL：优先服务器代理，备选 GitHub 直连
+      // 构建下载 URL：优先服务器代理，其次 GitHub 资产（走 gh-proxy 兜底）
       String downloadUrl = '';
       final prefs = await SharedPreferences.getInstance();
       final server = prefs.getString('server') ?? '';
@@ -286,6 +295,12 @@ class UpdateService {
         if (base.endsWith('/')) base = base.substring(0, base.length - 1);
         if (base.endsWith('/api')) base = base.substring(0, base.length - 4);
         downloadUrl = '$base/api/update/download?channel=$_channel';
+      } else {
+        final asset = _cachedUpdate!.apkDownloadUrl;
+        if (asset == null || asset.isEmpty) {
+          throw Exception('该版本没有可直接下载的 APK，请前往 Release 页面');
+        }
+        downloadUrl = core.proxyUrl(asset);
       }
 
       // 流式下载
