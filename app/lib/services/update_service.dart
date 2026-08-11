@@ -17,6 +17,11 @@ const AppUpdateConfig kUpdateConfig = AppUpdateConfig(
   useMetaFallback: false,
 );
 
+/// 「启动时自动检查更新」开关的持久化键（默认开启）.
+/// 对齐 sanyelive 的 version_checker.auto_check_update /
+/// FeiNiuMusic 的 autoCheckUpdateOnLaunch.
+const String kAutoCheckUpdateKey = 'update_service.auto_check_update';
+
 class UpdateInfo {
   final String latestVersion;
   final String? releaseNotes;
@@ -61,6 +66,7 @@ class UpdateService {
   double _downloadProgress = 0;
   String? _errorMessage;
   String _channel = 'stable';
+  bool _autoCheckOnLaunch = true;
 
   // Getters
   UpdateInfo? get cached => _cachedUpdate;
@@ -71,6 +77,9 @@ class UpdateService {
   double get downloadProgress => _downloadProgress;
   String? get errorMessage => _errorMessage;
   String get channel => _channel;
+
+  /// 「启动时自动检查更新」开关（默认开启）.
+  bool get autoCheckOnLaunch => _autoCheckOnLaunch;
 
   /// 设置更新通道（stable / beta）
   Future<void> setChannel(String channel) async {
@@ -87,6 +96,31 @@ class UpdateService {
   Future<void> loadChannel() async {
     final prefs = await SharedPreferences.getInstance();
     _channel = prefs.getString('update_channel') ?? 'stable';
+  }
+
+  /// 加载「启动时自动检查更新」开关（缺省 = 开启）.
+  Future<void> loadAutoCheck() async {
+    final prefs = await SharedPreferences.getInstance();
+    _autoCheckOnLaunch = prefs.getBool(kAutoCheckUpdateKey) ?? true;
+  }
+
+  /// 设置「启动时自动检查更新」开关并持久化.
+  Future<void> setAutoCheckOnLaunch(bool value) async {
+    _autoCheckOnLaunch = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kAutoCheckUpdateKey, value);
+    _notifyListeners();
+  }
+
+  /// 启动 / 进页面时的自动检查入口.
+  ///
+  /// 用户关掉开关后直接跳过，不发任何请求、不弹窗；
+  /// 设置页里手动点「检查更新」走 [check]，不受开关影响。
+  /// 语义与 sanyelive / FeiNiuMusic 保持一致。
+  Future<void> checkOnLaunch() async {
+    await loadAutoCheck();
+    if (!_autoCheckOnLaunch) return;
+    await check();
   }
 
   // Status change callback

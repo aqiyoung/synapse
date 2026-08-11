@@ -18,8 +18,8 @@ void main() async {
   final server = prefs.getString('server') ?? 'http://localhost:18800';
   await ApiService.setServer(server);
 
-  // Silent update check
-  UpdateService().check();
+  // Silent update check（受设置里「启动时自动检查更新」开关控制，默认开启）
+  UpdateService().checkOnLaunch();
 
   runApp(const KnowledgeBaseApp());
 }

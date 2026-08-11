@@ -36,7 +36,7 @@ class _MineScreenState extends State<MineScreen> {
   }
 
   Future<void> _autoCheckUpdate() async {
-    await UpdateService().check();
+    await UpdateService().checkOnLaunch();
     if (mounted && UpdateService().hasUpdate) {
       setState(() {});
       _showUpdateDialog(Theme.of(context).colorScheme);

@@ -32,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _serverController = TextEditingController();
   bool _saved = false;
   String _updateChannel = 'stable';
+  bool _autoCheckUpdate = true;
   bool _notificationsEnabled = true;
   int _unreadCount = 0;
 
@@ -58,9 +59,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadUpdateChannel() async {
     await UpdateService().loadChannel();
+    await UpdateService().loadAutoCheck();
     if (!mounted) return;
     setState(() {
       _updateChannel = UpdateService().channel;
+      _autoCheckUpdate = UpdateService().autoCheckOnLaunch;
+    });
+  }
+
+  Future<void> _setAutoCheckUpdate(bool value) async {
+    await UpdateService().setAutoCheckOnLaunch(value);
+    if (!mounted) return;
+    setState(() {
+      _autoCheckUpdate = value;
     });
   }
 
@@ -741,6 +752,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         value: 'beta',
                         icon: Icons.science_outlined,
                       ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Divider(
+                  height: 1,
+                  color: colorScheme.onSurface.withValues(alpha: 0.08),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.autorenew_outlined,
+                        color: colorScheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '启动时自动检查更新',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            '关闭后仅在手动点击「检查更新」时联网',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _autoCheckUpdate,
+                      onChanged: _setAutoCheckUpdate,
+                      activeColor: colorScheme.primary,
                     ),
                   ],
                 ),
