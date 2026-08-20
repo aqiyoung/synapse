@@ -18,6 +18,39 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Note? _note;
   Relations? _relations;
   bool _loading = true;
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _headingKeys = {};
+
+  String _ghSlug(String text) {
+    final parts = text.toLowerCase().split(RegExp(r'[\s\-_/]+'));
+    final kept = <String>[];
+    for (final p in parts) {
+      final cleaned = p
+          .runes
+          .map(String.fromCharCode)
+          .where((c) => RegExp(r'[a-z0-9\u4e00-\u9fff]').hasMatch(c))
+          .join();
+      if (cleaned.isNotEmpty) kept.add(cleaned);
+    }
+    return kept.join('-');
+  }
+
+  void _handleLink(String text, String? href, String title) {
+    if (href == null || !href.startsWith('#')) return;
+    final ctx = _headingKeys[href.substring(1)]?.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(ctx,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+          alignment: 0);
+    }
+  }
+
+@override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -104,6 +137,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Widget _buildContent(ColorScheme colorScheme) {
     final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
     return SingleChildScrollView(
+      controller: _scrollController,
       padding: EdgeInsets.fromLTRB(20, topPadding, 20, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,10 +395,36 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         final mdSegments = parts[i].split(RegExp(r'^---\s*$', multiLine: true));
         for (var si = 0; si < mdSegments.length; si++) {
           if (mdSegments[si].trim().isNotEmpty) {
-            children.add(
-              SelectionArea(
+            // 按标题行拆分该段，每个子块以标题开头并注册锚点 key，
+            // TOC 点击时 ensureVisible 可精确定位到标题。
+            final segLines = mdSegments[si].split('\n');
+            final headingRe = RegExp(r'^(#{1,6})\s+(.+)$');
+            final subBlocks = <String>[];
+            var cur = <String>[];
+            for (final line in segLines) {
+              final hm = headingRe.firstMatch(line.trim());
+              if (hm != null && cur.isNotEmpty) {
+                subBlocks.add(cur.join('\n'));
+                cur = [];
+              }
+              cur.add(line);
+            }
+            subBlocks.add(cur.join('\n'));
+
+            for (var bi = 0; bi < subBlocks.length; bi++) {
+              if (subBlocks[bi].trim().isEmpty) continue;
+              GlobalKey? segKey;
+              final firstLine = subBlocks[bi].trim().split('\n').first;
+              final hm = headingRe.firstMatch(firstLine);
+              if (hm != null) {
+                final slug = _ghSlug(hm.group(2)!.trim());
+                segKey = GlobalKey();
+                _headingKeys[slug] = segKey;
+              }
+              final Widget md = SelectionArea(
                 child: MarkdownBody(
-                  data: mdSegments[si],
+                  data: subBlocks[bi],
+                  onTapLink: _handleLink,
                   styleSheet: MarkdownStyleSheet(
                     p: TextStyle(
                       fontFamily: 'MiSans',
@@ -409,8 +469,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ),
                   ),
                 ),
-              ),
-            );
+              );
+              children.add(
+                segKey == null
+                    ? md
+                    : KeyedSubtree(key: segKey, child: md),
+              );
+            }
           }
           // Insert a divider between segments (not after the last one)
           if (si < mdSegments.length - 1) {
