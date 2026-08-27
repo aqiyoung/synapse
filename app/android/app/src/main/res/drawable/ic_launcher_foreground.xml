@@ -4,57 +4,57 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-  <!-- Connection lines - all equal length (32px from center) -->
+  <!-- Connection lines: from center (54,54) to each outer node -->
   <path
-      android:pathData="M26,38 L54,54"
+      android:pathData="M22,34 L54,54"
       android:strokeColor="#D97757"
-      android:strokeWidth="4"
-      android:strokeAlpha="0.9"
+      android:strokeWidth="4.5"
+      android:strokeAlpha="0.95"
       android:strokeLineCap="round"/>
   <path
-      android:pathData="M82,38 L54,54"
+      android:pathData="M86,34 L54,54"
       android:strokeColor="#5B9ABF"
-      android:strokeWidth="4"
-      android:strokeAlpha="0.9"
+      android:strokeWidth="4.5"
+      android:strokeAlpha="0.95"
       android:strokeLineCap="round"/>
   <path
       android:pathData="M54,86 L54,54"
       android:strokeColor="#7B6BBF"
-      android:strokeWidth="4"
-      android:strokeAlpha="0.9"
+      android:strokeWidth="4.5"
+      android:strokeAlpha="0.95"
       android:strokeLineCap="round"/>
 
-  <!-- Top-left node - Terracotta -->
+  <!-- Top-left node - Terracotta (radius 13) -->
   <path
-      android:pathData="M26,38m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"
+      android:pathData="M22,34m-13,0a13,13 0,1 1,26 0a13,13 0,1 1,-26 0"
       android:fillColor="#D97757"/>
   <path
-      android:pathData="M26,38m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"
+      android:pathData="M22,34m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"
       android:fillColor="#FAF9F5"/>
 
-  <!-- Top-right node - Teal blue -->
+  <!-- Top-right node - Teal blue (radius 13) -->
   <path
-      android:pathData="M82,38m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"
+      android:pathData="M86,34m-13,0a13,13 0,1 1,26 0a13,13 0,1 1,-26 0"
       android:fillColor="#5B9ABF"/>
   <path
-      android:pathData="M82,38m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"
+      android:pathData="M86,34m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"
       android:fillColor="#FAF9F5"/>
 
-  <!-- Bottom node - Purple -->
+  <!-- Bottom node - Purple (radius 13) -->
   <path
-      android:pathData="M54,86m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"
+      android:pathData="M54,86m-13,0a13,13 0,1 1,26 0a13,13 0,1 1,-26 0"
       android:fillColor="#7B6BBF"/>
   <path
       android:pathData="M54,86m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"
       android:fillColor="#FAF9F5"/>
 
-  <!-- Center synapse node -->
+  <!-- Center synapse node (radius 11) -->
   <path
-      android:pathData="M54,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"
+      android:pathData="M54,54m-11,0a11,11 0,1 1,22 0a11,11 0,1 1,-22 0"
       android:fillColor="#FFFFFF"
       android:strokeColor="#333333"
-      android:strokeWidth="2"/>
+      android:strokeWidth="2.5"/>
   <path
-      android:pathData="M54,54m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+      android:pathData="M54,54m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
       android:fillColor="#333333"/>
 </vector>
