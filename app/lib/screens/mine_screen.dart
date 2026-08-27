@@ -80,21 +80,19 @@ class _MineScreenState extends State<MineScreen> {
                     SizedBox(
                       width: 56,
                       height: 56,
-                      child: Image.asset(
-                        'assets/icons/logo.png',
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          print('Logo load error: $error');
-                          return Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFc96442),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Center(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFc96442),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Image.asset(
+                          'assets/icons/logo.png',
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            print('Logo load error: $error');
+                            return const Center(
                               child: Text(
                                 'S',
                                 style: TextStyle(
@@ -104,9 +102,9 @@ class _MineScreenState extends State<MineScreen> {
                                   color: Colors.white,
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
